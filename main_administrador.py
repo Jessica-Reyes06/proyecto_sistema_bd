@@ -1,6 +1,5 @@
 import os
 import sys
-
 from customtkinter import *
 import customtkinter
 from PIL import Image
@@ -145,13 +144,13 @@ def iniciar_admin():
 
     frame_cal.bind("<Button-1>", lambda event: mostrar_calendario_imagen(main_frame))
 
-    # Botón "Pendientes"
+    # Botón "Solicitudes"
     frame_pend = customtkinter.CTkFrame(sidebar, fg_color="transparent")
     frame_pend.pack(pady=5, padx=20, fill="x")
 
     btn_pend = customtkinter.CTkButton(
         frame_pend,
-        text="   Pendientes",
+        text="   Solicitudes",
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
@@ -159,31 +158,11 @@ def iniciar_admin():
         height=40,
         image=img_pendientes,
         anchor="w",
-        command=lambda: mostrar_pendientes(main_frame)
+        command=lambda: mostrar_solicitudes(main_frame)
     )
     btn_pend.pack(fill="x")
 
-    frame_pend.bind("<Button-1>", lambda event: mostrar_pendientes(main_frame))
-
-    # Botón "Notificaciones"
-    frame_notif = customtkinter.CTkFrame(sidebar, fg_color="transparent")
-    frame_notif.pack(pady=5, padx=20, fill="x")
-
-    btn_notif = customtkinter.CTkButton(
-        frame_notif,
-        text="   Notificaciones",
-        fg_color="transparent",
-        hover_color="#1c669f",
-        text_color="white",
-        width=150,
-        height=40,
-        image=img_notificaciones,
-        anchor="w",
-        command=lambda: mostrar_notificaciones(main_frame)
-    )
-    btn_notif.pack(fill="x")
-
-    frame_notif.bind("<Button-1>", lambda event: mostrar_notificaciones(main_frame))
+    frame_pend.bind("<Button-1>", lambda event: mostrar_solicitudes(main_frame))
 
     # Frame clickeable para cambiar modo oscuro/claro
     frame_modo = customtkinter.CTkFrame(sidebar, fg_color="transparent")

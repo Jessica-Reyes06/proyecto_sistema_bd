@@ -85,15 +85,15 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, actualizar_callb
 
 def ejecutar_update(sql, valores):
 
-    import mysql.connector
+   # import mysql.connector
     from db_conexion import obtener_conexion
-    conexion = obtener_conexion()
-    try:
-        with conexion.cursor() as cursor:
-            cursor.execute(sql, valores)
-        conexion.commit()
-    finally:
-        conexion.close()
+   # conexion = obtener_conexion()
+   # try:
+    #    with conexion.cursor() as cursor:
+     #       cursor.execute(sql, valores)
+   #     conexion.commit()
+   # finally:
+    #    conexion.close()
 
 pendientes_admin = []
 
@@ -125,11 +125,18 @@ def mostrar_dashboard(frame):
 
     crear_tarjeta(contenedor,"Alumnos",lambda: mostrar_alumnos(frame),"#510054",icono_alumnos).grid(row=0,column=0,padx=10,pady=10)
     crear_tarjeta(contenedor,"Maestros",lambda: mostrar_maestros(frame),"#004235",icono_maestros).grid(row=0,column=1,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Materias",lambda: mostrar_materias(frame),"#761127",icono_materias).grid(row=0,column=2,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Grupos",lambda: mostrar_grupos(frame),"#1f6aa5",icono_grupos).grid(row=0,column=3,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Horarios",lambda: mostrar_horarios(frame),"#1f6aa5",icono_horarios).grid(row=0,column=4,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Administradores",lambda: "mostrar_administradores"(frame),"#610139",icono_maestros).grid(row=0,column=2,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Carreras",lambda: "mostrar_carreras"(frame),"#43000E",icono_materias).grid(row=0,column=3,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Edificios",lambda: "mostrar_edificios y salones"(frame),"#761111",icono_materias).grid(row=0,column=4,padx=10,pady=10)
+
+    crear_tarjeta(contenedor,"Materias",lambda: mostrar_materias(frame),"#761127",icono_materias).grid(row=0,column=5,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Grupos",lambda: mostrar_grupos(frame),"#1f6aa5",icono_grupos).grid(row=0,column=6,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Horarios",lambda: mostrar_horarios(frame),"#1f6aa5",icono_horarios).grid(row=1,column=1,padx=10,pady=10)
     crear_tarjeta(contenedor,"Inscripciones",lambda: mostrar_inscripciones(frame),"#7A3500",icono_inscripciones).grid(row=1,column=0,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Usuarios",lambda: mostrar_usuarios(frame),"#2b4d7a",icono_usuarios).grid(row=1,column=1,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Actividades",lambda: "mostrar_actividades(frame)","#6C7A00",icono_inscripciones).grid(row=1,column=1,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Calificaciones",lambda: "mostrar_calificaciones(frame)","#067A00",icono_inscripciones).grid(row=1,column=2,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Usuarios",lambda: mostrar_usuarios(frame),"#2b4d7a",icono_usuarios).grid(row=1,column=3,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Reportes",lambda: "mostrar_reportes(frame)","#2b4d7a",icono_usuarios).grid(row=1,column=4,padx=10,pady=10)
 
     zona_inferior = CTkFrame(frame, height=120, fg_color="#f1f3f5")
     zona_inferior.pack(side="bottom", fill="x", padx=20, pady=(0,15))
@@ -189,13 +196,13 @@ def mostrar_calendario_imagen(frame):
 
     CTkLabel(cuerpo,text="",image=imagen_cal).pack(expand=True)
 
-def mostrar_pendientes(frame):
+def mostrar_solicitudes(frame):
     limpiar_frame(frame)
 
     header = CTkFrame(frame,height=60,fg_color="#154b74")
     header.pack(fill="x",pady=10)
 
-    CTkLabel(header,text="Pendientes",text_color="white",font=("Arial",26,"bold")).pack(pady=15)
+    CTkLabel(header,text="Solicitudes",text_color="white",font=("Arial",26,"bold")).pack(pady=15)
 
     cuerpo = CTkFrame(frame,fg_color="#ffffff")
     cuerpo.pack(fill="both",expand=True,padx=20,pady=10)
@@ -204,23 +211,11 @@ def mostrar_pendientes(frame):
     lista.pack(fill="both",expand=True,padx=10,pady=10)
 
     if not pendientes_admin:
-        CTkLabel(lista,text="No hay pendientes registrados",font=("Arial",16,"bold")).pack(pady=10)
+        CTkLabel(lista,text="No hay solicitudes registradas",font=("Arial",16,"bold")).pack(pady=10)
     else:
         for i,texto in enumerate(pendientes_admin,start=1):
             CTkLabel(lista,text=f"{i}. {texto}",anchor="w",justify="left",font=("Arial",14)).pack(fill="x",padx=5,pady=4)
 
-def mostrar_notificaciones(frame):
-    limpiar_frame(frame)
-
-    header = CTkFrame(frame,height=60,fg_color="#154b74")
-    header.pack(fill="x",pady=10)
-
-    CTkLabel(header,text="Notificaciones",text_color="white",font=("Arial",26,"bold")).pack(pady=15)
-
-    cuerpo = CTkFrame(frame,fg_color="#ffffff")
-    cuerpo.pack(fill="both",expand=True,padx=20,pady=10)
-
-    CTkLabel(cuerpo,text="No hay notificaciones",font=("Arial",18,"bold")).pack(pady=20)
 
 def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,botones,headers,tabla_sql=None):
     limpiar_frame(frame)
