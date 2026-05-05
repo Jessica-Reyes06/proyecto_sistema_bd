@@ -7,7 +7,6 @@ from funciones_admin import *
 
 ventana_principal = None
 
-
 def ruta_recurso(ruta_relativa):
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, ruta_relativa)
