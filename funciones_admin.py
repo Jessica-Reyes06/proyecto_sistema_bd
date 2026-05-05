@@ -1,5 +1,6 @@
 from customtkinter import CTkFrame, CTkLabel, CTkEntry, CTkButton
 import tkinter as tk
+from tkinter import messagebox
 from customtkinter import *
 from PIL import Image
 from config_principal import calendario, limpiar_frame, crear_tarjeta
@@ -86,14 +87,7 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, actualizar_callb
 def ejecutar_update(sql, valores):
 
    # import mysql.connector
-    from db_conexion import obtener_conexion
-   # conexion = obtener_conexion()
-   # try:
-    #    with conexion.cursor() as cursor:
-     #       cursor.execute(sql, valores)
-   #     conexion.commit()
-   # finally:
-    #    conexion.close()
+        return None
 
 pendientes_admin = []
 
@@ -123,20 +117,23 @@ def mostrar_dashboard(frame):
     icono_usuarios = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/usuario.png")),size=(64,64))
     icono_horarios = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_alumnos/reloj.png")),size=(64,64)) 
 
+    def abrir_pendiente(titulo):
+        return lambda: mostrar_seccion_pendiente(frame, titulo)
+
     crear_tarjeta(contenedor,"Alumnos",lambda: mostrar_alumnos(frame),"#510054",icono_alumnos).grid(row=0,column=0,padx=10,pady=10)
     crear_tarjeta(contenedor,"Maestros",lambda: mostrar_maestros(frame),"#004235",icono_maestros).grid(row=0,column=1,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Administradores",lambda: "mostrar_administradores"(frame),"#610139",icono_maestros).grid(row=0,column=2,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Carreras",lambda: "mostrar_carreras"(frame),"#43000E",icono_materias).grid(row=0,column=3,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Edificios",lambda: "mostrar_edificios y salones"(frame),"#761111",icono_materias).grid(row=0,column=4,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Administradores",abrir_pendiente("Administradores"),"#610139",icono_maestros).grid(row=0,column=2,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Carreras",abrir_pendiente("Carreras"),"#43000E",icono_materias).grid(row=0,column=3,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Edificios",abrir_pendiente("Edificios y salones"),"#761111",icono_materias).grid(row=0,column=4,padx=10,pady=10)
 
     crear_tarjeta(contenedor,"Materias",lambda: mostrar_materias(frame),"#761127",icono_materias).grid(row=0,column=5,padx=10,pady=10)
     crear_tarjeta(contenedor,"Grupos",lambda: mostrar_grupos(frame),"#1f6aa5",icono_grupos).grid(row=0,column=6,padx=10,pady=10)
     crear_tarjeta(contenedor,"Horarios",lambda: mostrar_horarios(frame),"#1f6aa5",icono_horarios).grid(row=1,column=1,padx=10,pady=10)
     crear_tarjeta(contenedor,"Inscripciones",lambda: mostrar_inscripciones(frame),"#7A3500",icono_inscripciones).grid(row=1,column=0,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Actividades",lambda: "mostrar_actividades(frame)","#6C7A00",icono_inscripciones).grid(row=1,column=1,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Calificaciones",lambda: "mostrar_calificaciones(frame)","#067A00",icono_inscripciones).grid(row=1,column=2,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Actividades",abrir_pendiente("Actividades"),"#6C7A00",icono_inscripciones).grid(row=1,column=1,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Calificaciones",abrir_pendiente("Calificaciones"),"#067A00",icono_inscripciones).grid(row=1,column=2,padx=10,pady=10)
     crear_tarjeta(contenedor,"Usuarios",lambda: mostrar_usuarios(frame),"#2b4d7a",icono_usuarios).grid(row=1,column=3,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Reportes",lambda: "mostrar_reportes(frame)","#2b4d7a",icono_usuarios).grid(row=1,column=4,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Reportes",abrir_pendiente("Reportes"),"#2b4d7a",icono_usuarios).grid(row=1,column=4,padx=10,pady=10)
 
     zona_inferior = CTkFrame(frame, height=120, fg_color="#f1f3f5")
     zona_inferior.pack(side="bottom", fill="x", padx=20, pady=(0,15))
@@ -217,6 +214,25 @@ def mostrar_solicitudes(frame):
             CTkLabel(lista,text=f"{i}. {texto}",anchor="w",justify="left",font=("Arial",14)).pack(fill="x",padx=5,pady=4)
 
 
+def mostrar_seccion_pendiente(frame, titulo):
+    limpiar_frame(frame)
+
+    header = CTkFrame(frame, height=60, fg_color="#154b74")
+    header.pack(fill="x", pady=10)
+
+    CTkLabel(header, text=titulo, text_color="white", font=("Arial", 26, "bold")).pack(pady=15)
+
+    cuerpo = CTkFrame(frame, fg_color="#ffffff")
+    cuerpo.pack(fill="both", expand=True, padx=20, pady=10)
+
+    CTkLabel(
+        cuerpo,
+        text="Seccion pendiente de integrar con la nueva distribucion.",
+        font=("Arial", 16, "bold"),
+        text_color="#000000"
+    ).pack(pady=30)
+
+
 def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,botones,headers,tabla_sql=None):
     limpiar_frame(frame)
 
@@ -239,41 +255,20 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
     def mostrar_tabla_base():
             limpiar_frame(area_contenido)
 
-            if not tabla_sql:
-                CTkLabel(area_contenido, text="No hay registros").pack()
-                return
+            CTkLabel(
+                area_contenido,
+                text="Vista visual lista para conectar con la nueva base de datos.",
+                font=("Arial", 15, "bold"),
+                text_color="#000000"
+            ).pack(pady=(10, 12))
 
-            try:
-
-                registros = ejecutar_select(f"SELECT * FROM {tabla_sql}")
-
-                if not registros:
-                    CTkLabel(area_contenido, text="No hay registros").pack()
-                    return
-
-                # columnas reales de la tabla
-                cursor = conexion.cursor()
-                cursor.execute(f"SHOW COLUMNS FROM {tabla_sql}")
-                columnas = [col[0] for col in cursor.fetchall()]
-                cursor.close()
-
-                crear_tabla_editable_con_doble_click(
-                    area_contenido,
-                    headers,
-                    registros,
-                    tabla_sql,
-                    columnas,
-                    columnas[0],
-                    volver_a_lista=mostrar_tabla_base
-                )
-
-            except Exception as e:
-
-                CTkLabel(
-                    area_contenido,
-                    text=f"Error al cargar datos: {e}",
-                    text_color="red"
-                ).pack(pady=10)
+            crear_tabla_editable(
+                area_contenido,
+                headers,
+                [],
+                tabla_sql or "pendiente",
+                actualizar_callback=None
+            )
 
     mostrar_tabla_base()
 
@@ -289,48 +284,17 @@ def guardar_csv(nombre):
     return filedialog.asksaveasfilename(defaultextension=".csv",filetypes=[("CSV","*.csv")],initialfile=nombre)
 
 def ejecutar_importacion(tabla,volver):
-    ruta = seleccionar_csv()
-    if not ruta:
-        return
-    try:
-        importar_csv(tabla,ruta)
-        tk.messagebox.showinfo("Importar CSV","Datos importados correctamente.")
-        if volver:
-            volver()
-    except Exception as e:
-        tk.messagebox.showerror("Error",str(e))
+    messagebox.showinfo("Importar CSV", "Funcion pendiente de conectar con la nueva base de datos.")
+    if volver:
+        volver()
 
 def ejecutar_exportacion(tabla,nombre):
-    ruta = guardar_csv(nombre)
-    if not ruta:
-        return
-    try:
-        exportar_csv(tabla,ruta)
-        tk.messagebox.showinfo("Exportar CSV","Datos exportados correctamente.")
-    except Exception as e:
-        tk.messagebox.showerror("Error",str(e))
+    messagebox.showinfo("Exportar CSV", "Funcion pendiente de conectar con la nueva base de datos.")
 
 
 def crear_respaldo_completo():
     """Respaldo completo de la base de datos en archivos CSV individuales por tabla."""
-
-    carpeta = filedialog.askdirectory(title="Selecciona carpeta para el respaldo")
-    if not carpeta:
-        return
-
-    marca_tiempo = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    tablas = ["alumnos", "maestros", "materias", "grupos", "registros"]
-
-    try:
-        for tabla in tablas:
-            nombre_archivo = f"{tabla}_{marca_tiempo}.csv"
-            ruta = f"{carpeta}/{nombre_archivo}"
-            exportar_csv(tabla, ruta)
-
-        tk.messagebox.showinfo("Respaldo", "Respaldo creado correctamente.")
-    except Exception as e:
-        tk.messagebox.showerror("Respaldo", f"Error al crear respaldo:\n{e}")
+    messagebox.showinfo("Respaldo", "Funcion pendiente de conectar con la nueva base de datos.")
 
 
 def restaurar_desde_respaldo():
@@ -340,28 +304,7 @@ def restaurar_desde_respaldo():
     "tabla_YYYYMMDD_HHMMSS.csv" más reciente y lo importa.
     """
 
-    carpeta = filedialog.askdirectory(title="Selecciona carpeta con respaldos")
-    if not carpeta:
-        return
-
-    tablas = ["alumnos", "maestros", "materias", "grupos", "registros"]
-
-    try:
-        for tabla in tablas:
-            prefijo = f"{tabla}_"
-            archivos = [f for f in os.listdir(carpeta) if f.startswith(prefijo) and f.endswith(".csv")]
-            if not archivos:
-                continue
-
-            archivos.sort()  # por nombre; con YYYYMMDD_HHMMSS el último es el más reciente
-            archivo_reciente = archivos[-1]
-            ruta = os.path.join(carpeta, archivo_reciente)
-
-            importar_csv(tabla, ruta)
-
-        tk.messagebox.showinfo("Restaurar", "Datos restaurados desde los respaldos más recientes.")
-    except Exception as e:
-        tk.messagebox.showerror("Restaurar", f"Error al restaurar datos:\n{e}")
+    messagebox.showinfo("Restaurar", "Funcion pendiente de conectar con la nueva base de datos.")
 
 def mostrar_alumnos(frame):
 

@@ -61,11 +61,11 @@ def on_login():
             from main_administrador import iniciar_admin
             iniciar_admin()
         elif mensaje["rol"] == "alumno":
-            from Inicio_Alumnos import iniciar_alumno
-            iniciar_alumno(mensaje["usuario"])
+             pass #from Inicio_Alumnos import iniciar_alumno
+             pass #iniciar_alumno(mensaje["usuario"])
         elif mensaje["rol"] == "maestro":
-            from Inicio_maestros import iniciar_maestro
-            iniciar_maestro(mensaje["usuario"])
+            #from Inicio_maestros import iniciar_maestro
+            pass #iniciar_maestro(mensaje["usuario"])
     
 
 boton_login = CTkButton(frame, text="Iniciar sesión", command=on_login, fg_color="#314560")
