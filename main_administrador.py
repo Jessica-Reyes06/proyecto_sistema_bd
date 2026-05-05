@@ -1,7 +1,6 @@
 import os
 import sys
-from customtkinter import *
-import customtkinter
+import customtkinter as ctk
 from PIL import Image
 from funciones_login import cambiar_modo
 from funciones_admin import *
@@ -15,7 +14,7 @@ def ruta_recurso(ruta_relativa):
 
 
 def crear_icono(ruta, size=(20, 20)):
-    return CTkImage(
+    return ctk.CTkImage(
         light_image=Image.open(ruta_recurso(ruta)),
         size=size
     )
@@ -26,10 +25,10 @@ def iniciar_admin():
 
     # ===== CONFIGURACIÓN =====
 
-    customtkinter.set_appearance_mode("light")
-    customtkinter.set_default_color_theme("blue")
+    ctk.set_appearance_mode("light")
+    ctk.set_default_color_theme("blue")
 
-    ventana_principal = customtkinter.CTk()
+    ventana_principal = ctk.CTk()
     ventana_principal.title("Panel Administrador")
 
     ventana_principal.withdraw()
@@ -48,11 +47,11 @@ def iniciar_admin():
     screen_w = ventana_principal.winfo_screenwidth()
 
     if screen_w >= 1900:
-        customtkinter.set_widget_scaling(1.3)
+        ctk.set_widget_scaling(1.3)
     elif screen_w >= 1500:
-        customtkinter.set_widget_scaling(1.15)
+        ctk.set_widget_scaling(1.15)
     else:
-        customtkinter.set_widget_scaling(1.0)
+        ctk.set_widget_scaling(1.0)
 
     # ===== GRID PRINCIPAL =====
 
@@ -62,28 +61,28 @@ def iniciar_admin():
 
     # ===== SIDEBAR =====
 
-    sidebar = customtkinter.CTkFrame(ventana_principal, width=220, fg_color="#003152")
+    sidebar = ctk.CTkFrame(ventana_principal, width=220, fg_color="#003152")
     sidebar.grid(row=0, column=0, sticky="ns")
 
-    logo_img = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/general/logo.jpeg")), size=(180, 60))
-    customtkinter.CTkLabel(
+    logo_img = ctk.CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/general/logo.jpeg")), size=(180, 60))
+    ctk.CTkLabel(
         sidebar,
         text="",
         image=logo_img
     ).pack(pady=(20, 5))
 
     # Avatar en la parte superior del panel izquierdo
-    avatar_image = CTkImage(
+    avatar_image = ctk.CTkImage(
         light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/usuario.png")),
         size=(100, 100)
     )
-    customtkinter.CTkLabel(
+    ctk.CTkLabel(
         sidebar,
         text="",
         image=avatar_image
     ).pack(pady=(5, 5))
 
-    customtkinter.CTkLabel(
+    ctk.CTkLabel(
         sidebar,
         text="¡Hola de nuevo! 😊",
         font=("Arial Rounded MT Bold", 20),
@@ -96,18 +95,17 @@ def iniciar_admin():
     img_modo = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/modo.png"), (24, 24))
     img_calendario = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/calendario.png"), (24, 24))
     img_pendientes = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/lista.png"), (24, 24))
-    img_notificaciones = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/reloj.png"), (24, 24))
     img_respaldo = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png"), (24, 24))
 
     # Frame clickeable para "Inicio"
-    frame_inicio = customtkinter.CTkFrame(sidebar, fg_color="transparent")
+    frame_inicio = ctk.CTkFrame(sidebar, fg_color="transparent")
     frame_inicio.pack(pady=10, padx=20, fill="x")
 
     # ===== AREA PRINCIPAL =====
-    main_frame = customtkinter.CTkFrame(ventana_principal, fg_color="transparent")
+    main_frame = ctk.CTkFrame(ventana_principal, fg_color="transparent")
     main_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
 
-    btn_inicio = customtkinter.CTkButton(
+    btn_inicio = ctk.CTkButton(
         frame_inicio,
         text="   Inicio",
         fg_color="#003152",
@@ -125,10 +123,10 @@ def iniciar_admin():
     frame_inicio.bind("<Button-1>", lambda event: mostrar_dashboard(main_frame))
 
     # Botón "Calendario"
-    frame_cal = customtkinter.CTkFrame(sidebar, fg_color="transparent")
+    frame_cal = ctk.CTkFrame(sidebar, fg_color="transparent")
     frame_cal.pack(pady=5, padx=20, fill="x")
 
-    btn_cal = customtkinter.CTkButton(
+    btn_cal = ctk.CTkButton(
         frame_cal,
         text="   Calendario",
         fg_color="transparent",
@@ -145,10 +143,10 @@ def iniciar_admin():
     frame_cal.bind("<Button-1>", lambda event: mostrar_calendario_imagen(main_frame))
 
     # Botón "Solicitudes"
-    frame_pend = customtkinter.CTkFrame(sidebar, fg_color="transparent")
+    frame_pend = ctk.CTkFrame(sidebar, fg_color="transparent")
     frame_pend.pack(pady=5, padx=20, fill="x")
 
-    btn_pend = customtkinter.CTkButton(
+    btn_pend = ctk.CTkButton(
         frame_pend,
         text="   Solicitudes",
         fg_color="transparent",
@@ -165,10 +163,10 @@ def iniciar_admin():
     frame_pend.bind("<Button-1>", lambda event: mostrar_solicitudes(main_frame))
 
     # Frame clickeable para cambiar modo oscuro/claro
-    frame_modo = customtkinter.CTkFrame(sidebar, fg_color="transparent")
+    frame_modo = ctk.CTkFrame(sidebar, fg_color="transparent")
     frame_modo.pack(pady=5, padx=20, fill="x")
 
-    btn_modo = customtkinter.CTkButton(
+    btn_modo = ctk.CTkButton(
         frame_modo,
         text="   Cambiar modo",
         fg_color="transparent",
@@ -185,10 +183,10 @@ def iniciar_admin():
     frame_modo.bind("<Button-1>", lambda event: cambiar_modo())
 
     # Botón "Crear respaldo"
-    frame_respaldo = customtkinter.CTkFrame(sidebar, fg_color="transparent")
+    frame_respaldo = ctk.CTkFrame(sidebar, fg_color="transparent")
     frame_respaldo.pack(pady=5, padx=20, fill="x")
 
-    btn_respaldo = customtkinter.CTkButton(
+    btn_respaldo = ctk.CTkButton(
         frame_respaldo,
         text="   Crear respaldo",
         fg_color="transparent",
@@ -205,10 +203,10 @@ def iniciar_admin():
     frame_respaldo.bind("<Button-1>", lambda event: crear_respaldo_completo())
 
     # Botón "Restaurar respaldo"
-    frame_restaurar = customtkinter.CTkFrame(sidebar, fg_color="transparent")
+    frame_restaurar = ctk.CTkFrame(sidebar, fg_color="transparent")
     frame_restaurar.pack(pady=5, padx=20, fill="x")
 
-    btn_restaurar = customtkinter.CTkButton(
+    btn_restaurar = ctk.CTkButton(
         frame_restaurar,
         text="   Rest. respaldo",
         fg_color="transparent",
@@ -225,10 +223,10 @@ def iniciar_admin():
     frame_restaurar.bind("<Button-1>", lambda event: restaurar_desde_respaldo())
 
     # "Cerrar sesión"
-    frame_cerrar = customtkinter.CTkFrame(sidebar, fg_color="transparent")
+    frame_cerrar = ctk.CTkFrame(sidebar, fg_color="transparent")
     frame_cerrar.pack(side="bottom", pady=20, padx=20, fill="x")
 
-    btn_cerrar = customtkinter.CTkButton(
+    btn_cerrar = ctk.CTkButton(
         frame_cerrar,
         text="   Cerrar sesión",
         fg_color="transparent",
