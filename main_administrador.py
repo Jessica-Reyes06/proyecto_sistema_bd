@@ -60,7 +60,7 @@ def iniciar_admin():
 
     # ===== SIDEBAR =====
 
-    sidebar = ctk.CTkFrame(ventana_principal, width=220, fg_color="#003152")
+    sidebar = ctk.CTkFrame(ventana_principal, width=280, fg_color="#003152")
     sidebar.grid(row=0, column=0, sticky="ns")
 
     logo_img = ctk.CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/general/logo.jpeg")), size=(180, 60))
@@ -110,7 +110,7 @@ def iniciar_admin():
         fg_color="#003152",
         hover_color="#1c669f",
         text_color="white",
-        width=150,
+        width=200,
         height=40,
         image=img_inicio,
         anchor="w",
@@ -131,7 +131,7 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=150,
+        width=200,
         height=40,
         image=img_calendario,
         anchor="w",
@@ -151,7 +151,7 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=150,
+        width=200,
         height=40,
         image=img_pendientes,
         anchor="w",
@@ -171,7 +171,7 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=150,
+        width=200,
         height=40,
         anchor="w",
         command=cambiar_modo,
@@ -191,7 +191,7 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=150,
+        width=200,
         height=40,
         image=img_respaldo,
         anchor="w",
@@ -211,7 +211,7 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=150,
+        width=200,
         height=40,
         image=img_respaldo,
         anchor="w",
@@ -231,7 +231,7 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#962d22",
         text_color="white",
-        width=150,
+        width=200,
         height=40,
         image=img_cerrar_sesion,
         anchor="w",
