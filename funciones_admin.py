@@ -10,7 +10,6 @@ def ruta_recurso(ruta_relativa):
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, ruta_relativa)
 
-
 def color_texto_legible(color_hex):
     if not isinstance(color_hex, str) or not color_hex.startswith("#") or len(color_hex) != 7:
         return "white"
@@ -137,17 +136,18 @@ def mostrar_dashboard(frame):
 
     crear_tarjeta(contenedor,"Alumnos",lambda: mostrar_alumnos(frame),"#510054",icono_alumnos).grid(row=0,column=0,padx=10,pady=10)
     crear_tarjeta(contenedor,"Maestros",lambda: mostrar_maestros(frame),"#004235",icono_maestros).grid(row=0,column=1,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Administradores",abrir_pendiente("Administradores"),"#610139",icono_admin).grid(row=0,column=2,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Carreras",abrir_pendiente("Carreras"),"#43000E",icono_carreras).grid(row=0,column=3,padx=10,pady=10)
+   
+    crear_tarjeta(contenedor,"Administradores",lambda: mostrar_admin(frame),"#610139",icono_admin).grid(row=0,column=2,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Carreras",lambda: mostrar_carreras(frame),"#43000E",icono_carreras).grid(row=0,column=3,padx=10,pady=10)
     crear_tarjeta(contenedor,"Edificios",abrir_pendiente("Edificios y salones"),"#761111",icono_edificios).grid(row=0,column=4,padx=10,pady=10)
 
     crear_tarjeta(contenedor,"Materias",lambda: mostrar_materias(frame),"#761127",icono_materias).grid(row=1,column=0,padx=10,pady=10)
     crear_tarjeta(contenedor,"Grupos",lambda: mostrar_grupos(frame),"#1f6aa5",icono_grupos).grid(row=1,column=1,padx=10,pady=10)
     crear_tarjeta(contenedor,"Horarios",lambda: mostrar_horarios(frame),"#1f6aa5",icono_horarios).grid(row=1,column=2,padx=10,pady=10)
     crear_tarjeta(contenedor,"Inscripciones",lambda: mostrar_inscripciones(frame),"#7A3500",icono_inscripciones).grid(row=1,column=3,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Tipos de Actividades",abrir_pendiente("Tipos"),"#2b4d7a",icono_tipos).grid(row=1,column=4,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Tipos de Actividades",lambda: mostrar_tipos_actividades(frame),"#2b4d7a",icono_tipos).grid(row=1,column=4,padx=10,pady=10)
     crear_tarjeta(contenedor,"Actividades",lambda: mostrar_actividades(frame),"#6C7A00",icono_actividades).grid(row=2,column=0,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Calificaciones",abrir_pendiente("Calificaciones"),"#067A00",icono_calificaciones).grid(row=2,column=1,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Calificaciones",lambda: mostrar_calificaciones_finales(frame),"#067A00",icono_calificaciones).grid(row=2,column=1,padx=10,pady=10)
     crear_tarjeta(contenedor,"Usuarios",lambda: mostrar_usuarios(frame),"#2b4d7a",icono_usuarios).grid(row=2,column=2,padx=10,pady=10)
     crear_tarjeta(contenedor,"Reportes",abrir_pendiente("Reportes"),"#030508",icono_reportes).grid(row=2,column=3,padx=10,pady=10)
 
@@ -377,11 +377,12 @@ def mostrar_admin(frame):
         ejecutar_exportacion("administradores","administradores.csv")
 
     botones = [
-        {"texto":"Registrar administrador","color":"#022A22","comando":registrar},
-        {"texto":"Importar CSV","color":"#022A22","comando":importar},
-        {"texto":"Exportar CSV","color":"#022A22","comando":exportar},
+        {"texto":"Registrar administrador","color":"#610139","comando":registrar},
+        {"texto":"Importar CSV","color":"#610139","comando":importar},
+        {"texto":"Exportar CSV","color":"#610139","comando":exportar},
     ]
     headers = ["Matricula","Nombre","A. Paterno","A. Materno","Area", "ID de usuario"]
+    mostrar_seccion_gestion(frame, "Gestión de Administradores", "#610139", "#ffffff", "#9880a0", botones, headers, "administradores")
 
 def mostrar_carreras(frame):
     def registrar(area,volver):
@@ -393,11 +394,12 @@ def mostrar_carreras(frame):
         ejecutar_exportacion("carreras","carreras.csv")
 
     botones = [
-        {"texto":"Registrar administrador","color":"#022A22","comando":registrar},
-        {"texto":"Importar CSV","color":"#022A22","comando":importar},
-        {"texto":"Exportar CSV","color":"#022A22","comando":exportar},
+        {"texto":"Registrar administrador","color":"#43000E","comando":registrar},
+        {"texto":"Importar CSV","color":"#43000E","comando":importar},
+        {"texto":"Exportar CSV","color":"#43000E","comando":exportar},
     ]
     headers = ["Nombre de la Carrera","Tipo"]
+    mostrar_seccion_gestion(frame, "Gestión de Carreras", "#43000E", "#ffffff", "#d1c4b3", botones, headers, "carreras")
 
 def mostrar_materias(frame):
 
@@ -521,3 +523,36 @@ def mostrar_actividades(frame):
     headers = ["ID Actividad","Tipo de Actividad","Unidad","Grupo","Materia","Ponderacion", "Detalles"]
 
     mostrar_seccion_gestion(frame,"Gestión de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"actividades")
+
+def mostrar_tipos_actividades(frame):
+    def importar(area,volver):
+        ejecutar_importacion("tipos_actividades",volver)
+
+    def exportar(area,volver):
+        ejecutar_exportacion("tipos_actividades","tipos_actividades.csv")
+
+    botones = [
+        {"texto":"Crear Tipo de Actividad","color":"#2b4d7a","comando":importar},
+        {"texto":"Importar CSV","color":"#2b4d7a","comando":importar},
+        {"texto":"Exportar CSV","color":"#2b4d7a","comando":exportar},
+    ]
+
+    headers = ["ID Tipo","Nombre de la Actividad"]
+
+    mostrar_seccion_gestion(frame,"Gestión de Tipos de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"tipos_actividades")
+
+def mostrar_calificaciones_finales(frame):
+    def importar(area,volver):
+        ejecutar_importacion("calificaciones_finales",volver)
+
+    def exportar(area,volver):
+        ejecutar_exportacion("calificaciones_finales","calificaciones_finales.csv")
+
+    botones = [
+        {"texto":"Importar CSV","color":"#2b4d7a","comando":importar},
+        {"texto":"Exportar CSV","color":"#2b4d7a","comando":exportar},
+    ]
+
+    headers = ["ID de Calificación","Calificación Final", "ID Registro"]
+
+    mostrar_seccion_gestion(frame,"Gestión de Calificaciones Finales","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"calificaciones_finales")

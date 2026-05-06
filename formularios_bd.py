@@ -415,6 +415,22 @@ def mostrar_form_registro_carrera(frame_contenido, volver_a_lista=None):
 
     crear_formulario_generico(frame_contenido, "Registrar carrera", campos, sql, volver_a_lista)
 
+# TIPOS DE ACTIVIDADES
+def mostrar_form_registro_tipo_actividad(frame_contenido, volver_a_lista=None):
+
+    # id_tipo se maneja como entero (AI PK) según especificación
+    campos = [
+        "nombre"
+    ]
+
+    sql = """
+    INSERT INTO tipos_actividades
+    (nombre)
+    VALUES (%s)
+    """
+
+    crear_formulario_generico(frame_contenido, "Registrar tipo de actividad", campos, sql, volver_a_lista)
+
 # MATERIAS
 
 def mostrar_form_registro_materia(frame_contenido,volver_a_lista=None):
