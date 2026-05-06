@@ -3,7 +3,7 @@ def crear_tabla_editable_con_doble_click(parent, headers, registros, tipo_tabla,
 
     from customtkinter import CTkFrame, CTkLabel, CTkScrollableFrame, CTkEntry, CTkButton
     from config_principal import limpiar_frame
-    from db_conexion import ejecutar_insert
+    from db_conexion import ejecutar_update
 
     tabla = CTkFrame(parent)
     tabla.pack(fill="both", expand=True)
@@ -65,7 +65,7 @@ def crear_tabla_editable_con_doble_click(parent, headers, registros, tipo_tabla,
 
             try:
 
-                ejecutar_insert(
+                ejecutar_update(
                     sql,
                     tuple(nuevos[1:]) + (valores[0],)
                 )
@@ -378,7 +378,7 @@ def mostrar_form_registro_administrador(frame_contenido, volver_a_lista=None):
 
     # id_administrador se omite por ser AUTO_INCREMENT (AI)
     campos = [
-        "matricula"
+        "matricula",
         "nombre",
         "apellido_paterno",
         "apellido_materno",
@@ -714,155 +714,6 @@ def exportar_csv(tabla, ruta_destino):
 
     cursor.close()
 
-def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
-
-    limpiar_frame(frame_contenido)
-
-    titulo = customtkinter.CTkLabel(
-        frame_contenido,
-        text="Registrar inscripción",
-        font=("Arial",22,"bold")
-    )
-    titulo.pack(pady=(10,20))
-
-    cuerpo = customtkinter.CTkFrame(frame_contenido)
-    cuerpo.pack(padx=20,pady=10,fill="x")
-
-    # LISTA DE ALUMNOS
-    alumnos = obtener_lista("alumnos","numero_control")
-
-    combo_alumno = crear_combo(
-        cuerpo,
-        0,
-        "Alumno",
-        alumnos
-    )
-
-    # LISTA DE GRUPOS
-    grupos = obtener_lista("grupos","id_grupo")
-
-    combo_grupo = crear_combo(
-        cuerpo,
-        1,
-        "Grupo",
-        grupos
-    )
-
-    # FECHA
-    fecha_registro = crear_campo(
-        cuerpo,
-        2,
-        "Fecha registro"
-    )
-
-    # ESTATUS
-    estatus_opciones = ["Cursando","Baja","Concluido"]
-
-    combo_estatus = crear_combo(
-        cuerpo,
-        3,
-        "Estatus",
-        estatus_opciones
-    )
-
-    # TIPO
-    tipo_registro = crear_campo(
-        cuerpo,
-        4,
-        "Tipo registro"
-    )
-
-    estado_label = customtkinter.CTkLabel(frame_contenido,text="")
-    estado_label.pack()
-
-    # -------------------------
-    # FUNCIÓN GUARDAR
-    # -------------------------
-
-    def guardar():
-
-        alumno = combo_alumno.get()
-        grupo = combo_grupo.get()
-
-        # VALIDAR ESTADO DEL ALUMNO
-        estado_alumno = ejecutar_select(
-            "SELECT estatus_alumno FROM alumnos WHERE numero_control=%s",
-            (alumno,)
-        )
-
-        if estado_alumno and estado_alumno[0][0] != "Activo":
-
-            estado_label.configure(
-                text="Solo alumnos activos pueden inscribirse",
-                text_color="red"
-            )
-            return
-
-
-        # VALIDAR ESTADO DEL GRUPO
-        estado_grupo = ejecutar_select(
-            "SELECT estado FROM grupos WHERE id_grupo=%s",
-            (grupo,)
-        )
-
-        if estado_grupo and estado_grupo[0][0] in ["Cerrado","Cancelado"]:
-
-            estado_label.configure(
-                text="No se pueden inscribir alumnos en este grupo",
-                text_color="red"
-            )
-            return
-
-
-        valores = (
-            alumno,
-            grupo,
-            fecha_registro.get(),
-            combo_estatus.get(),
-            tipo_registro.get()
-        )
-
-        sql = """
-        INSERT INTO registros
-        (numero_control,id_grupo,fecha_registro,estatus_materia,tipo_registro)
-        VALUES (%s,%s,%s,%s,%s)
-        """
-
-        try:
-
-            ejecutar_insert(sql,valores)
-
-            estado_label.configure(
-                text="Inscripción guardada correctamente",
-                text_color="green"
-            )
-
-            if volver_a_lista:
-                volver_a_lista()
-
-        except Exception as e:
-
-            estado_label.configure(
-                text=str(e),
-                text_color="red"
-            )
-
-    # BOTONES
-    botones = customtkinter.CTkFrame(frame_contenido,fg_color="transparent")
-    botones.pack(pady=20)
-
-    customtkinter.CTkButton(
-        botones,
-        text="Guardar",
-        command=guardar
-    ).grid(row=0,column=0,padx=10)
-
-    customtkinter.CTkButton(
-        botones,
-        text="Cancelar",
-        command=lambda: volver_a_lista() if volver_a_lista else None
-    ).grid(row=0,column=1,padx=10)
-
 def mostrar_form_registro_horario(frame_contenido, volver_a_lista=None):
     campos = ["id_horario", "id_grupo", "dia", "hora_inicio", "hora_fin", "id_salon"]
     sql = """
@@ -871,3 +722,170 @@ def mostrar_form_registro_horario(frame_contenido, volver_a_lista=None):
     VALUES (%s, %s, %s, %s, %s, %s)
     """
     crear_formulario_generico(frame_contenido, "Registrar horario", campos, sql, volver_a_lista)
+
+
+def mostrar_form_registro_calificacion_final(frame_contenido, volver_a_lista=None):
+    """Formulario para registrar calificación final"""
+    limpiar_frame(frame_contenido)
+
+    titulo = customtkinter.CTkLabel(
+        frame_contenido,
+        text="Registrar Calificación Final",
+        font=("Arial", 22, "bold")
+    )
+    titulo.pack(pady=(10, 20))
+
+    cuerpo = customtkinter.CTkFrame(frame_contenido)
+    cuerpo.pack(padx=20, pady=10, fill="x")
+
+    # COMBOS PARA ALUMNO Y GRUPO
+    alumnos = obtener_lista("alumnos", "numero_control")
+    grupos = obtener_lista("grupos", "id_grupo")
+
+    combo_alumno = crear_combo(cuerpo, 0, "Alumno", alumnos)
+    combo_grupo = crear_combo(cuerpo, 1, "Grupo", grupos)
+    entrada_calif = crear_campo(cuerpo, 2, "Calificación Final (0-100)")
+    entrada_periodo = crear_campo(cuerpo, 3, "Periodo (ej: Enero-Junio 2024)")
+
+    estado_label = customtkinter.CTkLabel(frame_contenido, text="")
+    estado_label.pack()
+
+    def guardar():
+        alumno = combo_alumno.get()
+        grupo = combo_grupo.get()
+        calif = entrada_calif.get()
+
+        # VALIDAR CALIFICACIÓN
+        try:
+            calif_float = float(calif)
+            if calif_float < 0 or calif_float > 100:
+                estado_label.configure(
+                    text="La calificación debe estar entre 0 y 100",
+                    text_color="red"
+                )
+                return
+        except ValueError:
+            estado_label.configure(text="Ingrese una calificación válida", text_color="red")
+            return
+
+        valores = (alumno, grupo, calif, entrada_periodo.get())
+
+        sql = """
+        INSERT INTO calificaciones_finales
+        (numero_control, id_grupo, calificacion_final, periodo)
+        VALUES (%s, %s, %s, %s)
+        """
+
+        try:
+            ejecutar_insert(sql, valores)
+            estado_label.configure(text="Calificación registrada", text_color="green")
+            if volver_a_lista:
+                volver_a_lista()
+        except Exception as e:
+            estado_label.configure(text=str(e), text_color="red")
+
+    botones = customtkinter.CTkFrame(frame_contenido, fg_color="transparent")
+    botones.pack(pady=20)
+
+    customtkinter.CTkButton(botones, text="Guardar", command=guardar).grid(row=0, column=0, padx=10)
+    customtkinter.CTkButton(botones, text="Cancelar",
+                           command=lambda: volver_a_lista() if volver_a_lista else None
+                           ).grid(row=0, column=1, padx=10)
+
+
+def mostrar_form_registro_calificacion_actividad(frame_contenido, volver_a_lista=None):
+    """Formulario para registrar calificación de actividad"""
+    limpiar_frame(frame_contenido)
+
+    titulo = customtkinter.CTkLabel(
+        frame_contenido,
+        text="Registrar Calificación de Actividad",
+        font=("Arial", 22, "bold")
+    )
+    titulo.pack(pady=(10, 20))
+
+    cuerpo = customtkinter.CTkFrame(frame_contenido)
+    cuerpo.pack(padx=20, pady=10, fill="x")
+
+    # COMBOS PARA ALUMNO Y ACTIVIDAD
+    alumnos = obtener_lista("alumnos", "numero_control")
+    actividades = obtener_lista("tipos_actividades", "nombre")
+
+    combo_alumno = crear_combo(cuerpo, 0, "Alumno", alumnos)
+    combo_actividad = crear_combo(cuerpo, 1, "Actividad", actividades)
+    entrada_calif = crear_campo(cuerpo, 2, "Calificación (0-100)")
+
+    # Fecha actual por defecto
+    import datetime
+    fecha_actual = datetime.date.today().strftime("%Y-%m-%d")
+    entrada_fecha = crear_campo(cuerpo, 3, "Fecha (YYYY-MM-DD)")
+
+    entrada_observaciones = customtkinter.CTkEntry(cuerpo, width=260, placeholder_text="Observaciones (opcional)")
+    entrada_observaciones.grid(row=4, column=1, padx=10, pady=5, sticky="w")
+
+    customtkinter.CTkLabel(cuerpo, text="Observaciones", font=("Arial", 14)
+                          ).grid(row=4, column=0, padx=10, pady=5, sticky="w")
+
+    estado_label = customtkinter.CTkLabel(frame_contenido, text="")
+    estado_label.pack()
+
+    def guardar():
+        alumno = combo_alumno.get()
+        actividad = combo_actividad.get()
+        calif = entrada_calif.get()
+
+        # VALIDAR CALIFICACIÓN
+        try:
+            calif_float = float(calif)
+            if calif_float < 0 or calif_float > 100:
+                estado_label.configure(
+                    text="La calificación debe estar entre 0 y 100",
+                    text_color="red"
+                )
+                return
+        except ValueError:
+            estado_label.configure(text="Ingrese una calificación válida", text_color="red")
+            return
+
+        valores = (
+            alumno,
+            actividad,
+            calif,
+            entrada_fecha.get() or fecha_actual,
+            entrada_observaciones.get() or ""
+        )
+
+        sql = """
+        INSERT INTO calificaciones_actividades
+        (numero_control, id_actividad, calificacion, fecha_registro, observaciones)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+
+        try:
+            ejecutar_insert(sql, valores)
+            estado_label.configure(text="Calificación registrada", text_color="green")
+            if volver_a_lista:
+                volver_a_lista()
+        except Exception as e:
+            estado_label.configure(text=str(e), text_color="red")
+
+    botones = customtkinter.CTkFrame(frame_contenido, fg_color="transparent")
+    botones.pack(pady=20)
+
+    customtkinter.CTkButton(botones, text="Guardar", command=guardar).grid(row=0, column=0, padx=10)
+    customtkinter.CTkButton(botones, text="Cancelar",
+                           command=lambda: volver_a_lista() if volver_a_lista else None
+                           ).grid(row=0, column=1, padx=10)
+
+
+def mostrar_form_registro_salon(frame_contenido, volver_a_lista=None):
+    """Formulario para registrar un nuevo salón"""
+    campos = ["id_salon", "nombre_salon", "capacidad", "tipo", "edificio", "piso", "estatus"]
+
+    sql = """
+    INSERT INTO salones
+    (id_salon, nombre_salon, capacidad, tipo, edificio, piso, estatus)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """
+
+    crear_formulario_generico(frame_contenido, "Registrar Salón", campos, sql, volver_a_lista)

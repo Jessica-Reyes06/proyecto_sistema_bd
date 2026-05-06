@@ -20,8 +20,8 @@ def color_texto_legible(color_hex):
     luminosidad = (0.299 * rojo) + (0.587 * verde) + (0.114 * azul)
     return "black" if luminosidad > 160 else "white"
 
-def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0e0e0", actualizar_callback=None):
- 
+def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0e0e0", actualizar_callback=None, eliminar_callback=None):
+
     tabla = CTkFrame(parent)
     tabla.pack(fill="both", expand=True)
 
@@ -32,6 +32,7 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
         encabezado.grid_columnconfigure(i, weight=1)
         CTkLabel(encabezado, text=h, text_color=color_texto, font=("Arial", 14, "bold"), anchor="w", justify="left").grid(row=0, column=i, padx=10, pady=10, sticky="w")
     encabezado.grid_columnconfigure(len(headers), weight=1)
+    encabezado.grid_columnconfigure(len(headers) + 1, weight=1)
 
     cuerpo = CTkFrame(tabla)
     cuerpo.pack(fill="both", expand=True)
@@ -39,6 +40,7 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
     fila_editando = {"idx": None}
     entries = {}
     btn_editar_ref = {}
+    btn_eliminar_ref = {}
 
     def editar_fila(idx):
         fila = registros[idx]
@@ -56,21 +58,28 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
             fila_editando["idx"] = None
             mostrar_filas()
         CTkButton(cuerpo, text="Confirmar", fg_color="#007b3a", command=confirmar).grid(row=idx, column=len(headers), padx=10, pady=4)
-    
+
     def on_row_enter(event, idx):
         btn = btn_editar_ref.get(idx)
         if btn:
             btn.grid()
+        btn_elim = btn_eliminar_ref.get(idx)
+        if btn_elim:
+            btn_elim.grid()
 
     def on_row_leave(event, idx):
         btn = btn_editar_ref.get(idx)
         if btn:
             btn.grid_remove()
+        btn_elim = btn_eliminar_ref.get(idx)
+        if btn_elim:
+            btn_elim.grid_remove()
 
     def mostrar_filas():
         for widget in cuerpo.winfo_children():
             widget.destroy()
         btn_editar_ref.clear()
+        btn_eliminar_ref.clear()
         for fila_idx, fila in enumerate(registros):
             row_widgets = []
             for col_idx, valor in enumerate(fila):
@@ -83,7 +92,17 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
             btn_editar.grid(row=fila_idx, column=len(headers), padx=10, pady=4)
             btn_editar.grid_remove()
             btn_editar_ref[fila_idx] = btn_editar
-            # Vincular eventos de mouse para mostrar/ocultar el botón
+
+            # BOTÓN ELIMINAR (NUEVO)
+            if eliminar_callback:
+                def hacer_eliminar(idx=fila_idx):
+                    return lambda: eliminar_callback(tabla_sql, fila[0], mostrar_filas)
+                btn_eliminar = CTkButton(cuerpo, text="Eliminar", fg_color="#962d22", command=hacer_eliminar(fila_idx))
+                btn_eliminar.grid(row=fila_idx, column=len(headers) + 1, padx=10, pady=4)
+                btn_eliminar.grid_remove()
+                btn_eliminar_ref[fila_idx] = btn_eliminar
+
+            # Vincular eventos de mouse para mostrar/ocultar los botones
             for w in row_widgets:
                 w.bind("<Enter>", lambda e, idx=fila_idx: on_row_enter(e, idx))
                 w.bind("<Leave>", lambda e, idx=fila_idx: on_row_leave(e, idx))
@@ -92,9 +111,202 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
     return tabla
 
 def ejecutar_update(sql, valores):
+    """Función temporal para compatibilidad - usar db_conexion.ejecutar_update"""
+    from db_conexion import ejecutar_update as db_ejecutar_update
+    return db_ejecutar_update(sql, valores)
 
-   # import mysql.connector
-        return None
+
+def actualizar_registro(tabla, id_valor, nuevos_valores):
+    """Callback para actualizar un registro"""
+    from db_conexion import ejecutar_update, conexion
+    from tkinter import messagebox
+
+    # Determinar el campo ID según la tabla
+    campos_id = {
+        "alumnos": "numero_control",
+        "maestros": "matricula_maestro",
+        "administradores": "matricula",
+        "usuarios": "usuario",
+        "registros": "id_registro",
+        "salones": "id_salon",
+        "grupos": "id_grupo",
+        "calificaciones_finales": "id_calificacion",
+        "calificaciones_actividades": "id_calif_actividad",
+    }
+
+    campo_id = campos_id.get(tabla, "id")
+
+    # Construir UPDATE dinámico
+    try:
+        # Obtener las columnas de la tabla
+        cursor = conexion.cursor()
+        cursor.execute(f"DESCRIBE {tabla}")
+        columnas = [col[0] for col in cursor.fetchall()]
+        cursor.close()
+
+        # Excluir el ID de los valores a actualizar
+        columnas_sin_id = [col for col in columnas if col != campo_id]
+
+        # Construir SET
+        set_clause = ", ".join([f"{col}=%s" for col in columnas_sin_id])
+
+        sql = f"UPDATE {tabla} SET {set_clause} WHERE {campo_id}=%s"
+
+        ejecutar_update(sql, tuple(nuevos_valores) + (id_valor,))
+        messagebox.showinfo("Éxito", "Registro actualizado correctamente")
+        return True
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Error al actualizar: {str(e)}")
+        return False
+
+
+def verificar_dependencias(tabla, campo_id, id_valor):
+    """
+    Verifica si un registro tiene dependencias antes de eliminarlo.
+    Retorna una lista de dicts con dependencias encontradas.
+    """
+    from db_conexion import ejecutar_select
+
+    # Mapa de dependencias por tabla
+    dependencias = {
+        "alumnos": [
+            ("registros", "numero_control", "inscripciones"),
+            ("calificaciones_finales", "numero_control", "calificaciones finales"),
+            ("calificaciones_actividades", "numero_control", "calificaciones de actividades"),
+        ],
+        "maestros": [
+            ("grupos", "matricula_maestro", "grupos asignados"),
+        ],
+        "administradores": [],
+        "usuarios": [],
+        "salones": [
+            ("horario", "id_salon", "horarios asignados"),
+        ],
+        "grupos": [
+            ("registros", "id_grupo", "inscripciones"),
+            ("calificaciones_finales", "id_grupo", "calificaciones finales"),
+            ("horario", "id_grupo", "horarios"),
+        ],
+        "calificaciones_finales": [],
+        "calificaciones_actividades": [],
+        "registros": [],
+        "materias": [],
+        "carreras": [],
+    }
+
+    deps_encontradas = []
+
+    if tabla in dependencias:
+        for (tabla_dep, campo_dep, nombre_legible) in dependencias[tabla]:
+            try:
+                resultado = ejecutar_select(
+                    f"SELECT COUNT(*) FROM {tabla_dep} WHERE {campo_dep}=%s",
+                    (id_valor,)
+                )
+                cantidad = resultado[0][0] if resultado else 0
+                if cantidad > 0:
+                    deps_encontradas.append({
+                        "tabla": tabla_dep,
+                        "campo": campo_dep,
+                        "cantidad": cantidad,
+                        "nombre": nombre_legible
+                    })
+            except Exception as e:
+                print(f"Error verificando {tabla_dep}: {e}")
+
+    return deps_encontradas
+
+
+def eliminar_registro(tabla, id_valor, callback_recargar):
+    """
+    Elimina un registro después de verificar dependencias y pedir confirmación.
+    Si hay dependencias, pregunta al usuario si desea eliminarlas también.
+    """
+    from db_conexion import ejecutar_delete
+    from tkinter import messagebox
+
+    campos_id = {
+        "alumnos": "numero_control",
+        "maestros": "matricula_maestro",
+        "administradores": "matricula",
+        "usuarios": "usuario",
+        "registros": "id_registro",
+        "salones": "id_salon",
+        "grupos": "id_grupo",
+        "calificaciones_finales": "id_calificacion",
+        "calificaciones_actividades": "id_calif_actividad",
+    }
+
+    campo_id = campos_id.get(tabla, "id")
+
+    # VERIFICAR DEPENDENCIAS
+    dependencias = verificar_dependencias(tabla, campo_id, id_valor)
+
+    if dependencias:
+        # CONSTRUIR MENSAJE DE DEPENDENCIAS
+        mensaje = f"El registro '{id_valor}' tiene las siguientes dependencias:\n\n"
+        for dep in dependencias:
+            mensaje += f"• {dep['cantidad']} {dep['nombre']}\n"
+
+        mensaje += "\n¿Qué desea hacer?"
+
+        # OFRECER OPCIONES
+        respuesta = messagebox.askyesnocancel(
+            "Dependencias detectadas",
+            mensaje + "\n\nSí = Eliminar todo (incluyendo dependencias)\nNo = Cancelar eliminación"
+        )
+
+        if respuesta is None or respuesta == False:  # Cancel o No
+            return
+
+        # ELIMINAR EN CASCADA
+        try:
+            # Primero eliminar las dependencias
+            for dep in dependencias:
+                dep_campo_id = dep['campo']
+                sql_dep = f"DELETE FROM {dep['tabla']} WHERE {dep_campo_id}=%s"
+                ejecutar_delete(sql_dep, (id_valor,))
+
+            # Luego eliminar el registro principal
+            sql = f"DELETE FROM {tabla} WHERE {campo_id}=%s"
+            exito = ejecutar_delete(sql, (id_valor,))
+
+            if exito:
+                messagebox.showinfo(
+                    "Éxito",
+                    f"Registro y {len(dependencias)} tipo(s) de dependencia(s) eliminados correctamente"
+                )
+                if callback_recargar:
+                    callback_recargar()
+            else:
+                messagebox.showwarning("Advertencia", "No se encontró el registro a eliminar")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al eliminar: {str(e)}")
+            return
+
+    # SIN DEPENDENCIAS - ELIMINACIÓN DIRECTA
+    confirmar = messagebox.askyesno(
+        "Confirmar eliminación",
+        f"¿Está seguro de eliminar el registro '{id_valor}'?\n\nEsta acción no se puede deshacer."
+    )
+
+    if not confirmar:
+        return
+
+    sql = f"DELETE FROM {tabla} WHERE {campo_id}=%s"
+
+    try:
+        exito = ejecutar_delete(sql, (id_valor,))
+        if exito:
+            messagebox.showinfo("Éxito", "Registro eliminado correctamente")
+            if callback_recargar:
+                callback_recargar()
+        else:
+            messagebox.showwarning("Advertencia", "No se encontró el registro a eliminar")
+    except Exception as e:
+        messagebox.showerror("Error", f"Error al eliminar: {str(e)}")
 
 pendientes_admin = []
 
@@ -208,6 +420,8 @@ def mostrar_dashboard(frame):
         ("Inscripciones",        "Registro de inscripciones",     lambda: mostrar_inscripciones(frame),                "#2D3250", icono_inscripciones),
         ("Reportes",             "Generación de reportes",        lambda: mostrar_seccion_pendiente(frame, "Reportes"),  "#2D3250", icono_reportes),
         ("Calificaciones",       "Gestión de calificaciones",     lambda: mostrar_calificaciones_finales(frame),       "#2D3250", icono_calificaciones),
+        ("Calif. Actividades",   "Gestión de calif. parciales",   lambda: mostrar_calificaciones_actividades(frame),   "#2D3250", icono_actividades),
+        ("Salones",              "Gestión de salones y aulas",    lambda: mostrar_salones(frame),                       "#2D3250", icono_calendario),
         ("Usuarios",             "Gestión de usuarios",           lambda: mostrar_usuarios(frame),                     "#2D3250", icono_usuarios),
     ]
 
@@ -308,21 +522,34 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
     def mostrar_tabla_base():
             limpiar_frame(area_contenido)
 
-            CTkLabel(
-                area_contenido,
-                text="Vista visual lista para conectar con la nueva base de datos.",
-                font=("Arial", 15, "bold"),
-                text_color="#000000"
-            ).pack(pady=(10, 12))
+            # CARGAR DATOS REALES DE LA BD
+            if tabla_sql:
+                from db_conexion import ejecutar_select_todo
+                try:
+                    registros = ejecutar_select_todo(tabla_sql)
+                except Exception as e:
+                    print(f"Error cargando datos de {tabla_sql}: {e}")
+                    registros = []
+            else:
+                registros = []
 
-            crear_tabla_editable(
-                area_contenido,
-                headers,
-                [],
-                tabla_sql or "pendiente",
-                color_tabla,
-                actualizar_callback=None
-            )
+            if not registros:
+                CTkLabel(
+                    area_contenido,
+                    text="No hay registros en la base de datos",
+                    font=("Arial", 15, "bold"),
+                    text_color="#000000"
+                ).pack(pady=(10, 12))
+            else:
+                crear_tabla_editable(
+                    area_contenido,
+                    headers,
+                    registros,
+                    tabla_sql or "pendiente",
+                    color_tabla,
+                    actualizar_callback=actualizar_registro if tabla_sql else None,
+                    eliminar_callback=eliminar_registro if tabla_sql else None
+                )
 
     mostrar_tabla_base()
 
@@ -546,17 +773,90 @@ def mostrar_actividades(frame):
     mostrar_seccion_gestion(frame,"Gestión de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"actividades")
 
 def mostrar_calificaciones_finales(frame):
-    def importar(area,volver):
-        ejecutar_importacion("calificaciones_finales",volver)
+    def registrar(area, volver):
+        mostrar_form_registro_calificacion_final(area, volver)
 
-    def exportar(area,volver):
-        ejecutar_exportacion("calificaciones_finales","calificaciones_finales.csv")
+    def importar(area, volver):
+        ejecutar_importacion("calificaciones_finales", volver)
+
+    def exportar(area, volver):
+        ejecutar_exportacion("calificaciones_finales", "calificaciones_finales.csv")
 
     botones = [
-        {"texto":"Importar CSV","color":"#2b4d7a","comando":importar},
-        {"texto":"Exportar CSV","color":"#2b4d7a","comando":exportar},
+        {"texto": "Registrar calificación", "color": "#2b4d7a", "comando": registrar},
+        {"texto": "Importar CSV", "color": "#2b4d7a", "comando": importar},
+        {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": exportar},
     ]
 
-    headers = ["Alumno","Número de Control","Grupo", "Materia","Calificación Final"]
+    headers = ["ID", "Alumno", "Grupo", "Calificación", "Periodo"]
 
-    mostrar_seccion_gestion(frame,"Gestión de Calificaciones Finales","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"calificaciones_finales")
+    mostrar_seccion_gestion(
+        frame,
+        "Gestión de Calificaciones Finales",
+        "#2b4d7a",
+        "#ffffff",
+        "#8fb1cb",
+        botones,
+        headers,
+        "calificaciones_finales"
+    )
+
+
+def mostrar_calificaciones_actividades(frame):
+    def registrar(area, volver):
+        mostrar_form_registro_calificacion_actividad(area, volver)
+
+    def importar(area, volver):
+        ejecutar_importacion("calificaciones_actividades", volver)
+
+    def exportar(area, volver):
+        ejecutar_exportacion("calificaciones_actividades", "calificaciones_actividades.csv")
+
+    botones = [
+        {"texto": "Registrar calificación", "color": "#2b4d7a", "comando": registrar},
+        {"texto": "Importar CSV", "color": "#2b4d7a", "comando": importar},
+        {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": exportar},
+    ]
+
+    headers = ["ID", "Alumno", "Actividad", "Calificación", "Fecha", "Observaciones"]
+
+    mostrar_seccion_gestion(
+        frame,
+        "Gestión de Calificaciones de Actividades",
+        "#2b4d7a",
+        "#ffffff",
+        "#8fb1cb",
+        botones,
+        headers,
+        "calificaciones_actividades"
+    )
+
+
+def mostrar_salones(frame):
+    def registrar(area, volver):
+        mostrar_form_registro_salon(area, volver)
+
+    def importar(area, volver):
+        ejecutar_importacion("salones", volver)
+
+    def exportar(area, volver):
+        ejecutar_exportacion("salones", "salones.csv")
+
+    botones = [
+        {"texto": "Registrar salón", "color": "#184c73", "comando": registrar},
+        {"texto": "Importar CSV", "color": "#184c73", "comando": importar},
+        {"texto": "Exportar CSV", "color": "#184c73", "comando": exportar},
+    ]
+
+    headers = ["ID Salón", "Nombre", "Capacidad", "Tipo", "Edificio", "Piso", "Estatus"]
+
+    mostrar_seccion_gestion(
+        frame,
+        "Gestión de Salones",
+        "#1f6aa5",
+        "#ffffff",
+        "#8fb1cb",
+        botones,
+        headers,
+        "salones"
+    )
