@@ -1,29 +1,37 @@
-from customtkinter import CTkFrame, CTkLabel, CTkEntry, CTkButton
-import tkinter as tk
 from tkinter import messagebox
 from customtkinter import *
 from PIL import Image
 from config_principal import calendario, limpiar_frame, crear_tarjeta
 from formularios_bd import *
-import datetime
 import os
 import sys
-
 
 def ruta_recurso(ruta_relativa):
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, ruta_relativa)
 
-def crear_tabla_editable(parent, headers, registros, tabla_sql, actualizar_callback=None):
+
+def color_texto_legible(color_hex):
+    if not isinstance(color_hex, str) or not color_hex.startswith("#") or len(color_hex) != 7:
+        return "white"
+
+    rojo = int(color_hex[1:3], 16)
+    verde = int(color_hex[3:5], 16)
+    azul = int(color_hex[5:7], 16)
+    luminosidad = (0.299 * rojo) + (0.587 * verde) + (0.114 * azul)
+    return "black" if luminosidad > 160 else "white"
+
+def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0e0e0", actualizar_callback=None):
  
     tabla = CTkFrame(parent)
     tabla.pack(fill="both", expand=True)
 
-    encabezado = CTkFrame(tabla, fg_color="#e0e0e0")
+    encabezado = CTkFrame(tabla, fg_color=color_tabla)
     encabezado.pack(fill="x")
+    color_texto = color_texto_legible(color_tabla)
     for i, h in enumerate(headers):
         encabezado.grid_columnconfigure(i, weight=1)
-        CTkLabel(encabezado, text=h, text_color="white", font=("Arial", 14, "bold"), anchor="w", justify="left").grid(row=0, column=i, padx=10, pady=10, sticky="w")
+        CTkLabel(encabezado, text=h, text_color=color_texto, font=("Arial", 14, "bold"), anchor="w", justify="left").grid(row=0, column=i, padx=10, pady=10, sticky="w")
     encabezado.grid_columnconfigure(len(headers), weight=1)
 
     cuerpo = CTkFrame(tabla)
@@ -122,7 +130,7 @@ def mostrar_dashboard(frame):
     icono_calificaciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/calificaciones.png")),size=(64,64)) 
     icono_actividades = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/actividades.png")),size=(64,64)) 
     icono_reportes = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/reportes.png")),size=(64,64)) 
-
+    icono_tipos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/tipos.png")),size=(64,64))
 
     def abrir_pendiente(titulo):
         return lambda: mostrar_seccion_pendiente(frame, titulo)
@@ -137,10 +145,11 @@ def mostrar_dashboard(frame):
     crear_tarjeta(contenedor,"Grupos",lambda: mostrar_grupos(frame),"#1f6aa5",icono_grupos).grid(row=1,column=1,padx=10,pady=10)
     crear_tarjeta(contenedor,"Horarios",lambda: mostrar_horarios(frame),"#1f6aa5",icono_horarios).grid(row=1,column=2,padx=10,pady=10)
     crear_tarjeta(contenedor,"Inscripciones",lambda: mostrar_inscripciones(frame),"#7A3500",icono_inscripciones).grid(row=1,column=3,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Actividades",abrir_pendiente("Actividades"),"#6C7A00",icono_actividades).grid(row=1,column=4,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Calificaciones",abrir_pendiente("Calificaciones"),"#067A00",icono_calificaciones).grid(row=2,column=0,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Usuarios",lambda: mostrar_usuarios(frame),"#2b4d7a",icono_usuarios).grid(row=2,column=1,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Reportes",abrir_pendiente("Reportes"),"#2b4d7a",icono_reportes).grid(row=2,column=2,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Tipos de Actividades",abrir_pendiente("Tipos"),"#2b4d7a",icono_tipos).grid(row=1,column=4,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Actividades",lambda: mostrar_actividades(frame),"#6C7A00",icono_actividades).grid(row=2,column=0,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Calificaciones",abrir_pendiente("Calificaciones"),"#067A00",icono_calificaciones).grid(row=2,column=1,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Usuarios",lambda: mostrar_usuarios(frame),"#2b4d7a",icono_usuarios).grid(row=2,column=2,padx=10,pady=10)
+    crear_tarjeta(contenedor,"Reportes",abrir_pendiente("Reportes"),"#030508",icono_reportes).grid(row=2,column=3,padx=10,pady=10)
 
     zona_inferior = CTkFrame(frame, height=120, fg_color="#f1f3f5")
     zona_inferior.pack(side="bottom", fill="x", padx=20, pady=(0,15))
@@ -274,6 +283,7 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
                 headers,
                 [],
                 tabla_sql or "pendiente",
+                color_tabla,
                 actualizar_callback=None
             )
 
@@ -312,6 +322,8 @@ def restaurar_desde_respaldo():
     """
 
     messagebox.showinfo("Restaurar", "Funcion pendiente de conectar con la nueva base de datos.")
+
+
 
 def mostrar_alumnos(frame):
 
@@ -355,6 +367,38 @@ def mostrar_maestros(frame):
 
     mostrar_seccion_gestion(frame,"Gestión de Maestros","#004235","#ffffff","#6F8A90",botones,headers,"maestros")
 
+def mostrar_admin(frame):
+    def registrar(area,volver):
+        mostrar_form_registro_administrador(area,volver)
+    def importar(area,volver):
+        ejecutar_importacion("administradores",volver)
+
+    def exportar(area,volver):
+        ejecutar_exportacion("administradores","administradores.csv")
+
+    botones = [
+        {"texto":"Registrar administrador","color":"#022A22","comando":registrar},
+        {"texto":"Importar CSV","color":"#022A22","comando":importar},
+        {"texto":"Exportar CSV","color":"#022A22","comando":exportar},
+    ]
+    headers = ["Matricula","Nombre","A. Paterno","A. Materno","Area", "ID de usuario"]
+
+def mostrar_carreras(frame):
+    def registrar(area,volver):
+        mostrar_form_registro_carrera(area,volver)
+    def importar(area,volver):
+        ejecutar_importacion("carreras",volver)
+
+    def exportar(area,volver):
+        ejecutar_exportacion("carreras","carreras.csv")
+
+    botones = [
+        {"texto":"Registrar administrador","color":"#022A22","comando":registrar},
+        {"texto":"Importar CSV","color":"#022A22","comando":importar},
+        {"texto":"Exportar CSV","color":"#022A22","comando":exportar},
+    ]
+    headers = ["Nombre de la Carrera","Tipo"]
+
 def mostrar_materias(frame):
 
     def registrar(area,volver):
@@ -372,7 +416,7 @@ def mostrar_materias(frame):
         {"texto":"Exportar CSV","color":"#510113","comando":exportar},
     ]
 
-    headers = ["Clave","Materia","Horas","Créditos","Tipo"]
+    headers = ["Clave","Materia","Horas","Créditos","Carrera"]
 
     mostrar_seccion_gestion(frame,"Gestión de Materias","#761127","#ffffff","#9A0000",botones,headers,"materias")
 
@@ -393,7 +437,7 @@ def mostrar_grupos(frame):
         {"texto":"Exportar CSV","color":"#184c73","comando":exportar},
     ]
 
-    headers = ["ID Grupo","Maestro","Materia","Cupo", "Estado"]
+    headers = ["ID Grupo","Maestro","Materia","Cupo","Periodo", "Año", "Inscritos", "Estado" ]
 
     mostrar_seccion_gestion(frame,"Gestión de Grupos","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"grupos")
 
@@ -414,7 +458,7 @@ def mostrar_inscripciones(frame):
         {"texto":"Exportar CSV","color":"#A64500","comando":exportar},
     ]
 
-    headers = ["ID","No.Control","ID Grupo","Fecha","Estatus","Tipo"]
+    headers = ["ID","No.Control","ID Grupo","Estatus","Tipo de inscripción"]
 
     mostrar_seccion_gestion(frame,"Inscripciones","#7A3500","#ffffff","#C75C00",botones,headers,"registros")
 
@@ -436,7 +480,7 @@ def mostrar_usuarios(frame):
         {"texto":"Exportar CSV","color":"#2b4d7a","comando":exportar},
     ]
 
-    headers = ["ID","Usuario","Contraseña","Rol"]
+    headers = ["ID","Contraseña","Rol"]
 
     mostrar_seccion_gestion(frame,"Gestión de Usuarios","#2b4d7a","#ffffff","#4c6fa0",botones,headers,"usuarios")
 
@@ -460,3 +504,20 @@ def mostrar_horarios(frame):
     headers = ["ID Horario","ID Grupo","Día","Hora inicio","Hora fin","ID Salón"]
 
     mostrar_seccion_gestion(frame,"Gestión de Horarios","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"horario")
+
+# === ACTIVIDADES ===
+def mostrar_actividades(frame):
+    def importar(area,volver):
+        ejecutar_importacion("actividades",volver)
+
+    def exportar(area,volver):
+        ejecutar_exportacion("actividades","actividades.csv")
+
+    botones = [
+        {"texto":"Importar CSV","color":"#1f6aa5","comando":importar},
+        {"texto":"Exportar CSV","color":"#1f6aa5","comando":exportar},
+    ]
+
+    headers = ["ID Actividad","Tipo de Actividad","Unidad","Grupo","Materia","Ponderacion", "Detalles"]
+
+    mostrar_seccion_gestion(frame,"Gestión de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"actividades")

@@ -245,8 +245,5 @@ def iniciar_admin():
 
     ventana_principal.mainloop()
 
-
-from funciones_admin import mostrar_horarios
-
 if __name__ == "__main__":
     iniciar_admin()

@@ -61,7 +61,6 @@ def crear_tabla_editable_con_doble_click(parent, headers, registros, tipo_tabla,
             set_sql = ", ".join(
                 [f"{campo}=%s" for campo in campos_sql if campo != campo_id]
             )
-
             sql = f"UPDATE {tipo_tabla} SET {set_sql} WHERE {campo_id}=%s"
 
             try:
@@ -160,8 +159,7 @@ CARRERAS_ITVER = [
 ]
 
 SEMESTRES_ITVER = [str(i) for i in range(1,13)]
-ESTADOS_ALUMNO = ["Activo","Baja temporal","Baja definitiva","Egresado"]
-
+ESTADOS_ALUMNO = ["Activo","Baja temporal","Baja definitiva","Egresado", "Reingreso" ]
 
 def generar_numero_control_unico():
     year = datetime.date.today().year % 100
@@ -373,6 +371,49 @@ def mostrar_form_registro_maestro(frame_contenido,volver_a_lista=None):
     """
 
     crear_formulario_generico(frame_contenido,"Registrar maestro",campos,sql,volver_a_lista)
+
+
+# ADMINISTRADORES
+def mostrar_form_registro_administrador(frame_contenido, volver_a_lista=None):
+
+    # id_administrador se omite por ser AUTO_INCREMENT (AI)
+    campos = [
+        "matricula"
+        "nombre",
+        "apellido_paterno",
+        "apellido_materno",
+        "area",
+        "id_usuario"
+    ]
+
+    sql = """
+    INSERT INTO administradores
+    (matricula,nombre,apellido_paterno,apellido_materno,area,id_usuario)
+    VALUES (%s,%s,%s,%s,%s,%s)
+    """
+
+    crear_formulario_generico(frame_contenido, "Registrar administrador", campos, sql, volver_a_lista)
+
+
+# CARRERAS
+def mostrar_form_registro_carrera(frame_contenido, volver_a_lista=None):
+
+    # id_carrera se omite por ser AUTO_INCREMENT (AI)
+    campos = [
+        "nombre_carrera",
+        "tipo_carrera",
+        "horas_semana",
+        "creditos",
+        "id_carrera"
+    ]
+
+    sql = """
+    INSERT INTO carreras
+    (nombre_carrera,tipo_carrera,horas_semana,creditos,id_carrera)
+    VALUES (%s,%s,%s,%s,%s)
+    """
+
+    crear_formulario_generico(frame_contenido, "Registrar carrera", campos, sql, volver_a_lista)
 
 # MATERIAS
 
