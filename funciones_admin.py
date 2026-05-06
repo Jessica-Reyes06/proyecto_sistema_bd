@@ -112,8 +112,8 @@ def mostrar_dashboard(frame):
     stats_frame.pack(fill="x", padx=24, pady=(6, 14))
 
     stats = [
-        ("Alumnos",         "342", "#9B30FF"),
-        ("Maestros",        "45",  "#1A6B3C"),
+        ("Alumnos",         "342", "#510054"),
+        ("Maestros",        "45",  "#004235"),
         ("Administradores", "8",   "#1A3A8F"),
         ("Materias",        "67",  "#2D3250"),
         ("Grupos",          "24",  "#2D3250"),
@@ -198,8 +198,8 @@ def mostrar_dashboard(frame):
         grid_frame.grid_columnconfigure(col, weight=1)
 
     catalogos = [
-        ("Alumnos",              "Gestión de estudiantes",        lambda: mostrar_alumnos(frame),                      "#9B30FF", icono_alumnos),
-        ("Maestros",             "Gestión de docentes",           lambda: mostrar_maestros(frame),                     "#1A6B3C", icono_maestros),
+        ("Alumnos",              "Gestión de estudiantes",        lambda: mostrar_alumnos(frame),                      "#510054", icono_alumnos),
+        ("Maestros",             "Gestión de docentes",           lambda: mostrar_maestros(frame),                     "#004235", icono_maestros),
         ("Administradores",      "Gestión de administradores",    lambda: mostrar_admin(frame),                        "#1A3A8F", icono_admin),
         ("Materias",             "Catálogo de materias",          lambda: mostrar_materias(frame),                     "#2D3250", icono_materias),
         ("Grupos",               "Gestión de grupos",             lambda: mostrar_grupos(frame),                       "#2D3250", icono_grupos),
