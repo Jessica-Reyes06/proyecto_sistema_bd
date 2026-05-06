@@ -101,72 +101,68 @@ pendientes_admin = []
 def mostrar_dashboard(frame):
     limpiar_frame(frame)
 
-    header = CTkFrame(frame, height=60, fg_color="#154b74")
-    header.pack(fill="x", pady=(0,20))
+    # ── HEADER ──────────────────────────────────────────────
+    header = CTkFrame(frame, fg_color="transparent")
+    header.pack(fill="x", padx=24, pady=(18, 6))
+    CTkLabel(header, text="Panel de Administración",
+             font=("Arial", 28, "bold"), text_color="#000000").pack(anchor="w")
 
-    titulo = CTkLabel(header,text="Panel de Administración",text_color="white",font=("Arial",28,"bold"))
-    titulo.pack(pady=15)
+    # ── TARJETAS DE ESTADÍSTICAS ─────────────────────────────
+    stats_frame = CTkFrame(frame, fg_color="transparent")
+    stats_frame.pack(fill="x", padx=24, pady=(6, 14))
 
-    contenedor = CTkFrame(frame, fg_color="#b8d0e1")
-    contenedor.pack(fill="both", expand=True, padx=20, pady=(10, 0))
+    stats = [
+        ("Alumnos",         "342", "#9B30FF"),
+        ("Maestros",        "45",  "#1A6B3C"),
+        ("Administradores", "8",   "#1A3A8F"),
+        ("Materias",        "67",  "#2D3250"),
+        ("Grupos",          "24",  "#2D3250"),
+        ("Inscripciones",   "318", "#2D3250"),
+    ]
 
-    for c in range(5):
-        contenedor.grid_columnconfigure(c, weight=1)
+    for i, (label, valor, color) in enumerate(stats):
+        stats_frame.grid_columnconfigure(i, weight=1)
+        card = CTkFrame(stats_frame, fg_color=color, corner_radius=10)
+        card.grid(row=0, column=i, padx=6, pady=4, sticky="ew")
+        CTkLabel(card, text=label, font=("Arial", 13), text_color="white").pack(anchor="w", padx=12, pady=(10, 0))
+        CTkLabel(card, text=valor, font=("Arial", 28, "bold"), text_color="white").pack(anchor="w", padx=12, pady=(0, 10))
 
-    for r in range(3):
-        contenedor.grid_rowconfigure(r, weight=1)
+    # ── CARGA DE ÍCONOS ──────────────────────────────────────
+    icono_alumnos        = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/alumnos.png")),        size=(64,64))
+    icono_maestros       = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/maestros.png")),       size=(64,64))
+    icono_materias       = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/materias.png")),       size=(64,64))
+    icono_grupos         = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/grupos.png")),         size=(64,64))
+    icono_inscripciones  = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/inscripciones.png")), size=(64,64))
+    icono_admin          = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/admin.png")),          size=(64,64))
+    icono_carreras       = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/carreras.png")),       size=(64,64))
+    icono_calificaciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/calificaciones.png")),size=(64,64))
+    icono_actividades    = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/actividades.png")),    size=(64,64))
+    icono_reportes       = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/reportes.png")),       size=(64,64))
+    icono_tipos          = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/tipos.png")),          size=(64,64))
+    icono_usuarios       = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/usuario.png")),        size=(64,64))
 
-    icono_alumnos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/alumnos.png")),size=(64,64))
-    icono_maestros = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/maestros.png")),size=(64,64))
-    icono_materias = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/materias.png")),size=(64,64))
-    icono_grupos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/grupos.png")),size=(64,64))
-    icono_inscripciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/inscripciones.png")),size=(64,64))
-    icono_usuarios = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/usuario.png")),size=(64,64))
-    icono_horarios = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_alumnos/reloj.png")),size=(64,64)) 
-    icono_admin = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/admin.png")),size=(64,64)) 
-    icono_carreras = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/carreras.png")),size=(64,64)) 
-    icono_edificios = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/edificios.png")),size=(64,64)) 
-    icono_calificaciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/calificaciones.png")),size=(64,64)) 
-    icono_actividades = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/actividades.png")),size=(64,64)) 
-    icono_reportes = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/reportes.png")),size=(64,64)) 
-    icono_tipos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/tipos.png")),size=(64,64))
+    # ── ÁREA PRINCIPAL: izquierda + derecha ──────────────────
+    main_area = CTkFrame(frame, fg_color="transparent")
+    main_area.pack(fill="both", expand=True, padx=24, pady=(0, 16))
+    main_area.grid_columnconfigure(0, weight=0)
+    main_area.grid_columnconfigure(1, weight=1)
+    main_area.grid_rowconfigure(0, weight=1)
 
-    def abrir_pendiente(titulo):
-        return lambda: mostrar_seccion_pendiente(frame, titulo)
+    # ── PANEL IZQUIERDO: calendario + eventos ────────────────
+    left_panel = CTkFrame(main_area, fg_color="#ffffff", corner_radius=12, width=270)
+    left_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 16))
+    left_panel.grid_propagate(False)
 
-    crear_tarjeta(contenedor,"Alumnos",lambda: mostrar_alumnos(frame),"#510054",icono_alumnos).grid(row=0,column=0,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Maestros",lambda: mostrar_maestros(frame),"#004235",icono_maestros).grid(row=0,column=1,padx=10,pady=10)
-   
-    crear_tarjeta(contenedor,"Administradores",lambda: mostrar_admin(frame),"#610139",icono_admin).grid(row=0,column=2,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Carreras",lambda: mostrar_carreras(frame),"#43000E",icono_carreras).grid(row=0,column=3,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Edificios",abrir_pendiente("Edificios y salones"),"#761111",icono_edificios).grid(row=0,column=4,padx=10,pady=10)
+    calendario(left_panel)
 
-    crear_tarjeta(contenedor,"Materias",lambda: mostrar_materias(frame),"#761127",icono_materias).grid(row=1,column=0,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Grupos",lambda: mostrar_grupos(frame),"#1f6aa5",icono_grupos).grid(row=1,column=1,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Horarios",lambda: mostrar_horarios(frame),"#1f6aa5",icono_horarios).grid(row=1,column=2,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Inscripciones",lambda: mostrar_inscripciones(frame),"#7A3500",icono_inscripciones).grid(row=1,column=3,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Tipos de Actividades",lambda: mostrar_tipos_actividades(frame),"#2b4d7a",icono_tipos).grid(row=1,column=4,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Actividades",lambda: mostrar_actividades(frame),"#6C7A00",icono_actividades).grid(row=2,column=0,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Calificaciones",lambda: mostrar_calificaciones_finales(frame),"#067A00",icono_calificaciones).grid(row=2,column=1,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Usuarios",lambda: mostrar_usuarios(frame),"#2b4d7a",icono_usuarios).grid(row=2,column=2,padx=10,pady=10)
-    crear_tarjeta(contenedor,"Reportes",abrir_pendiente("Reportes"),"#030508",icono_reportes).grid(row=2,column=3,padx=10,pady=10)
+    eventos_frame = CTkFrame(left_panel, fg_color="#f0f4f8", corner_radius=10)
+    eventos_frame.pack(fill="both", expand=True, padx=10, pady=(8, 10))
 
-    zona_inferior = CTkFrame(frame, height=120, fg_color="#f1f3f5")
-    zona_inferior.pack(side="bottom", fill="x", padx=20, pady=(0,15))
-    zona_inferior.pack_propagate(False)
+    CTkLabel(eventos_frame, text="🗓  Eventos",
+             font=("Arial", 15, "bold"), text_color="#000000").pack(anchor="w", padx=10, pady=(8, 4))
 
-    frame_calendario = CTkFrame(zona_inferior, fg_color="#ffffff")
-    frame_calendario.grid(row=0,column=0,padx=10,pady=10,sticky="nsew")
-
-    calendario(frame_calendario)
-
-    frame_texto = CTkFrame(zona_inferior, fg_color="#cfe5f3")
-    frame_texto.grid(row=0,column=1,padx=10,pady=10,sticky="nsew")
-
-    frame_texto.grid_columnconfigure(0, weight=1)
-    frame_texto.grid_columnconfigure(1, weight=1)
-
-    CTkLabel(frame_texto,text="Enero - Junio 2026",justify="left",font=("Arial",16,"bold"),text_color="#000000").grid(row=0,column=0,columnspan=2,padx=15,pady=(10,5),sticky="w")
+    scroll_eventos = CTkScrollableFrame(eventos_frame, fg_color="transparent")
+    scroll_eventos.pack(fill="both", expand=True, padx=4, pady=(0, 6))
 
     eventos = [
         "7 al 16 de enero: Actividades intersemestrales",
@@ -182,18 +178,60 @@ def mostrar_dashboard(frame):
         "6 al 31 de julio: Periodo vacacional",
     ]
 
-    mitad = (len(eventos)+1)//2
+    for ev in eventos:
+        fila = CTkFrame(scroll_eventos, fg_color="transparent")
+        fila.pack(fill="x", pady=3)
+        CTkLabel(fila, text="●", text_color="#1A6B3C", font=("Arial", 10)).pack(side="left", padx=(4, 6))
+        CTkLabel(fila, text=ev, font=("Arial", 12), text_color="#000000",
+                 anchor="w", justify="left", wraplength=190).pack(side="left", fill="x")
 
-    for i in range(len(eventos)):
-        if i < mitad:
-            columna = 0
-            fila = i+1
-        else:
-            columna = 1
-            fila = (i-mitad)+1
+    # ── PANEL DERECHO: catálogos ─────────────────────────────
+    right_panel = CTkFrame(main_area, fg_color="transparent")
+    right_panel.grid(row=0, column=1, sticky="nsew")
 
-        CTkLabel(frame_texto,text=eventos[i],justify="left",anchor="w",font=("Arial",14),text_color="#000000").grid(row=fila,column=columna,padx=(15,15),pady=2,sticky="w")
+    CTkLabel(right_panel, text="Catálogos del Sistema",
+             font=("Arial", 20, "bold"), text_color="#000000").pack(anchor="w", pady=(0, 10))
 
+    grid_frame = CTkFrame(right_panel, fg_color="transparent")
+    grid_frame.pack(fill="both", expand=True)
+    for col in range(3):
+        grid_frame.grid_columnconfigure(col, weight=1)
+
+    catalogos = [
+        ("Alumnos",              "Gestión de estudiantes",        lambda: mostrar_alumnos(frame),                      "#9B30FF", icono_alumnos),
+        ("Maestros",             "Gestión de docentes",           lambda: mostrar_maestros(frame),                     "#1A6B3C", icono_maestros),
+        ("Administradores",      "Gestión de administradores",    lambda: mostrar_admin(frame),                        "#1A3A8F", icono_admin),
+        ("Materias",             "Catálogo de materias",          lambda: mostrar_materias(frame),                     "#2D3250", icono_materias),
+        ("Grupos",               "Gestión de grupos",             lambda: mostrar_grupos(frame),                       "#2D3250", icono_grupos),
+        ("Carreras",             "Catálogo de carreras",          lambda: mostrar_carreras(frame),                     "#2D3250", icono_carreras),
+        ("Tipos de Actividades", "Clasificación de actividades",  lambda: mostrar_tipos_actividades(frame),            "#2D3250", icono_tipos),
+        ("Actividades",          "Gestión de actividades",        lambda: mostrar_actividades(frame),                  "#2D3250", icono_actividades),
+        ("Inscripciones",        "Registro de inscripciones",     lambda: mostrar_inscripciones(frame),                "#2D3250", icono_inscripciones),
+        ("Reportes",             "Generación de reportes",        lambda: mostrar_seccion_pendiente(frame, "Reportes"),  "#2D3250", icono_reportes),
+        ("Calificaciones",       "Gestión de calificaciones",     lambda: mostrar_calificaciones_finales(frame),       "#2D3250", icono_calificaciones),
+        ("Usuarios",             "Gestión de usuarios",           lambda: mostrar_usuarios(frame),                     "#2D3250", icono_usuarios),
+    ]
+
+    for idx, (titulo_c, subtitulo_c, comando_c, color_c, icono_c) in enumerate(catalogos):
+        r = idx // 3
+        c = idx % 3
+        grid_frame.grid_rowconfigure(r, weight=1)
+
+        card = CTkFrame(grid_frame, fg_color=color_c, corner_radius=12, cursor="hand2")
+        card.grid(row=r, column=c, padx=8, pady=8, sticky="nsew")
+        card.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
+
+        lbl_icono = CTkLabel(card, text="", image=icono_c)
+        lbl_icono.pack(pady=(16, 4))
+        lbl_icono.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
+
+        lbl_titulo = CTkLabel(card, text=titulo_c, font=("Arial", 15, "bold"), text_color="white")
+        lbl_titulo.pack(pady=(0, 2))
+        lbl_titulo.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
+
+        lbl_sub = CTkLabel(card, text=subtitulo_c, font=("Arial", 11), text_color="#cccccc")
+        lbl_sub.pack(pady=(0, 16))
+        lbl_sub.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
 def mostrar_calendario_imagen(frame):
     limpiar_frame(frame)
 
