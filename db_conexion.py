@@ -12,12 +12,6 @@ conexion = mysql.connector.connect(
 
 print("Conectado a MySQL (db_conexion)")
 
-# Crear tablas nuevas automáticamente al iniciar
-try:
-    crear_tablas_nuevas()
-except Exception as e:
-    print(f"Advertencia: No se pudieron crear algunas tablas: {e}")
-
 
 def ejecutar_insert(sql, datos):
     cursor = conexion.cursor()
@@ -69,6 +63,14 @@ def crear_tablas_nuevas():
     """Crea las tablas necesarias para los CRUD si no existen"""
 
     cursor = conexion.cursor()
+
+    # Tabla de tipos_actividades (si no existe) - NECESARIA ANTES QUE calificaciones_actividades
+    sql_tipos_actividades = """
+    CREATE TABLE IF NOT EXISTS tipos_actividades (
+        id_tipo INT AUTO_INCREMENT PRIMARY KEY,
+        nombre VARCHAR(100)
+    )
+    """
 
     # Tabla de salones
     sql_salones = """
@@ -125,6 +127,10 @@ def crear_tablas_nuevas():
     """
 
     try:
+        # PRIMERO crear tipos_actividades (si no existe)
+        cursor.execute(sql_tipos_actividades)
+        print("✓ Tabla 'tipos_actividades' verificada/creada")
+
         # Verificar y agregar columna id_registro a tabla registros si no existe
         cursor.execute("SHOW COLUMNS FROM registros LIKE 'id_registro'")
         if not cursor.fetchone():
@@ -153,3 +159,10 @@ def crear_tablas_nuevas():
 
     finally:
         cursor.close()
+
+
+# Crear tablas nuevas automáticamente al iniciar (después de definir la función)
+try:
+    crear_tablas_nuevas()
+except Exception as e:
+    print(f"Advertencia: No se pudieron crear algunas tablas: {e}")
