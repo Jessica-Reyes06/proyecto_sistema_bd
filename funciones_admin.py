@@ -204,7 +204,6 @@ def mostrar_dashboard(frame):
         ("Materias",             "Catálogo de materias",          lambda: mostrar_materias(frame),                     "#2D3250", icono_materias),
         ("Grupos",               "Gestión de grupos",             lambda: mostrar_grupos(frame),                       "#2D3250", icono_grupos),
         ("Carreras",             "Catálogo de carreras",          lambda: mostrar_carreras(frame),                     "#2D3250", icono_carreras),
-        ("Tipos de Actividades", "Clasificación de actividades",  lambda: mostrar_tipos_actividades(frame),            "#2D3250", icono_tipos),
         ("Actividades",          "Gestión de actividades",        lambda: mostrar_actividades(frame),                  "#2D3250", icono_actividades),
         ("Inscripciones",        "Registro de inscripciones",     lambda: mostrar_inscripciones(frame),                "#2D3250", icono_inscripciones),
         ("Reportes",             "Generación de reportes",        lambda: mostrar_seccion_pendiente(frame, "Reportes"),  "#2D3250", icono_reportes),
@@ -380,7 +379,7 @@ def mostrar_alumnos(frame):
         {"texto":"Exportar CSV","color":"#552157","comando":exportar},
     ]
 
-    headers = ["No.Control","Nombre","A. Paterno","A. Materno","Correo","Carrera","Semestre","Estado"]
+    headers = ["Número de Control","Nombre","Apellido Paterno","Apellido Materno","Correo","Carrera","Semestre","Estado"]
 
     mostrar_seccion_gestion(frame,"Gestión de Alumnos","#510054","#fafafa","#9880a0",botones,headers,"alumnos")
 
@@ -401,7 +400,7 @@ def mostrar_maestros(frame):
         {"texto":"Exportar CSV","color":"#022A22","comando":exportar},
     ]
 
-    headers = ["Matricula","Nombre","A. Paterno","A. Materno","Correo","Estatus","Estudios","Perfil","Carga Académica","Contrato","Cédula"]
+    headers = ["Matrícula","Nombre","Apellido Paterno","Apellido Materno","Correo","Estatus","Estudios","Perfil","Carga Académica","Contrato","Cédula"]
 
     mostrar_seccion_gestion(frame,"Gestión de Maestros","#004235","#ffffff","#6F8A90",botones,headers,"maestros")
 
@@ -419,7 +418,7 @@ def mostrar_admin(frame):
         {"texto":"Importar CSV","color":"#610139","comando":importar},
         {"texto":"Exportar CSV","color":"#610139","comando":exportar},
     ]
-    headers = ["Matricula","Nombre","A. Paterno","A. Materno","Area", "ID de usuario"]
+    headers = ["Matrícula","Nombre","Apellido Paterno","Apellido Materno","Área"]
     mostrar_seccion_gestion(frame, "Gestión de Administradores", "#610139", "#ffffff", "#9880a0", botones, headers, "administradores")
 
 def mostrar_carreras(frame):
@@ -456,7 +455,7 @@ def mostrar_materias(frame):
         {"texto":"Exportar CSV","color":"#510113","comando":exportar},
     ]
 
-    headers = ["Clave","Materia","Horas","Créditos","Carrera"]
+    headers = ["Clave","Materia","Carrera","Horas","Créditos",]
 
     mostrar_seccion_gestion(frame,"Gestión de Materias","#761127","#ffffff","#9A0000",botones,headers,"materias")
 
@@ -477,7 +476,7 @@ def mostrar_grupos(frame):
         {"texto":"Exportar CSV","color":"#184c73","comando":exportar},
     ]
 
-    headers = ["ID Grupo","Maestro","Materia","Cupo","Periodo", "Año", "Inscritos", "Estado" ]
+    headers = ["Grupo","Materia","Maestro","Periodo", "Año","Cupo", "Inscritos", "Horario","Estado" ]
 
     mostrar_seccion_gestion(frame,"Gestión de Grupos","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"grupos")
 
@@ -498,7 +497,7 @@ def mostrar_inscripciones(frame):
         {"texto":"Exportar CSV","color":"#A64500","comando":exportar},
     ]
 
-    headers = ["ID","No.Control","ID Grupo","Estatus","Tipo de inscripción"]
+    headers = ["Alumno","Número de Control","Grupo","Estatus","Tipo de inscripción"]
 
     mostrar_seccion_gestion(frame,"Inscripciones","#7A3500","#ffffff","#C75C00",botones,headers,"registros")
 
@@ -520,33 +519,16 @@ def mostrar_usuarios(frame):
         {"texto":"Exportar CSV","color":"#2b4d7a","comando":exportar},
     ]
 
-    headers = ["ID","Contraseña","Rol"]
+    headers = ["Usuario","Contraseña","Rol"]
 
     mostrar_seccion_gestion(frame,"Gestión de Usuarios","#2b4d7a","#ffffff","#4c6fa0",botones,headers,"usuarios")
 
-# === HORARIOS ===
-def mostrar_horarios(frame):
-    def registrar(area,volver):
-        mostrar_form_registro_horario(area,volver)
-
-    def importar(area,volver):
-        ejecutar_importacion("horario",volver)
-
-    def exportar(area,volver):
-        ejecutar_exportacion("horario","horario.csv")
-
-    botones = [
-        {"texto":"Registrar horario","color":"#1f6aa5","comando":registrar},
-        {"texto":"Importar CSV","color":"#1f6aa5","comando":importar},
-        {"texto":"Exportar CSV","color":"#1f6aa5","comando":exportar},
-    ]
-
-    headers = ["ID Horario","ID Grupo","Día","Hora inicio","Hora fin","ID Salón"]
-
-    mostrar_seccion_gestion(frame,"Gestión de Horarios","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"horario")
 
 # === ACTIVIDADES ===
 def mostrar_actividades(frame):
+    def registrar(area,volver):
+        mostrar_form_registro_tipo_actividad(area,volver)
+
     def importar(area,volver):
         ejecutar_importacion("actividades",volver)
 
@@ -554,30 +536,14 @@ def mostrar_actividades(frame):
         ejecutar_exportacion("actividades","actividades.csv")
 
     botones = [
+        {"texto":"Crear nueva actividad","color":"#1f6aa5","comando":registrar},
         {"texto":"Importar CSV","color":"#1f6aa5","comando":importar},
         {"texto":"Exportar CSV","color":"#1f6aa5","comando":exportar},
     ]
 
-    headers = ["ID Actividad","Tipo de Actividad","Unidad","Grupo","Materia","Ponderacion", "Detalles"]
+    headers = ["Tipo de Actividad","Unidad","Grupo","Materia","Ponderacion", "Detalles"]
 
     mostrar_seccion_gestion(frame,"Gestión de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"actividades")
-
-def mostrar_tipos_actividades(frame):
-    def importar(area,volver):
-        ejecutar_importacion("tipos_actividades",volver)
-
-    def exportar(area,volver):
-        ejecutar_exportacion("tipos_actividades","tipos_actividades.csv")
-
-    botones = [
-        {"texto":"Crear Tipo de Actividad","color":"#2b4d7a","comando":importar},
-        {"texto":"Importar CSV","color":"#2b4d7a","comando":importar},
-        {"texto":"Exportar CSV","color":"#2b4d7a","comando":exportar},
-    ]
-
-    headers = ["ID Tipo","Nombre de la Actividad"]
-
-    mostrar_seccion_gestion(frame,"Gestión de Tipos de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"tipos_actividades")
 
 def mostrar_calificaciones_finales(frame):
     def importar(area,volver):
@@ -591,6 +557,6 @@ def mostrar_calificaciones_finales(frame):
         {"texto":"Exportar CSV","color":"#2b4d7a","comando":exportar},
     ]
 
-    headers = ["ID de Calificación","Calificación Final", "ID Registro"]
+    headers = ["Alumno","Número de Control","Grupo", "Materia","Calificación Final"]
 
     mostrar_seccion_gestion(frame,"Gestión de Calificaciones Finales","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"calificaciones_finales")
