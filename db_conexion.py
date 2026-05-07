@@ -7,10 +7,10 @@ conexion = mysql.connector.connect(
     port=33989,
     user="root",
     password="eCjzlyNIPozVeLnSIFfMVLiaeAJRURPE",
-    database="control_escolar"
+    database="db_escolar"
 )
 
-print("Conectado a MySQL (db_conexion)")
+print("Conectado a MySQL - Base de datos: db_escolar")
 
 
 def ejecutar_insert(sql, datos):
@@ -60,11 +60,69 @@ def obtener_registro_por_id(tabla, campo_id, valor_id):
 
 
 def crear_tablas_nuevas():
-    """Crea las tablas necesarias para los CRUD si no existen"""
+    """Crea todas las tablas necesarias para el sistema si no existen"""
 
     cursor = conexion.cursor()
 
-    # Tabla de tipos_actividades (si no existe) - NECESARIA ANTES QUE calificaciones_actividades
+    # Tablas principales del sistema
+    sql_alumnos = """
+    CREATE TABLE IF NOT EXISTS alumnos (
+        numero_control VARCHAR(8) PRIMARY KEY,
+        nombre_alumno VARCHAR(100),
+        apellido_paterno VARCHAR(100),
+        apellido_materno VARCHAR(100),
+        correo_alumno VARCHAR(100),
+        carrera VARCHAR(100),
+        semestre INT,
+        estatus_alumno VARCHAR(50)
+    )
+    """
+
+    sql_maestros = """
+    CREATE TABLE IF NOT EXISTS maestros (
+        matricula_maestro VARCHAR(20) PRIMARY KEY,
+        nombre_maestro VARCHAR(100),
+        apellido_paterno VARCHAR(100),
+        apellido_materno VARCHAR(100),
+        correo VARCHAR(100),
+        estatus VARCHAR(50),
+        grado_estudios VARCHAR(100),
+        perfil_docente VARCHAR(100),
+        carga_academica INT,
+        tipo_contrato VARCHAR(50),
+        cedula_profesional VARCHAR(50)
+    )
+    """
+
+    sql_administradores = """
+    CREATE TABLE IF NOT EXISTS administradores (
+        matricula VARCHAR(20) PRIMARY KEY,
+        nombre VARCHAR(100),
+        apellido_paterno VARCHAR(100),
+        apellido_materno VARCHAR(100),
+        area VARCHAR(100),
+        id_usuario VARCHAR(50)
+    )
+    """
+
+    sql_usuarios = """
+    CREATE TABLE IF NOT EXISTS usuarios (
+        usuario VARCHAR(50) PRIMARY KEY,
+        contrasena VARCHAR(100),
+        rol VARCHAR(50)
+    )
+    """
+
+    sql_carreras = """
+    CREATE TABLE IF NOT EXISTS carreras (
+        id_carrera INT AUTO_INCREMENT PRIMARY KEY,
+        nombre_carrera VARCHAR(100),
+        tipo_carrera VARCHAR(50),
+        horas_semana INT,
+        creditos INT
+    )
+    """
+
     sql_tipos_actividades = """
     CREATE TABLE IF NOT EXISTS tipos_actividades (
         id_tipo INT AUTO_INCREMENT PRIMARY KEY,
@@ -72,7 +130,41 @@ def crear_tablas_nuevas():
     )
     """
 
-    # Tabla de salones
+    sql_materias = """
+    CREATE TABLE IF NOT EXISTS materias (
+        id_materia VARCHAR(20) PRIMARY KEY,
+        nombre_materia VARCHAR(100),
+        horas_semana INT,
+        creditos INT,
+        tipo VARCHAR(50)
+    )
+    """
+
+    sql_grupos = """
+    CREATE TABLE IF NOT EXISTS grupos (
+        id_grupo VARCHAR(20) PRIMARY KEY,
+        matricula_maestro VARCHAR(20),
+        id_materia VARCHAR(20),
+        cupo_maximo INT,
+        estado VARCHAR(50),
+        FOREIGN KEY (matricula_maestro) REFERENCES maestros(matricula_maestro),
+        FOREIGN KEY (id_materia) REFERENCES materias(id_materia)
+    )
+    """
+
+    sql_registros = """
+    CREATE TABLE IF NOT EXISTS registros (
+        id_registro INT AUTO_INCREMENT PRIMARY KEY,
+        numero_control VARCHAR(8),
+        id_grupo VARCHAR(20),
+        fecha_registro DATE,
+        estatus_materia VARCHAR(50),
+        tipo_registro VARCHAR(50),
+        FOREIGN KEY (numero_control) REFERENCES alumnos(numero_control),
+        FOREIGN KEY (id_grupo) REFERENCES grupos(id_grupo)
+    )
+    """
+
     sql_salones = """
     CREATE TABLE IF NOT EXISTS salones (
         id_salon VARCHAR(20) PRIMARY KEY,
@@ -85,7 +177,6 @@ def crear_tablas_nuevas():
     )
     """
 
-    # Tabla de calificaciones finales por periodo
     sql_calif_finales = """
     CREATE TABLE IF NOT EXISTS calificaciones_finales (
         id_calificacion INT AUTO_INCREMENT PRIMARY KEY,
@@ -98,7 +189,6 @@ def crear_tablas_nuevas():
     )
     """
 
-    # Tabla de calificaciones de actividades
     sql_calif_actividades = """
     CREATE TABLE IF NOT EXISTS calificaciones_actividades (
         id_calif_actividad INT AUTO_INCREMENT PRIMARY KEY,
@@ -112,7 +202,6 @@ def crear_tablas_nuevas():
     )
     """
 
-    # Tabla de horarios (si no existe)
     sql_horario = """
     CREATE TABLE IF NOT EXISTS horario (
         id_horario INT AUTO_INCREMENT PRIMARY KEY,
@@ -126,35 +215,37 @@ def crear_tablas_nuevas():
     )
     """
 
+    tablas = [
+        ("alumnos", sql_alumnos),
+        ("maestros", sql_maestros),
+        ("administradores", sql_administradores),
+        ("usuarios", sql_usuarios),
+        ("carreras", sql_carreras),
+        ("tipos_actividades", sql_tipos_actividades),
+        ("materias", sql_materias),
+        ("grupos", sql_grupos),
+        ("registros", sql_registros),
+        ("salones", sql_salones),
+        ("calificaciones_finales", sql_calif_finales),
+        ("calificaciones_actividades", sql_calif_actividades),
+        ("horario", sql_horario),
+    ]
+
     try:
-        # PRIMERO crear tipos_actividades (si no existe)
-        cursor.execute(sql_tipos_actividades)
-        print("✓ Tabla 'tipos_actividades' verificada/creada")
+        print("\n📊 Creando/verificando tablas en db_escolar...")
 
-        # Verificar y agregar columna id_registro a tabla registros si no existe
-        cursor.execute("SHOW COLUMNS FROM registros LIKE 'id_registro'")
-        if not cursor.fetchone():
-            print("Agregando columna 'id_registro' a tabla 'registros'...")
-            cursor.execute("ALTER TABLE registros ADD COLUMN id_registro INT AUTO_INCREMENT PRIMARY KEY FIRST")
-            print("✓ Columna 'id_registro' agregada a 'registros'")
-
-        cursor.execute(sql_salones)
-        print("✓ Tabla 'salones' verificada/creada")
-
-        cursor.execute(sql_calif_finales)
-        print("✓ Tabla 'calificaciones_finales' verificada/creada")
-
-        cursor.execute(sql_calif_actividades)
-        print("✓ Tabla 'calificaciones_actividades' verificada/creada")
-
-        cursor.execute(sql_horario)
-        print("✓ Tabla 'horario' verificada/creada")
+        for nombre_tabla, sql in tablas:
+            try:
+                cursor.execute(sql)
+                print(f"✓ Tabla '{nombre_tabla}' verificada/creada")
+            except Exception as e:
+                print(f"❌ Error creando tabla '{nombre_tabla}': {e}")
 
         conexion.commit()
-        print("✓ Base de datos actualizada correctamente")
+        print("\n✓ Base de datos 'db_escolar' actualizada correctamente")
 
     except Exception as e:
-        print(f"Error creando tablas: {e}")
+        print(f"Error general creando tablas: {e}")
         conexion.rollback()
 
     finally:

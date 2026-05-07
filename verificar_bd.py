@@ -71,7 +71,7 @@ def probar_conexion():
         cursor.execute("SELECT VERSION()")
         version = cursor.fetchone()[0]
         print(f"✅ Conectado a MySQL versión {version}")
-        print(f"✅ Base de datos: 'control_escolar'")
+        print(f"✅ Base de datos: 'db_escolar'")
         cursor.close()
         print("="*60 + "\n")
         return True

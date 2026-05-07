@@ -421,7 +421,7 @@ def mostrar_dashboard(frame):
         ("Reportes",             "Generación de reportes",        lambda: mostrar_seccion_pendiente(frame, "Reportes"),  "#2D3250", icono_reportes),
         ("Calificaciones",       "Gestión de calificaciones",     lambda: mostrar_calificaciones_finales(frame),       "#2D3250", icono_calificaciones),
         ("Calif. Actividades",   "Gestión de calif. parciales",   lambda: mostrar_calificaciones_actividades(frame),   "#2D3250", icono_actividades),
-        ("Salones",              "Gestión de salones y aulas",    lambda: mostrar_salones(frame),                       "#2D3250", icono_calendario),
+        ("Salones",              "Gestión de salones y aulas",    lambda: mostrar_salones(frame),                       "#2D3250", icono_tipos),
         ("Usuarios",             "Gestión de usuarios",           lambda: mostrar_usuarios(frame),                     "#2D3250", icono_usuarios),
     ]
 
@@ -564,28 +564,178 @@ def seleccionar_csv():
 def guardar_csv(nombre):
     return filedialog.asksaveasfilename(defaultextension=".csv",filetypes=[("CSV","*.csv")],initialfile=nombre)
 
-def ejecutar_importacion(tabla,volver):
-    messagebox.showinfo("Importar CSV", "Funcion pendiente de conectar con la nueva base de datos.")
-    if volver:
-        volver()
+def ejecutar_importacion(tabla, volver):
+    """Importa datos desde un archivo CSV a la tabla especificada"""
+    from formularios_bd import importar_csv
+    from tkinter import filedialog
 
-def ejecutar_exportacion(tabla,nombre):
-    messagebox.showinfo("Exportar CSV", "Funcion pendiente de conectar con la nueva base de datos.")
+    ruta_csv = filedialog.askopenfilename(
+        title=f"Seleccionar archivo CSV para importar a {tabla}",
+        filetypes=[("CSV", "*.csv"), ("Todos los archivos", "*.*")]
+    )
+
+    if ruta_csv:
+        try:
+            importar_csv(tabla, ruta_csv)
+            messagebox.showinfo("Importación Exitosa", f"Datos importados correctamente a la tabla '{tabla}'")
+            if volver:
+                volver()
+        except Exception as e:
+            messagebox.showerror("Error de Importación", f"Error al importar: {str(e)}")
+
+
+def ejecutar_exportacion(tabla, nombre):
+    """Exporta datos de una tabla a un archivo CSV"""
+    from formularios_bd import exportar_csv
+    from tkinter import filedialog
+
+    ruta_csv = filedialog.asksaveasfilename(
+        title=f"Exportar {tabla} a CSV",
+        defaultextension=".csv",
+        filetypes=[("CSV", "*.csv"), ("Todos los archivos", "*.*")],
+        initialfile=nombre
+    )
+
+    if ruta_csv:
+        try:
+            exportar_csv(tabla, ruta_csv)
+            messagebox.showinfo("Exportación Exitosa", f"Datos de '{tabla}' exportados a {ruta_csv}")
+        except Exception as e:
+            messagebox.showerror("Error de Exportación", f"Error al exportar: {str(e)}")
 
 
 def crear_respaldo_completo():
     """Respaldo completo de la base de datos en archivos CSV individuales por tabla."""
-    messagebox.showinfo("Respaldo", "Funcion pendiente de conectar con la nueva base de datos.")
+    from tkinter import filedialog
+    from formularios_bd import exportar_csv
+    import datetime
+    import os
+
+    # Seleccionar carpeta raíz donde se creará la carpeta del respaldo
+    carpeta_raiz = filedialog.askdirectory(title="Seleccionar dónde crear la carpeta del respaldo")
+
+    if not carpeta_raiz:
+        return
+
+    # Crear nombre de carpeta con formato: Respaldo_DB_YYYYMMDD_HHMMSS
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    nombre_carpeta = f"Respaldo_DB_{timestamp}"
+
+    # Ruta completa de la nueva carpeta
+    ruta_carpeta = os.path.join(carpeta_raiz, nombre_carpeta)
+
+    # Crear la carpeta
+    try:
+        os.makedirs(ruta_carpeta, exist_ok=False)
+        print(f"✓ Carpeta de respaldo creada: {ruta_carpeta}")
+    except Exception as e:
+        messagebox.showerror("Error", f"No se pudo crear la carpeta: {str(e)}")
+        return
+
+    tablas = [
+        "alumnos", "maestros", "administradores", "usuarios",
+        "carreras", "materias", "grupos", "registros",
+        "tipos_actividades", "salones",
+        "calificaciones_finales", "calificaciones_actividades", "horario"
+    ]
+
+    exportados = 0
+    errores = []
+
+    for tabla in tablas:
+        try:
+            nombre_archivo = f"{tabla}.csv"
+            ruta_completa = os.path.join(ruta_carpeta, nombre_archivo)
+            exportar_csv(tabla, ruta_completa)
+            exportados += 1
+        except Exception as e:
+            errores.append(f"{tabla}: {str(e)}")
+
+    mensaje = f"✅ Respaldo completado:\n\n📁 Carpeta: {nombre_carpeta}\n📍 Ubicación: {carpeta_raiz}\n\n✓ Tablas exportadas: {exportados}/{len(tablas)}"
+
+    if errores:
+        mensaje += f"\n\n❌ Errores:\n" + "\n".join(errores)
+
+    messagebox.showinfo("Respaldo Completo", mensaje)
 
 
 def restaurar_desde_respaldo():
-    """Restaura datos desde los CSV de respaldo más recientes en una carpeta.
+    """Restaura datos desde los CSV de respaldo más recientes en una carpeta."""
+    from tkinter import filedialog
+    from formularios_bd import importar_csv
+    import os
+    import glob
 
-    Para cada tabla principal busca el archivo con nombre
-    "tabla_YYYYMMDD_HHMMSS.csv" más reciente y lo importa.
-    """
+    # Primero seleccionar la carpeta raíz donde buscar carpetas de respaldo
+    carpeta_raiz = filedialog.askdirectory(title="Seleccionar carpeta donde buscar respaldos")
 
-    messagebox.showinfo("Restaurar", "Funcion pendiente de conectar con la nueva base de datos.")
+    if not carpeta_raiz:
+        return
+
+    # Buscar carpetas que tengan el formato Respaldo_DB_*
+    carpetas_respaldo = []
+    for carpeta in os.listdir(carpeta_raiz):
+        ruta_completa = os.path.join(carpeta_raiz, carpeta)
+        if os.path.isdir(ruta_completa) and carpeta.startswith("Respaldo_DB_"):
+            carpetas_respaldo.append((carpeta, ruta_completa))
+
+    if not carpetas_respaldo:
+        messagebox.showwarning("No hay respaldos", "No se encontraron carpetas de respaldo (formato: Respaldo_DB_*)")
+        return
+
+    # Si hay múltiples carpetas, dejar elegir
+    if len(carpetas_respaldo) == 1:
+        carpeta_seleccionada = carpetas_respaldo[0][1]
+    else:
+        # Crear diálogo simple para seleccionar carpeta
+        from tkinter import simpledialog
+
+        nombres_carpetas = [c[0] for c in carpetas_respaldo]
+        seleccion = simpledialog.askstring(
+            "Seleccionar Respaldo",
+            f"Se encontraron {len(carpetas_respaldo)} carpetas de respaldo:\n\n" +
+            "\n".join(nombres_carpetas) +
+            "\n\nEscribe el nombre exacto de la carpeta que deseas restaurar:",
+            initialvalue=nombres_carpetas[0]
+        )
+
+        if not seleccion:
+            return
+
+        # Encontrar la ruta completa
+        for nombre, ruta in carpetas_respaldo:
+            if nombre == seleccion:
+                carpeta_seleccionada = ruta
+                break
+
+    # Buscar todos los archivos CSV en la carpeta seleccionada
+    archivos_csv = glob.glob(os.path.join(carpeta_seleccionada, "*.csv"))
+
+    if not archivos_csv:
+        messagebox.showwarning("No hay archivos", f"No se encontraron archivos CSV en la carpeta:\n{carpeta_seleccionada}")
+        return
+
+    importados = 0
+    errores = []
+
+    for archivo in archivos_csv:
+        try:
+            # Obtener nombre de la tabla desde el nombre del archivo
+            nombre_archivo = os.path.basename(archivo)
+            # El formato es: tabla.csv
+            nombre_tabla = nombre_archivo.replace(".csv", "")
+
+            importar_csv(nombre_tabla, archivo)
+            importados += 1
+        except Exception as e:
+            errores.append(f"{nombre_archivo}: {str(e)}")
+
+    mensaje = f"✅ Restauración completada:\n\n📁 Carpeta: {os.path.basename(carpeta_seleccionada)}\n📍 Ubicación: {carpeta_raiz}\n\n✓ Archivos importados: {importados}/{len(archivos_csv)}"
+
+    if errores:
+        mensaje += f"\n\n❌ Errores:\n" + "\n".join(errores)
+
+    messagebox.showinfo("Restauración Completada", mensaje)
 
 
 
