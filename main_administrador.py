@@ -18,7 +18,6 @@ def crear_icono(ruta, size=(20, 20)):
         size=size
     )
 
-
 def iniciar_admin():
     global ventana_principal
 
@@ -241,7 +240,8 @@ def iniciar_admin():
 
     frame_cerrar.bind("<Button-1>", lambda event: ventana_principal.destroy())
 
-    mostrar_dashboard(main_frame)
+    # Temporal: abrir la vista de Solicitudes al iniciar para depurar el espaciado
+    mostrar_solicitudes(main_frame)
 
     ventana_principal.mainloop()
 

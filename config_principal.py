@@ -8,31 +8,6 @@ def limpiar_frame(frame):
 	for widget in frame.winfo_children():
 		widget.destroy()
 
-
-def crear_tarjeta(parent, titulo, comando, boton_color=None, icono=None):
-	"""Crea una "tarjeta" con un botón grande centrado."""
-	marco = CTkFrame(
-		parent,
-		fg_color="#ffffff",
-		corner_radius=10
-	)
-
-	boton = CTkButton(
-		marco,
-		text=titulo,
-		width=170,
-		height=130,
-		command=comando,
-		fg_color=boton_color,
-		font=("Arial", 18, "bold"),
-		image=icono,
-		compound="top"
-	)
-	boton.pack(padx=8, pady=8)
-
-	return marco
-
-
 def calendario(frame):
 	"""Calendario reutilizable para el panel administrador.
 
@@ -52,17 +27,17 @@ def calendario(frame):
 		month=hoy.month,
 		day=hoy.day,
 		font=("Arial Rounded MT Bold", 20),
-		background="#a4d6ff",
-		foreground="white",
-		headersbackground="#a4d6ff",
-		headersforeground="white",
-		normalbackground="#cabece",
-		normalforeground="white",
-		weekendbackground="#cabece",
-		weekendforeground="white",
-		selectbackground="#a4d6ff",
-		selectforeground="white",
-		bordercolor="#a4d6ff",
+		background="#ffffff",
+		foreground="#000000",
+		headersbackground="#ffffff",
+		headersforeground="#000000",
+		normalbackground="#ffffff",
+		normalforeground="#000000",
+		weekendbackground="#ffffff",
+		weekendforeground="#000000",
+		selectbackground="#d9d9d9",
+		selectforeground="#000000",
+		bordercolor="#ffffff",
 	)
 
 	cal.pack(fill="both", expand=True, padx=5, pady=5)
