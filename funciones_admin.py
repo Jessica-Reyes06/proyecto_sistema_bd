@@ -516,6 +516,9 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
     for i in range(len(botones)):
         menu.grid_columnconfigure(i,weight=1)
 
+    barra_busqueda = CTkEntry(frame, corner_radius=20,border_width=1, border_color="#888888", width=200, height=35, placeholder_text="Buscar...", placeholder_text_color="#888888")
+    barra_busqueda.pack(fill="x", padx=20, pady=10)
+
     area_contenido = CTkFrame(frame)
     area_contenido.pack(fill="both",expand=True,padx=20,pady=10)
 
@@ -907,10 +910,10 @@ def mostrar_actividades(frame):
         mostrar_form_registro_tipo_actividad(area,volver)
 
     def importar(area,volver):
-        ejecutar_importacion("actividades",volver)
+        ejecutar_importacion("tipos_actividades",volver)
 
     def exportar(area,volver):
-        ejecutar_exportacion("actividades","actividades.csv")
+        ejecutar_exportacion("tipos_actividades","tipos_actividades.csv")
 
     botones = [
         {"texto":"Crear nueva actividad","color":"#1f6aa5","comando":registrar},
@@ -920,7 +923,7 @@ def mostrar_actividades(frame):
 
     headers = ["Tipo de Actividad","Unidad","Grupo","Materia","Ponderacion", "Detalles"]
 
-    mostrar_seccion_gestion(frame,"Gestión de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"actividades")
+    mostrar_seccion_gestion(frame,"Gestión de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"tipos_actividades")
 
 def mostrar_calificaciones_finales(frame):
     def registrar(area, volver):
