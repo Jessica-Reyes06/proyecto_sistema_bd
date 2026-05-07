@@ -20,14 +20,14 @@ def color_texto_legible(color_hex):
     luminosidad = (0.299 * rojo) + (0.587 * verde) + (0.114 * azul)
     return "black" if luminosidad > 160 else "white"
 
-def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0e0e0", actualizar_callback=None, eliminar_callback=None):
+def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0e0e0", actualizar_callback=None, eliminar_callback=None, header_text_color=None):
 
     tabla = CTkFrame(parent)
     tabla.pack(fill="both", expand=True)
 
     encabezado = CTkFrame(tabla, fg_color=color_tabla)
     encabezado.pack(fill="x")
-    color_texto = color_texto_legible(color_tabla)
+    color_texto = header_text_color or color_texto_legible(color_tabla)
     for i, h in enumerate(headers):
         encabezado.grid_columnconfigure(i, weight=1)
         CTkLabel(encabezado, text=h, text_color=color_texto, font=("Arial", 14, "bold"), anchor="w", justify="left").grid(row=0, column=i, padx=10, pady=10, sticky="w")
@@ -477,7 +477,7 @@ def mostrar_seccion_pendiente(frame, titulo):
     ).pack(pady=30)
 
 
-def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,botones,headers,tabla_sql=None):
+def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,botones,headers,tabla_sql=None,header_text_color=None):
     limpiar_frame(frame)
 
     CTkButton(frame,text="←",width=80,command=lambda: mostrar_dashboard(frame)).pack(anchor="w",padx=20,pady=10)
@@ -518,7 +518,8 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
                 tabla_sql or "pendiente",
                 color_tabla,
                 actualizar_callback=actualizar_registro if tabla_sql else None,
-                eliminar_callback=eliminar_registro if tabla_sql else None
+                eliminar_callback=eliminar_registro if tabla_sql else None,
+                header_text_color=header_text_color
             )
             
             # Mostrar mensaje si no hay registros
@@ -774,7 +775,7 @@ def mostrar_admin(frame):
         {"texto":"Importar CSV","color":"#610139","comando":importar},
         {"texto":"Exportar CSV","color":"#610139","comando":exportar},
     ]
-    headers = ["Matrícula","Nombre","Apellido Paterno","Apellido Materno","Área"]
+    headers = ["Matrícula","Nombre","Apellido Paterno","Apellido Materno"]
     mostrar_seccion_gestion(frame, "Gestión de Administradores", "#610139", "#ffffff", "#9880a0", botones, headers, "administradores")
 
 def mostrar_carreras(frame):
@@ -791,8 +792,8 @@ def mostrar_carreras(frame):
         {"texto":"Importar CSV","color":"#43000E","comando":importar},
         {"texto":"Exportar CSV","color":"#43000E","comando":exportar},
     ]
-    headers = ["Nombre de la Carrera","Siglas","Semestres","Tipo"]
-    mostrar_seccion_gestion(frame, "Gestión de Carreras", "#43000E", "#ffffff", "#d1c4b3", botones, headers, "carreras")
+    headers = ["Nombre de la Carrera","Tipo","Semestres","Clave"]
+    mostrar_seccion_gestion(frame, "Gestión de Carreras", "#43000E", "#ffffff", "#d1c4b3", botones, headers, "carreras", header_text_color="white")
 
 def mostrar_materias(frame):
 
@@ -811,7 +812,7 @@ def mostrar_materias(frame):
         {"texto":"Exportar CSV","color":"#510113","comando":exportar},
     ]
 
-    headers = ["Clave","Materia","Carrera","Horas","Créditos",]
+    headers = ["Clave","Materia","Carrera","Horas a la semana","Unidades",]
 
     mostrar_seccion_gestion(frame,"Gestión de Materias","#761127","#ffffff","#9A0000",botones,headers,"materias")
 
@@ -834,7 +835,7 @@ def mostrar_grupos(frame):
 
     headers = ["Grupo","Materia","Maestro","Periodo", "Año","Cupo", "Inscritos", "Horario","Estado" ]
 
-    mostrar_seccion_gestion(frame,"Gestión de Grupos","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"grupos")
+    mostrar_seccion_gestion(frame,"Gestión de Grupos","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"grupos",header_text_color="white")
 
 def mostrar_inscripciones(frame):
 
@@ -882,9 +883,10 @@ def mostrar_usuarios(frame):
 
 # === ACTIVIDADES ===
 def mostrar_actividades(frame):
-    def registrar(area,volver):
+    def registrar1(area,volver):
         mostrar_form_registro_tipo_actividad(area,volver)
-
+    def registrar2(area,volver):
+        mostrar_form_actividad(area,volver)
     def importar(area,volver):
         ejecutar_importacion("actividades",volver)
 
@@ -892,14 +894,15 @@ def mostrar_actividades(frame):
         ejecutar_exportacion("actividades","actividades.csv")
 
     botones = [
-        {"texto":"Crear nueva actividad","color":"#1f6aa5","comando":registrar},
+        {"texto":"Nuevo tipo de actividad","color":"#1f6aa5","comando":registrar1},
+        {"texto":"Registrar Actividad","color":"#1f6aa5","comando":registrar2},
         {"texto":"Importar CSV","color":"#1f6aa5","comando":importar},
         {"texto":"Exportar CSV","color":"#1f6aa5","comando":exportar},
     ]
 
     headers = ["Tipo de Actividad","Unidad","Grupo","Materia","Ponderacion", "Detalles"]
 
-    mostrar_seccion_gestion(frame,"Gestión de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"actividades")
+    mostrar_seccion_gestion(frame,"Gestión de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"actividades", header_text_color="white")
 
 def mostrar_calificaciones_finales(frame):
     def registrar(area, volver):
@@ -927,7 +930,8 @@ def mostrar_calificaciones_finales(frame):
         "#8fb1cb",
         botones,
         headers,
-        "calificaciones_finales"
+        "calificaciones_finales",
+        header_text_color="white"
     )
 
 
@@ -954,7 +958,8 @@ def mostrar_calificaciones_actividades(frame):
         "#8fb1cb",
         botones,
         headers,
-        "calificaciones_actividades"
+        "calificaciones_actividades",
+        header_text_color="white"
     )
 
 def mostrar_solicitudes(frame, datos=None):
