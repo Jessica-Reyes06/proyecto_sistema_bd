@@ -1,7 +1,7 @@
 from tkinter import messagebox
 from customtkinter import *
 from PIL import Image
-from config_principal import calendario, limpiar_frame, crear_tarjeta
+from config_principal import calendario, limpiar_frame
 from formularios_bd import *
 import os
 import sys
@@ -350,7 +350,6 @@ def mostrar_dashboard(frame):
     icono_calificaciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/calificaciones.png")),size=(64,64))
     icono_actividades    = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/actividades.png")),    size=(64,64))
     icono_reportes       = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/reportes.png")),       size=(64,64))
-    icono_tipos          = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/tipos.png")),          size=(64,64))
     icono_usuarios       = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/usuario.png")),        size=(64,64))
 
     # ── ÁREA PRINCIPAL: izquierda + derecha ──────────────────
@@ -361,8 +360,8 @@ def mostrar_dashboard(frame):
     main_area.grid_rowconfigure(0, weight=1)
 
     # ── PANEL IZQUIERDO: calendario + eventos ────────────────
-    left_panel = CTkFrame(main_area, fg_color="#ffffff", corner_radius=12, width=270)
-    left_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 16))
+    left_panel = CTkFrame(main_area, fg_color="#ffffff", corner_radius=12, width=270, height=540)
+    left_panel.grid(row=0, column=0, sticky="nw", padx=(0, 16), pady=(100, 0))
     left_panel.grid_propagate(False)
 
     calendario(left_panel)
@@ -421,7 +420,6 @@ def mostrar_dashboard(frame):
         ("Reportes",             "Generación de reportes",        lambda: mostrar_seccion_pendiente(frame, "Reportes"),  "#2D3250", icono_reportes),
         ("Calificaciones",       "Gestión de calificaciones",     lambda: mostrar_calificaciones_finales(frame),       "#2D3250", icono_calificaciones),
         ("Calif. Actividades",   "Gestión de calif. parciales",   lambda: mostrar_calificaciones_actividades(frame),   "#2D3250", icono_actividades),
-        ("Salones",              "Gestión de salones y aulas",    lambda: mostrar_salones(frame),                       "#2D3250", icono_tipos),
         ("Usuarios",             "Gestión de usuarios",           lambda: mostrar_usuarios(frame),                     "#2D3250", icono_usuarios),
     ]
 
@@ -459,27 +457,6 @@ def mostrar_calendario_imagen(frame):
     imagen_cal = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/calendario.png")),size=(600,800))
 
     CTkLabel(cuerpo,text="",image=imagen_cal).pack(expand=True)
-
-def mostrar_solicitudes(frame):
-    limpiar_frame(frame)
-
-    header = CTkFrame(frame,height=60,fg_color="#154b74")
-    header.pack(fill="x",pady=10)
-
-    CTkLabel(header,text="Solicitudes",text_color="white",font=("Arial",26,"bold")).pack(pady=15)
-
-    cuerpo = CTkFrame(frame,fg_color="#ffffff")
-    cuerpo.pack(fill="both",expand=True,padx=20,pady=10)
-
-    lista = CTkScrollableFrame(cuerpo,fg_color="#ffffff")
-    lista.pack(fill="both",expand=True,padx=10,pady=10)
-
-    if not pendientes_admin:
-        CTkLabel(lista,text="No hay solicitudes registradas",font=("Arial",16,"bold")).pack(pady=10)
-    else:
-        for i,texto in enumerate(pendientes_admin,start=1):
-            CTkLabel(lista,text=f"{i}. {texto}",anchor="w",justify="left",font=("Arial",14)).pack(fill="x",padx=5,pady=4)
-
 
 def mostrar_seccion_pendiente(frame, titulo):
     limpiar_frame(frame)
@@ -536,6 +513,18 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
             else:
                 registros = []
 
+            # Siempre mostrar los encabezados de la tabla
+            crear_tabla_editable(
+                area_contenido,
+                headers,
+                registros,
+                tabla_sql or "pendiente",
+                color_tabla,
+                actualizar_callback=actualizar_registro if tabla_sql else None,
+                eliminar_callback=eliminar_registro if tabla_sql else None
+            )
+            
+            # Mostrar mensaje si no hay registros
             if not registros:
                 CTkLabel(
                     area_contenido,
@@ -543,16 +532,6 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
                     font=("Arial", 15, "bold"),
                     text_color="#000000"
                 ).pack(pady=(10, 12))
-            else:
-                crear_tabla_editable(
-                    area_contenido,
-                    headers,
-                    registros,
-                    tabla_sql or "pendiente",
-                    color_tabla,
-                    actualizar_callback=actualizar_registro if tabla_sql else None,
-                    eliminar_callback=eliminar_registro if tabla_sql else None
-                )
 
     mostrar_tabla_base()
 
@@ -811,11 +790,11 @@ def mostrar_carreras(frame):
         ejecutar_exportacion("carreras","carreras.csv")
 
     botones = [
-        {"texto":"Registrar administrador","color":"#43000E","comando":registrar},
+        {"texto":"Registrar Carrera nueva","color":"#43000E","comando":registrar},
         {"texto":"Importar CSV","color":"#43000E","comando":importar},
         {"texto":"Exportar CSV","color":"#43000E","comando":exportar},
     ]
-    headers = ["Nombre de la Carrera","Tipo"]
+    headers = ["Nombre de la Carrera","Siglas","Semestres","Tipo"]
     mostrar_seccion_gestion(frame, "Gestión de Carreras", "#43000E", "#ffffff", "#d1c4b3", botones, headers, "carreras")
 
 def mostrar_materias(frame):
@@ -941,7 +920,7 @@ def mostrar_calificaciones_finales(frame):
         {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": exportar},
     ]
 
-    headers = ["ID", "Alumno", "Grupo", "Calificación", "Periodo"]
+    headers = ["Numero de control", "Alumno", "Grupo","Materia","Periodo", "Calificación Final", ]
 
     mostrar_seccion_gestion(
         frame,
@@ -956,8 +935,6 @@ def mostrar_calificaciones_finales(frame):
 
 
 def mostrar_calificaciones_actividades(frame):
-    def registrar(area, volver):
-        mostrar_form_registro_calificacion_actividad(area, volver)
 
     def importar(area, volver):
         ejecutar_importacion("calificaciones_actividades", volver)
@@ -966,12 +943,11 @@ def mostrar_calificaciones_actividades(frame):
         ejecutar_exportacion("calificaciones_actividades", "calificaciones_actividades.csv")
 
     botones = [
-        {"texto": "Registrar calificación", "color": "#2b4d7a", "comando": registrar},
         {"texto": "Importar CSV", "color": "#2b4d7a", "comando": importar},
         {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": exportar},
     ]
 
-    headers = ["ID", "Alumno", "Actividad", "Calificación", "Fecha", "Observaciones"]
+    headers = ["Numero de Control", "Alumno", "Actividad", "Calificación", "Fecha", "Observaciones"]
 
     mostrar_seccion_gestion(
         frame,
@@ -984,32 +960,93 @@ def mostrar_calificaciones_actividades(frame):
         "calificaciones_actividades"
     )
 
+def mostrar_solicitudes(frame, datos=None):
+    limpiar_frame(frame)
 
-def mostrar_salones(frame):
-    def registrar(area, volver):
-        mostrar_form_registro_salon(area, volver)
+    CTkLabel(frame, text="Solicitudes Pendientes",
+             font=("Arial", 24, "bold"), text_color="#000000").pack(anchor="w", padx=30, pady=(0, 4))
 
-    def importar(area, volver):
-        ejecutar_importacion("salones", volver)
+    scroll = CTkScrollableFrame(frame, fg_color="transparent")
+    scroll.pack(fill="both", expand=True, padx=20, pady=(0, 4))
 
-    def exportar(area, volver):
-        ejecutar_exportacion("salones", "salones.csv")
+    if datos is None:
+        datos = [
+            {
+                "nombre":      "Juan Pérez",
+                "matricula":   "21490001",
+                "estado":      "ALTA",
+                "titulo":      "Recuperación de Contraseña",
+                "descripcion": "El alumno Juan Pérez solicita recuperar su contraseña",
+            },
+            {
+                "nombre":      "Carlos Ruiz",
+                "matricula":   "21490032",
+                "estado":      "ALTA",
+                "titulo":      "Cita Programada para el 20 de mayo a las 10:00 AM",
+                "descripcion": "El alumno Carlos Ruiz solicita una cita programada para el 20 de mayo a las 10:00 AM",
+            },
+            {
+                "nombre":      "Carlos González",
+                "matricula":   "M00245",
+                "estado":      "MEDIA",
+                "titulo":      "Nuevo Tipo de Actividad",
+                "descripcion": "El alumno Carlos González solicita un nuevo tipo de actividad",
+            },
+            {
+                "nombre":      "María López",
+                "matricula":   "M00189",
+                "estado":      "BAJA",
+                "titulo":      "Modificación de Grupo",
+                "descripcion": "La alumna María López solicita una modificación de grupo",
+            },
+        ]
 
-    botones = [
-        {"texto": "Registrar salón", "color": "#184c73", "comando": registrar},
-        {"texto": "Importar CSV", "color": "#184c73", "comando": importar},
-        {"texto": "Exportar CSV", "color": "#184c73", "comando": exportar},
-    ]
+    colores_estado = {
+        "ALTA":  {"borde": "#e53935", "etiqueta": "#fdecea", "texto": "#e53935"},
+        "MEDIA": {"borde": "#f9a825", "etiqueta": "#fffde7", "texto": "#f57f17"},
+        "BAJA":  {"borde": "#1565c0", "etiqueta": "#e3f2fd", "texto": "#1565c0"},
+    }
 
-    headers = ["ID Salón", "Nombre", "Capacidad", "Tipo", "Edificio", "Piso", "Estatus"]
+    if not datos:
+        CTkLabel(scroll, text="No hay solicitudes pendientes.",
+                 font=("Arial", 14), text_color="#888888").pack(pady=20)
+        return
 
-    mostrar_seccion_gestion(
-        frame,
-        "Gestión de Salones",
-        "#1f6aa5",
-        "#ffffff",
-        "#8fb1cb",
-        botones,
-        headers,
-        "salones"
-    )
+    for sol in datos:
+        estado = sol.get("estado", "BAJA").strip().upper()
+        c = colores_estado.get(estado, colores_estado["BAJA"])
+
+        tarjeta = CTkFrame(scroll, fg_color="#ffffff", corner_radius=10,
+                           border_width=2, border_color=c["borde"])
+        tarjeta.pack(fill="x", pady=4, padx=4)
+        tarjeta.grid_columnconfigure(1, weight=1)
+
+        franja = CTkFrame(tarjeta, fg_color=c["borde"], width=6, corner_radius=0)
+        franja.grid(row=0, column=0, sticky="ns")
+
+        contenido = CTkFrame(tarjeta, fg_color="transparent")
+        contenido.grid(row=0, column=1, sticky="ew", padx=12, pady=0)
+
+        fila_top = CTkFrame(contenido, fg_color="transparent")
+        fila_top.pack(fill="x")
+
+        CTkLabel(fila_top, text=sol.get("titulo", "Sin título"),
+                 font=("Arial", 13, "bold"), text_color="#000000").pack(side="left", pady=(0, 2))
+
+        etiqueta = CTkFrame(fila_top, fg_color=c["etiqueta"], corner_radius=4)
+        etiqueta.pack(side="right", padx=(0, 4))
+        CTkLabel(etiqueta, text=f"PRIORIDAD {estado}",
+                 font=("Arial", 9, "bold"), text_color=c["texto"]).pack(padx=7, pady=1)
+
+        CTkLabel(contenido,
+                 text=f"👤  {sol.get('nombre', '—')}   •   Matrícula / No. Control: {sol.get('matricula', '—')}",
+                 font=("Arial", 10), text_color="#333333").pack(anchor="w", pady=(2, 1))
+
+        CTkLabel(contenido, text=sol.get("descripcion", " "),
+                 font=("Arial", 10), text_color="#444444",
+                 anchor="w", justify="left", wraplength=900).pack(anchor="w", pady=(0, 2))
+
+        CTkButton(contenido, text="✔  Marcar como Completada",
+                  fg_color="#2e7d32", hover_color="#1b5e20",
+                  text_color="white", corner_radius=8,
+                  width=220, height=26).pack(anchor="w", pady=(0, 0))
