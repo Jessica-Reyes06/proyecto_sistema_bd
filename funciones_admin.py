@@ -418,8 +418,7 @@ def mostrar_dashboard(frame):
         ("Actividades",          "Gestión de actividades",        lambda: mostrar_actividades(frame),                  "#2D3250", icono_actividades),
         ("Inscripciones",        "Registro de inscripciones",     lambda: mostrar_inscripciones(frame),                "#2D3250", icono_inscripciones),
         ("Reportes",             "Generación de reportes",        lambda: mostrar_seccion_pendiente(frame, "Reportes"),  "#2D3250", icono_reportes),
-        ("Calificaciones",       "Gestión de calificaciones",     lambda: mostrar_calificaciones_finales(frame),       "#2D3250", icono_calificaciones),
-        ("Calif. Actividades",   "Gestión de calif. parciales",   lambda: mostrar_calificaciones_actividades(frame),   "#2D3250", icono_actividades),
+        ("Calif. Actividades",   "Gestión de calif. parciales",   lambda: mostrar_calificaciones_actividades(frame),   "#2D3250", icono_calificaciones),
         ("Usuarios",             "Gestión de usuarios",           lambda: mostrar_usuarios(frame),                     "#2D3250", icono_usuarios),
     ]
 
