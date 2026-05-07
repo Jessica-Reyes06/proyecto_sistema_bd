@@ -57,12 +57,3 @@ def ejecutar_select_todo(tabla):
 def obtener_registro_por_id(tabla, campo_id, valor_id):
     """Obtiene un registro específico por su ID"""
     return ejecutar_select(f"SELECT * FROM {tabla} WHERE {campo_id}=%s", (valor_id,))
-
-
-def crear_tablas_nuevas():
-    """Crea todas las tablas necesarias para el sistema si no existen"""
-    # La función de creación automática de tablas se ha eliminado.
-    # Si necesita restaurarla en el futuro, reimplemente aquí.
-
-
-# La llamada automática a `crear_tablas_nuevas()` fue eliminada intencionalmente.

@@ -510,6 +510,18 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
             else:
                 registros = []
 
+            # Siempre mostrar los encabezados de la tabla
+            crear_tabla_editable(
+                area_contenido,
+                headers,
+                registros,
+                tabla_sql or "pendiente",
+                color_tabla,
+                actualizar_callback=actualizar_registro if tabla_sql else None,
+                eliminar_callback=eliminar_registro if tabla_sql else None
+            )
+            
+            # Mostrar mensaje si no hay registros
             if not registros:
                 CTkLabel(
                     area_contenido,
@@ -517,16 +529,6 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
                     font=("Arial", 15, "bold"),
                     text_color="#000000"
                 ).pack(pady=(10, 12))
-            else:
-                crear_tabla_editable(
-                    area_contenido,
-                    headers,
-                    registros,
-                    tabla_sql or "pendiente",
-                    color_tabla,
-                    actualizar_callback=actualizar_registro if tabla_sql else None,
-                    eliminar_callback=eliminar_registro if tabla_sql else None
-                )
 
     mostrar_tabla_base()
 
