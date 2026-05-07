@@ -350,7 +350,6 @@ def mostrar_dashboard(frame):
     icono_calificaciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/calificaciones.png")),size=(64,64))
     icono_actividades    = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/actividades.png")),    size=(64,64))
     icono_reportes       = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/reportes.png")),       size=(64,64))
-    icono_tipos          = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/tipos.png")),          size=(64,64))
     icono_usuarios       = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/usuario.png")),        size=(64,64))
 
     # ── ÁREA PRINCIPAL: izquierda + derecha ──────────────────
@@ -421,7 +420,6 @@ def mostrar_dashboard(frame):
         ("Reportes",             "Generación de reportes",        lambda: mostrar_seccion_pendiente(frame, "Reportes"),  "#2D3250", icono_reportes),
         ("Calificaciones",       "Gestión de calificaciones",     lambda: mostrar_calificaciones_finales(frame),       "#2D3250", icono_calificaciones),
         ("Calif. Actividades",   "Gestión de calif. parciales",   lambda: mostrar_calificaciones_actividades(frame),   "#2D3250", icono_actividades),
-        ("Salones",              "Gestión de salones y aulas",    lambda: mostrar_salones(frame),                       "#2D3250", icono_tipos),
         ("Usuarios",             "Gestión de usuarios",           lambda: mostrar_usuarios(frame),                     "#2D3250", icono_usuarios),
     ]
 
@@ -917,7 +915,7 @@ def mostrar_calificaciones_finales(frame):
         {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": exportar},
     ]
 
-    headers = ["ID", "Alumno", "Grupo", "Calificación", "Periodo"]
+    headers = ["Numero de control", "Alumno", "Grupo","Materia","Periodo", "Calificación Final", ]
 
     mostrar_seccion_gestion(
         frame,
@@ -932,8 +930,6 @@ def mostrar_calificaciones_finales(frame):
 
 
 def mostrar_calificaciones_actividades(frame):
-    def registrar(area, volver):
-        mostrar_form_registro_calificacion_actividad(area, volver)
 
     def importar(area, volver):
         ejecutar_importacion("calificaciones_actividades", volver)
@@ -942,12 +938,11 @@ def mostrar_calificaciones_actividades(frame):
         ejecutar_exportacion("calificaciones_actividades", "calificaciones_actividades.csv")
 
     botones = [
-        {"texto": "Registrar calificación", "color": "#2b4d7a", "comando": registrar},
         {"texto": "Importar CSV", "color": "#2b4d7a", "comando": importar},
         {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": exportar},
     ]
 
-    headers = ["ID", "Alumno", "Actividad", "Calificación", "Fecha", "Observaciones"]
+    headers = ["Numero de Control", "Alumno", "Actividad", "Calificación", "Fecha", "Observaciones"]
 
     mostrar_seccion_gestion(
         frame,
@@ -959,37 +954,6 @@ def mostrar_calificaciones_actividades(frame):
         headers,
         "calificaciones_actividades"
     )
-
-
-def mostrar_salones(frame):
-    def registrar(area, volver):
-        mostrar_form_registro_salon(area, volver)
-
-    def importar(area, volver):
-        ejecutar_importacion("salones", volver)
-
-    def exportar(area, volver):
-        ejecutar_exportacion("salones", "salones.csv")
-
-    botones = [
-        {"texto": "Registrar salón", "color": "#184c73", "comando": registrar},
-        {"texto": "Importar CSV", "color": "#184c73", "comando": importar},
-        {"texto": "Exportar CSV", "color": "#184c73", "comando": exportar},
-    ]
-
-    headers = ["ID Salón", "Nombre", "Capacidad", "Tipo", "Edificio", "Piso", "Estatus"]
-
-    mostrar_seccion_gestion(
-        frame,
-        "Gestión de Salones",
-        "#1f6aa5",
-        "#ffffff",
-        "#8fb1cb",
-        botones,
-        headers,
-        "salones"
-    )
-
 
 def mostrar_solicitudes(frame, datos=None):
     limpiar_frame(frame)
