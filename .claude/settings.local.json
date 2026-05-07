@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python:*)",
       "Bash(python3:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(/mnt/c/Users/marle/PycharmProjects/proyecto_sistema_bd/.venv/Scripts/python.exe:*)"
     ]
   }
 }

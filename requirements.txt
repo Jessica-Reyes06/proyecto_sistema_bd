@@ -1,0 +1,23 @@
+# Dependencias del Sistema de Control Escolar
+# Instalar con: pip install -r requirements.txt
+
+# Base de datos MySQL
+mysql-connector-python>=8.0.0
+
+# Interfaz gráfica moderna
+customtkinter>=5.0.0
+
+# Manejo de imágenes
+Pillow>=10.0.0
+
+# Calendarios en formularios
+tkcalendar>=1.6.0
+
+# Tkinter (incluido en Python estándar, pero listado para referencia)
+# tk Not needed - comes with Python
+
+# Notas de instalación:
+# - Python 3.x debe estar instalado
+# - MySQL server debe estar accesible
+# - Las librerías se instalan automáticamente al ejecutar pip install -r requirements.txt
+# - Se usan versiones mínimas (>=) para evitar problemas de compatibilidad
