@@ -1132,8 +1132,34 @@ def mostrar_solicitudes(frame, datos=None):
                   fg_color="#2e7d32", hover_color="#1b5e20",
                   text_color="white", corner_radius=8,
                   width=220, height=26).pack(anchor="w", pady=(0, 0))
-        
-def mostrar_reporte_grupal(frame, id_grupo):
+
+def exportar_reporte_grupal(headers, registros, clave_grupo):
+    from tkinter import filedialog
+    import csv
+
+    """Exporta la tabla del reporte grupal a CSV (similar a ejecutar_exportacion)"""
+    ruta_csv = filedialog.asksaveasfilename(
+        title=f"Exportar reporte del grupo {clave_grupo} a CSV",
+        defaultextension=".csv",
+        filetypes=[("CSV", "*.csv"), ("Todos los archivos", "*.*")],
+        initialfile=f"Reporte_{clave_grupo}.csv"
+    )
+    
+    if ruta_csv:
+        try:
+            with open(ruta_csv, 'w', newline='', encoding='utf-8') as archivo:
+                escritor = csv.writer(archivo)
+                escritor.writerow(headers)
+                for registro in registros:
+                    escritor.writerow(registro[1:])  # Saltar id_alumno
+            
+            messagebox.showinfo("Exportación Exitosa", f"Reporte exportado a:\n{ruta_csv}")
+        except Exception as e:
+            messagebox.showerror("Error de Exportación", f"Error al exportar: {str(e)}")
+
+def mostrar_reporte_grupal(frame, id_grupo, clave_grupo):
+    from db_conexion import ejecutar_select
+
     limpiar_frame(frame)
 
     CTkButton(frame,text="←",width=80,command=lambda: mostrar_reportes(frame)).pack(anchor="w",padx=20,pady=10)
@@ -1141,22 +1167,138 @@ def mostrar_reporte_grupal(frame, id_grupo):
     header = CTkFrame(frame,height=60,fg_color="#154b74")
     header.pack(fill="x")
 
-    CTkLabel(header,text="Reporte de Grupo", text_color="white",font=("Arial",26,"bold")).pack(pady=15)
+    CTkLabel(header,text=f"Grupo: {clave_grupo}", text_color="white",font=("Arial",26,"bold")).pack(pady=15)
 
-    menu = CTkFrame(frame,fg_color="#ffffff")
-    menu.pack(fill="x",padx=20,pady=10)
+    boton_frame = CTkFrame(frame, fg_color="transparent")
+    boton_frame.pack(fill="x", padx=20, pady=10)
+
+    boton_exportar = CTkButton(boton_frame, text="Exportar CSV", fg_color="#1f6aa5", hover_color="#155d8b", text_color="white")
+    boton_exportar.pack(anchor="w")
 
     area_contenido = CTkFrame(frame)
     area_contenido.pack(fill="both",expand=True,padx=20,pady=10)
 
+    # Obtener unidades de la materia asociada al grupo
+    resultado = ejecutar_select(
+        """SELECT m.unidades 
+           FROM grupos g
+           JOIN materias m ON g.id_materia = m.id_materia
+           WHERE g.id_grupo = %s""",
+        (id_grupo)
+    )
+    unidades = resultado[0][0] if resultado else 0
+
+    # Crear headers dinámicamente basado en unidades
+    headers = ["Alumno", "No. Control"]
+    headers.extend([f"Unidad {i+1}" for i in range(unidades)])
+    headers.append("Calificación Final")
+    
+    # Anchos predefinidos para cada columna
+    base_width = 100
+    column_widths = [150, 80] + [base_width] * unidades + [120]
+    
+    tabla = CTkFrame(area_contenido)
+    tabla.pack(fill="both", expand=True)
+
+    CTkScrollbar(tabla, orientation="horizontal").pack(side="bottom", fill="x")
+
+    encabezado = CTkFrame(tabla, fg_color="#5d91b9")
+    encabezado.pack(fill="x")
+    color_texto = color_texto_legible("#fafafa")
+    for i, h in enumerate(headers):
+        encabezado.grid_columnconfigure(i, weight=0, minsize=column_widths[i])
+        CTkLabel(encabezado, text=h, text_color=color_texto, font=("Arial", 14, "bold"), anchor="center", justify="center", width=column_widths[i]).grid(row=0, column=i, padx=10, pady=10, sticky="nsew")
+
+    cuerpo = CTkFrame(tabla, fg_color="transparent")
+    cuerpo.pack(fill="both", expand=True)
+
+    fila_seleccionada = {"idx": None}
+    row_frames = {}
+
+    def mostrar_filas(registros):
+        for widget in cuerpo.winfo_children():
+            widget.destroy()
+        row_frames.clear()
+        fila_seleccionada["idx"] = None
+        
+        # Si no hay registros, mostrar mensaje
+        if not registros:
+            CTkLabel(
+                cuerpo,
+                text="No hay registros en la base de datos",
+                font=("Arial", 15, "bold"),
+                text_color="#000000"
+            ).pack(pady=(10, 12))
+            return
+        
+        for fila_idx, fila in enumerate(registros):
+            # Frame contenedor de la fila con eventos de mouse
+            frame_fila = CTkFrame(cuerpo, fg_color="transparent", corner_radius=6)
+            frame_fila.pack(fill="x", padx=4, pady=2)
+            
+            row_frames[fila_idx] = frame_fila
+            
+            # Crear frame interno para las celdas
+            inner_frame = CTkFrame(frame_fila, fg_color="transparent")
+            inner_frame.pack(fill="x", expand=True)
+            
+            for col_idx, valor in enumerate(headers):
+                inner_frame.grid_columnconfigure(col_idx, weight=0, minsize=column_widths[col_idx])
+            
+            # Crear labels para cada celda (comenzar desde índice 1, saltando id_grupo)
+            labels = []
+            for col_idx, valor in enumerate(fila[1:]):  # ← Comienza desde índice 1
+                l = CTkLabel(inner_frame, text=str(valor), font=("Arial", 13), anchor="center", justify="center", wraplength=column_widths[col_idx]-20, text_color="#000000", width=column_widths[col_idx])
+                l.grid(row=0, column=col_idx, padx=10, pady=8, sticky="nsew")
+                labels.append(l)
+    
+    def obtener_registros(id_grupo, unidades):
+        """Obtiene datos de alumnos con sus calificaciones por unidad"""
+        # Construir dinámicamente las columnas de unidades
+        columnas_unidades = []
+        for i in range(1, unidades + 1):
+            columnas_unidades.append(
+                f"COALESCE(MAX(CASE WHEN u.numero_unidad = {i} THEN cu.calificacion END), '-') AS unidad_{i}"
+            )
+        
+        select_unidades = ", ".join(columnas_unidades) if columnas_unidades else ""
+        
+        sql = f"""
+        SELECT 
+            a.id_alumno,
+            CONCAT(a.nombre_alumno, ' ', a.apellido_paterno, ' ', a.apellido_materno) as alumno,
+            a.numero_control,
+            {select_unidades},
+            COALESCE(cf.calificacion, '-') AS calificacion_final
+        FROM Registros r
+        JOIN Alumnos a ON r.id_alumno = a.id_alumno
+        LEFT JOIN Calificaciones_unidad cu ON cu.id_registro = r.id_registro
+        LEFT JOIN Unidad u ON u.id_unidad = cu.id_unidad
+        LEFT JOIN Calificacion_final cf ON cf.id_registro = r.id_registro
+        WHERE r.id_grupo = %s
+        GROUP BY a.id_alumno
+        ORDER BY a.apellido_paterno, a.apellido_materno, a.nombre_alumno
+        """
+        
+        try:
+            registros = ejecutar_select(sql, (id_grupo,))
+            return registros if registros else []
+        except Exception as e:
+            print(f"Error en obtener_registros: {e}")
+            return []
+    
+    registros = obtener_registros(id_grupo, unidades)
+    mostrar_filas(registros)
+    boton_exportar.configure(command=lambda: exportar_reporte_grupal(headers, registros, clave_grupo))
+
+    
 
 def crear_tabla_reportes(contenedor, registros, frame_principal):
-    """Función interna para crear tabla. Recibe frame_principal por referencia.
-    Nota: El primer elemento de cada registro es id_grupo (oculto), comenzamos a mostrar desde índice 1.
-    """
-    headers = ["Grupo", "Materia", "Maestro", "Período", "Año", "Estado"]
+    #Función interna para crear tabla. Recibe frame_principal por referencia.
+    
+    headers = ["Grupo", "Materia", "Maestro","Carrera", "Período", "Año", "Estado"]
     # Anchos predefinidos para cada columna
-    column_widths = [60, 150, 270, 150, 60, 100]
+    column_widths = [60, 150, 200, 150, 150, 60, 100]
     
     tabla = CTkFrame(contenedor)
     tabla.pack(fill="both", expand=True)
@@ -1190,7 +1332,8 @@ def crear_tabla_reportes(contenedor, registros, frame_principal):
         # Ejecutar mostrar_reporte_grupal con el frame principal
         if registros and idx < len(registros):
             id_grupo = registros[idx][0]  # Primer elemento es el id_grupo
-            mostrar_reporte_grupal(frame_principal, id_grupo)
+            clave_grupo = registros[idx][1]  # Segunda columna es clave del grupo
+            mostrar_reporte_grupal(frame_principal, id_grupo, clave_grupo)
 
     def on_enter(idx):
         """Evento cuando el cursor entra en una fila"""
@@ -1271,7 +1414,7 @@ def mostrar_reportes(frame):
     header = CTkFrame(frame,height=60,fg_color="#154b74")
     header.pack(fill="x")
 
-    CTkLabel(header,text="Reportes",text_color="white",font=("Arial",26,"bold")).pack(pady=15)
+    CTkLabel(header,text="Generación de reportes",text_color="white",font=("Arial",26,"bold")).pack(pady=15)
 
     menu = CTkFrame(frame,fg_color="#ffffff")
     menu.pack(fill="x",padx=20,pady=10)
@@ -1281,17 +1424,13 @@ def mostrar_reportes(frame):
     area_contenido = CTkFrame(frame)
     area_contenido.pack(fill="both",expand=True,padx=20,pady=10)
 
-    """registros=[(1,"1J1-A", "Matemáticas", "Dr. Juan Pérez", "Enero-Junio", "2024", "Activo"),
-              (2,"1J4-B", "Física", "Dra. María López", "Agosto-Diciembre", "2024", "Inactivo"),
-              (3,"1J3-C", "Química", "Dr. Carlos Ruiz", "Enero-Junio", "2023", "Activo"),
-              (4,"2J1-D", "Biología", "Dra. Ana Gómez", "Agosto-Diciembre", "2023", "Inactivo")]"""
-
     def recargar_tabla_con_filtros():
         #Recarga la tabla según los filtros seleccionados
-        #from db_conexion import ejecutar_select
+        from db_conexion import ejecutar_select
         
         periodo = filtro_periodo.get()
         año = filtro_año.get()
+        carrera = filtro_carrera.get()
         
         # Construir consulta SQL dinámicamente
         sql = """SELECT 
@@ -1299,22 +1438,28 @@ def mostrar_reportes(frame):
             g.clave_grupo,
             m.nombre_materia,
             CONCAT(ma.nombre_maestro, ' ', ma.apellido_paterno, ' ', ma.apellido_materno) as maestro,
+            c.nombre_carrera,
             g.periodo, 
             g.years, 
             g.estado 
         FROM grupos g
         LEFT JOIN materias m ON g.id_materia = m.id_materia
         LEFT JOIN maestros ma ON g.id_maestro = ma.id_maestro
+        LEFT JOIN carreras c ON m.id_carrera = c.id_carrera
         WHERE 1=1"""
         params = []
         
-        if periodo and periodo != "Período":
+        if periodo != "Período":
             sql += " AND g.periodo=%s"
             params.append(periodo)
         
-        if año and año != "Año":
+        if año != "Año":
             sql += " AND g.years=%s"
             params.append(año)
+
+        if carrera != "Carrera":
+            sql += " AND c.nombre_carrera=%s"
+            params.append(carrera)
         
         try:
             registros = ejecutar_select(sql, tuple(params) if params else None)
@@ -1327,13 +1472,29 @@ def mostrar_reportes(frame):
         crear_tabla_reportes(area_contenido, registros, frame) 
 
     # Crear OptionMenus con comando para filtrar
+    filtro_carrera=CTkOptionMenu(menu, values=["Carrera",  
+        "Ingeniería en Sistemas Computacionales",
+        "Ingeniería Industrial",
+        "Ingeniería Electromecánica",
+        "Ingeniería Eléctrica",
+        "Ingeniería Electrónica",
+        "Ingeniería Civil",
+        "Ingeniería Química",
+        "Ingeniería Bioquímica",
+        "Ingeniería en Gestión Empresarial",
+        "Licenciatura en Administración"], 
+        corner_radius=20, 
+        command=lambda x: recargar_tabla_con_filtros())
+    filtro_carrera.set("Carrera")   
+    filtro_carrera.grid(row=1,column=0,padx=10,pady=10)
+
     filtro_periodo=CTkOptionMenu(menu, values=["Período", "Enero-Junio", "Agosto-Diciembre", "Verano"], corner_radius=20, command=lambda x: recargar_tabla_con_filtros())
     filtro_periodo.set("Período")
-    filtro_periodo.grid(row=1,column=0,padx=10,pady=10)
+    filtro_periodo.grid(row=1,column=1,padx=10,pady=10)
 
     filtro_año=CTkOptionMenu(menu, values=["Año"] + [str(a) for a in range(2015, 2026)], corner_radius=20, command=lambda x: recargar_tabla_con_filtros())
     filtro_año.set("Año")
-    filtro_año.grid(row=1,column=1,padx=10,pady=10)
+    filtro_año.grid(row=1,column=2,padx=10,pady=10)
 
     # Cargar datos iniciales
     recargar_tabla_con_filtros()
