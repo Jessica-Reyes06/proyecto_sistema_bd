@@ -43,12 +43,15 @@ def verificar_tablas():
         print("="*60)
 
         # Verificar id_registro en tabla registros
-        cursor.execute("SHOW COLUMNS FROM registros LIKE 'id_registro'")
-        if cursor.fetchone():
-            print("✅ Tabla 'registros' tiene columna 'id_registro'")
-        else:
-            print(
-                "❌ Tabla 'registros' NO tiene columna 'id_registro' (se agregará automáticamente)")
+        try:
+            cursor.execute("SHOW COLUMNS FROM registros LIKE 'id_registro'")
+            if cursor.fetchone():
+                print("✅ Tabla 'registros' tiene columna 'id_registro'")
+            else:
+                print(
+                    "❌ Tabla 'registros' NO tiene columna 'id_registro' (se agregará automáticamente)")
+        except Exception as e:
+            print(f"❌ No se pudo verificar la tabla 'registros': {e}")
 
         try:
             cursor.execute("SHOW COLUMNS FROM actividades LIKE 'id_actividad'")

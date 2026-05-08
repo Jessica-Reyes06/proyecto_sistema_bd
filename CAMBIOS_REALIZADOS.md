@@ -1,5 +1,12 @@
 # 📋 CAMBIOS REALIZADOS - Conexión a Base de Datos
 
+## 🆕 Actualización 2026-05-07
+
+- Se creó la tabla persistente `actividades` para guardar registros del módulo de actividades.
+- El formulario de actividad ahora inserta en `actividades` en lugar de reutilizar `tipos_actividades`.
+- La pantalla de gestión de actividades ahora muestra registros reales, con botones de editar y eliminar.
+- Se agregó filtro en vivo por grupo en el módulo de actividades.
+
 ## ✅ Resumen de Modificaciones
 
 **Fecha:** 2026-05-06
@@ -10,24 +17,30 @@
 ## 🔧 Archivos Modificados
 
 ### 1. **`db_conexion.py`**
+
 **Cambios:**
+
 - ✅ Se agregó llamada automática a `crear_tablas_nuevas()` al iniciar
 - ✅ Se actualizó `crear_tablas_nuevas()` para agregar columna `id_registro` a tabla `registros` si no existe
 - ✅ Manejo de errores mejorado con try-except
 
 **Por qué:**
+
 - Las tablas nuevas se crean automáticamente al iniciar la aplicación
 - La columna `id_registro` es necesaria para las operaciones UPDATE/DELETE en inscripciones
 
 ---
 
 ### 2. **`funciones_admin.py`**
+
 **Cambios:**
+
 - ✅ Se actualizó el campo ID de la tabla `registros` de `"numero_control"` a `"id_registro"`
 - ✅ Se aplicó a todas las funciones que usan el diccionario `campos_id` (2 ocurrencias)
 - ✅ Se agregaron entradas para `"materias"` y `"carreras"` en el mapa de dependencias
 
 **Por qué:**
+
 - La tabla `registros` necesita un ID único para operaciones CRUD
 - Un alumno puede tener múltiples inscripciones, por lo que `numero_control` no es único
 
@@ -36,6 +49,7 @@
 ## 📊 Estado de la Base de Datos
 
 ### Tablas Existentes (No Modificadas)
+
 - ✅ `alumnos` - Sin cambios
 - ✅ `maestros` - Sin cambios
 - ✅ `administradores` - Sin cambios
@@ -47,6 +61,7 @@
 - ✅ `registros` - **Se agregará columna `id_registro` si no existe**
 
 ### Tablas Nuevas (Se Crearán Automáticamente)
+
 - 🆕 `salones` - Gestión de salones y aulas
 - 🆕 `calificaciones_finales` - Calificaciones finales por periodo
 - 🆕 `calificaciones_actividades` - Calificaciones de actividades parciales
@@ -65,6 +80,7 @@ python verificar_bd.py
 ```
 
 Este script mostrará:
+
 - ✅ Estado de la conexión
 - ✅ Lista de tablas existentes
 - ✅ Cantidad de registros por tabla
@@ -79,8 +95,9 @@ python main_administrador.py
 ```
 
 **Al iniciar:**
+
 1. Se conectará a la base de datos automáticamente
-2. Creará las tablas faltantes (salones, calificaciones_*, horario)
+2. Creará las tablas faltantes (salones, calificaciones\_\*, horario)
 3. Agregará la columna `id_registro` a la tabla `registros` si no existe
 4. Mostrará mensajes de confirmación en consola
 
@@ -117,16 +134,19 @@ python main_administrador.py
 ## 🧪 Pruebas Sugeridas
 
 ### 1. Verificar que las tablas se crearon:
+
 ```sql
 SHOW TABLES;
 ```
 
 ### 2. Verificar la columna id_registro:
+
 ```sql
 DESCRIBE registros;
 ```
 
 ### 3. Probar CRUD en cada módulo:
+
 - **Alumnos:** Registrar → Editar → Eliminar
 - **Salones:** Registrar nuevo salón → Editar capacidad → Eliminar
 - **Calificaciones:** Registrar calificación → Ver en lista → Editar
@@ -136,12 +156,15 @@ DESCRIBE registros;
 ## 📞 Si Hay Problemas
 
 ### Error: "No se pudo crear tabla"
+
 **Solución:** Verifica que el usuario de BD tenga permisos CREATE
 
 ### Error: "Columna id_registro no existe"
+
 **Solución:** El script la agregará automáticamente, solo espera a que termine
 
 ### Error: "Foreign key constraint fails"
+
 **Solución:** Asegúrate de que las tablas referenciadas tengan datos
 
 ---
