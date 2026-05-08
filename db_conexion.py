@@ -12,6 +12,35 @@ conexion = mysql.connector.connect(
 
 print("Conectado a MySQL - Base de datos: db_escolar")
 
+
+def crear_tablas_nuevas():
+    cursor = conexion.cursor()
+
+    try:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS actividades (
+                id_actividad INT AUTO_INCREMENT PRIMARY KEY,
+                tipo_actividad VARCHAR(150) NOT NULL,
+                unidad VARCHAR(50) NOT NULL,
+                id_grupo VARCHAR(50) NOT NULL,
+                materia VARCHAR(150) NOT NULL,
+                ponderacion VARCHAR(50) NOT NULL,
+                detalles TEXT NOT NULL
+            )
+            """
+        )
+        conexion.commit()
+        print("Tabla 'actividades' verificada")
+    except Exception as e:
+        print(f"No se pudo verificar la tabla 'actividades': {e}")
+    finally:
+        cursor.close()
+
+
+crear_tablas_nuevas()
+
+
 def ejecutar_insert(sql, datos):
     cursor = conexion.cursor()
     cursor.execute(sql, datos)
@@ -56,4 +85,3 @@ def ejecutar_select_todo(tabla):
 def obtener_registro_por_id(tabla, campo_id, valor_id):
     """Obtiene un registro específico por su ID"""
     return ejecutar_select(f"SELECT * FROM {tabla} WHERE {campo_id}=%s", (valor_id,))
-
