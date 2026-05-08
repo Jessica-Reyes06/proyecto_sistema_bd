@@ -417,7 +417,7 @@ def mostrar_dashboard(frame):
         ("Carreras",             "Catálogo de carreras",          lambda: mostrar_carreras(frame),                     "#2D3250", icono_carreras),
         ("Actividades",          "Gestión de actividades",        lambda: mostrar_actividades(frame),                  "#2D3250", icono_actividades),
         ("Inscripciones",        "Registro de inscripciones",     lambda: mostrar_inscripciones(frame),                "#2D3250", icono_inscripciones),
-        ("Reportes",             "Generación de reportes",        lambda: mostrar_seccion_pendiente(frame, "Reportes"),  "#2D3250", icono_reportes),
+        ("Reportes",             "Generación de reportes",        lambda: mostrar_reportes(frame),                     "#2D3250", icono_reportes),
         ("Calificaciones",       "Gestión de calificaciones",     lambda: mostrar_calificaciones_finales(frame),       "#2D3250", icono_calificaciones),
         ("Calif. Actividades",   "Gestión de calif. parciales",   lambda: mostrar_calificaciones_actividades(frame),   "#2D3250", icono_actividades),
         ("Usuarios",             "Gestión de usuarios",           lambda: mostrar_usuarios(frame),                     "#2D3250", icono_usuarios),
@@ -443,6 +443,7 @@ def mostrar_dashboard(frame):
         lbl_sub = CTkLabel(card, text=subtitulo_c, font=("Arial", 11), text_color="#cccccc")
         lbl_sub.pack(pady=(0, 16))
         lbl_sub.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
+
 def mostrar_calendario_imagen(frame):
     limpiar_frame(frame)
 
@@ -1050,3 +1051,212 @@ def mostrar_solicitudes(frame, datos=None):
                   fg_color="#2e7d32", hover_color="#1b5e20",
                   text_color="white", corner_radius=8,
                   width=220, height=26).pack(anchor="w", pady=(0, 0))
+        
+def mostrar_reporte_grupal(frame, id_grupo):
+    limpiar_frame(frame)
+
+    CTkButton(frame,text="←",width=80,command=lambda: mostrar_reportes(frame)).pack(anchor="w",padx=20,pady=10)
+
+    header = CTkFrame(frame,height=60,fg_color="#154b74")
+    header.pack(fill="x")
+
+    CTkLabel(header,text="Reporte de Grupo", text_color="white",font=("Arial",26,"bold")).pack(pady=15)
+
+    menu = CTkFrame(frame,fg_color="#ffffff")
+    menu.pack(fill="x",padx=20,pady=10)
+
+    area_contenido = CTkFrame(frame)
+    area_contenido.pack(fill="both",expand=True,padx=20,pady=10)
+
+
+def crear_tabla_reportes(contenedor, registros, frame_principal):
+    """Función interna para crear tabla. Recibe frame_principal por referencia.
+    Nota: El primer elemento de cada registro es id_grupo (oculto), comenzamos a mostrar desde índice 1.
+    """
+    headers = ["Grupo", "Materia", "Maestro", "Período", "Año", "Estado"]
+    # Anchos predefinidos para cada columna
+    column_widths = [60, 150, 270, 150, 60, 100]
+    
+    tabla = CTkFrame(contenedor)
+    tabla.pack(fill="both", expand=True)
+
+    encabezado = CTkFrame(tabla, fg_color="#5d91b9")
+    encabezado.pack(fill="x")
+    color_texto = color_texto_legible("#fafafa")
+    for i, h in enumerate(headers):
+        encabezado.grid_columnconfigure(i, weight=0, minsize=column_widths[i])
+        CTkLabel(encabezado, text=h, text_color=color_texto, font=("Arial", 14, "bold"), anchor="center", justify="center", width=column_widths[i]).grid(row=0, column=i, padx=10, pady=10, sticky="nsew")
+
+    cuerpo = CTkFrame(tabla, fg_color="transparent")
+    cuerpo.pack(fill="both", expand=True)
+
+    fila_seleccionada = {"idx": None}
+    row_frames = {}
+
+    def seleccionar_fila(idx):
+        # Deseleccionar fila anterior si existe
+        if fila_seleccionada["idx"] is not None:
+            prev_frame = row_frames.get(fila_seleccionada["idx"])
+            if prev_frame:
+                prev_frame.configure(fg_color="transparent")
+        
+        # Seleccionar nueva fila
+        fila_seleccionada["idx"] = idx
+        nueva_frame = row_frames.get(idx)
+        if nueva_frame:
+            nueva_frame.configure(fg_color="#e0e7ff")  # Azul claro
+        
+        # Ejecutar mostrar_reporte_grupal con el frame principal
+        if registros and idx < len(registros):
+            id_grupo = registros[idx][0]  # Primer elemento es el id_grupo
+            mostrar_reporte_grupal(frame_principal, id_grupo)
+
+    def on_enter(idx):
+        """Evento cuando el cursor entra en una fila"""
+        frame = row_frames.get(idx)
+        if frame and fila_seleccionada["idx"] != idx:
+            frame.configure(fg_color="#f5f5f5")  # Gris muy claro
+    
+    def on_leave(idx):
+        """Evento cuando el cursor sale de una fila"""
+        frame = row_frames.get(idx)
+        if frame:
+            if fila_seleccionada["idx"] == idx:
+                frame.configure(fg_color="#e0e7ff")  # Mantiene el color de selección
+            else:
+                frame.configure(fg_color="transparent")  # Vuelve a transparente
+
+    def mostrar_filas():
+        for widget in cuerpo.winfo_children():
+            widget.destroy()
+        row_frames.clear()
+        fila_seleccionada["idx"] = None
+        
+        # Si no hay registros, mostrar mensaje
+        if not registros:
+            CTkLabel(
+                cuerpo,
+                text="No hay registros en la base de datos",
+                font=("Arial", 15, "bold"),
+                text_color="#000000"
+            ).pack(pady=(10, 12))
+            return
+        
+        for fila_idx, fila in enumerate(registros):
+            # Frame contenedor de la fila con eventos de mouse
+            frame_fila = CTkFrame(cuerpo, fg_color="transparent", corner_radius=6)
+            frame_fila.pack(fill="x", padx=4, pady=2)
+            
+            row_frames[fila_idx] = frame_fila
+            
+            # Crear frame interno para las celdas
+            inner_frame = CTkFrame(frame_fila, fg_color="transparent")
+            inner_frame.pack(fill="x", expand=True)
+            
+            for col_idx, valor in enumerate(headers):
+                inner_frame.grid_columnconfigure(col_idx, weight=0, minsize=column_widths[col_idx])
+            
+            # Crear labels para cada celda (comenzar desde índice 1, saltando id_grupo)
+            labels = []
+            for col_idx, valor in enumerate(fila[1:]):  # ← Comienza desde índice 1
+                l = CTkLabel(inner_frame, text=str(valor), font=("Arial", 13), anchor="center", justify="center", wraplength=column_widths[col_idx]-20, text_color="#000000", width=column_widths[col_idx])
+                l.grid(row=0, column=col_idx, padx=10, pady=8, sticky="nsew")
+                labels.append(l)
+            
+            # Vincular eventos de selección y hover a todos los elementos de la fila
+            def hacer_seleccionar(idx=fila_idx):
+                return lambda: seleccionar_fila(idx)
+            
+            frame_fila.bind("<Button-1>", lambda e, idx=fila_idx: seleccionar_fila(idx))
+            frame_fila.bind("<Enter>", lambda e, idx=fila_idx: on_enter(idx))
+            frame_fila.bind("<Leave>", lambda e, idx=fila_idx: on_leave(idx))
+            
+            inner_frame.bind("<Button-1>", lambda e, idx=fila_idx: seleccionar_fila(idx))
+            inner_frame.bind("<Enter>", lambda e, idx=fila_idx: on_enter(idx))
+            inner_frame.bind("<Leave>", lambda e, idx=fila_idx: on_leave(idx))
+            
+            for lbl in labels:
+                lbl.bind("<Button-1>", lambda e, idx=fila_idx: seleccionar_fila(idx))
+                lbl.bind("<Enter>", lambda e, idx=fila_idx: on_enter(idx))
+                lbl.bind("<Leave>", lambda e, idx=fila_idx: on_leave(idx))
+
+    mostrar_filas()
+
+def mostrar_reportes(frame):
+    limpiar_frame(frame)
+
+    CTkButton(frame,text="←",width=80,command=lambda: mostrar_dashboard(frame)).pack(anchor="w",padx=20,pady=10)
+
+    header = CTkFrame(frame,height=60,fg_color="#154b74")
+    header.pack(fill="x")
+
+    CTkLabel(header,text="Reportes",text_color="white",font=("Arial",26,"bold")).pack(pady=15)
+
+    menu = CTkFrame(frame,fg_color="#ffffff")
+    menu.pack(fill="x",padx=20,pady=10)
+
+    CTkLabel(menu,text="Filtrar por:",font=("Arial",20,"bold"),text_color="#000000").grid(row=0,column=0,padx=10,pady=10,sticky="w")
+
+    area_contenido = CTkFrame(frame)
+    area_contenido.pack(fill="both",expand=True,padx=20,pady=10)
+
+    """registros=[(1,"1J1-A", "Matemáticas", "Dr. Juan Pérez", "Enero-Junio", "2024", "Activo"),
+              (2,"1J4-B", "Física", "Dra. María López", "Agosto-Diciembre", "2024", "Inactivo"),
+              (3,"1J3-C", "Química", "Dr. Carlos Ruiz", "Enero-Junio", "2023", "Activo"),
+              (4,"2J1-D", "Biología", "Dra. Ana Gómez", "Agosto-Diciembre", "2023", "Inactivo")]"""
+
+    def recargar_tabla_con_filtros():
+        #Recarga la tabla según los filtros seleccionados
+        #from db_conexion import ejecutar_select
+        
+        periodo = filtro_periodo.get()
+        año = filtro_año.get()
+        
+        # Construir consulta SQL dinámicamente
+        sql = """SELECT 
+            g.id_grupo,
+            g.clave_grupo,
+            m.nombre_materia,
+            CONCAT(ma.nombre_maestro, ' ', ma.apellido_paterno, ' ', ma.apellido_materno) as maestro,
+            g.periodo, 
+            g.years, 
+            g.estado 
+        FROM grupos g
+        LEFT JOIN materias m ON g.id_materia = m.id_materia
+        LEFT JOIN maestros ma ON g.id_maestro = ma.id_maestro
+        WHERE 1=1"""
+        params = []
+        
+        if periodo and periodo != "Período":
+            sql += " AND g.periodo=%s"
+            params.append(periodo)
+        
+        if año and año != "Año":
+            sql += " AND g.years=%s"
+            params.append(año)
+        
+        try:
+            registros = ejecutar_select(sql, tuple(params) if params else None)
+        except Exception as e:
+            print(f"Error cargando grupos desde BD: {e}")
+            registros = []
+        
+        # Limpiar área de contenido y recrear tabla
+        limpiar_frame(area_contenido)
+        crear_tabla_reportes(area_contenido, registros, frame) 
+
+    # Crear OptionMenus con comando para filtrar
+    filtro_periodo=CTkOptionMenu(menu, values=["Período", "Enero-Junio", "Agosto-Diciembre", "Verano"], corner_radius=20, command=lambda x: recargar_tabla_con_filtros())
+    filtro_periodo.set("Período")
+    filtro_periodo.grid(row=1,column=0,padx=10,pady=10)
+
+    filtro_año=CTkOptionMenu(menu, values=["Año"] + [str(a) for a in range(2015, 2026)], corner_radius=20, command=lambda x: recargar_tabla_con_filtros())
+    filtro_año.set("Año")
+    filtro_año.grid(row=1,column=1,padx=10,pady=10)
+
+    # Cargar datos iniciales
+    recargar_tabla_con_filtros()
+    
+
+
+

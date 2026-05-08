@@ -12,7 +12,6 @@ conexion = mysql.connector.connect(
 
 print("Conectado a MySQL - Base de datos: db_escolar")
 
-
 def ejecutar_insert(sql, datos):
     cursor = conexion.cursor()
     cursor.execute(sql, datos)
@@ -57,3 +56,4 @@ def ejecutar_select_todo(tabla):
 def obtener_registro_por_id(tabla, campo_id, valor_id):
     """Obtiene un registro específico por su ID"""
     return ejecutar_select(f"SELECT * FROM {tabla} WHERE {campo_id}=%s", (valor_id,))
+
