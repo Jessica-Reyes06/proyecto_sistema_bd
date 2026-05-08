@@ -6,6 +6,7 @@ Ejecuta este script para verificar que todo esté correcto antes de iniciar la a
 
 from db_conexion import conexion, ejecutar_select
 
+
 def verificar_tablas():
     """Verifica qué tablas existen en la base de datos"""
     cursor = conexion.cursor()
@@ -22,7 +23,7 @@ def verificar_tablas():
         tablas_esperadas = [
             "alumnos", "maestros", "administradores", "usuarios",
             "carreras", "materias", "grupos", "registros",
-            "tipos_actividades", "salones",
+            "tipos_actividades", "actividades", "salones",
             "calificaciones_finales", "calificaciones_actividades", "horario"
         ]
 
@@ -42,11 +43,24 @@ def verificar_tablas():
         print("="*60)
 
         # Verificar id_registro en tabla registros
-        cursor.execute("SHOW COLUMNS FROM registros LIKE 'id_registro'")
-        if cursor.fetchone():
-            print("✅ Tabla 'registros' tiene columna 'id_registro'")
-        else:
-            print("❌ Tabla 'registros' NO tiene columna 'id_registro' (se agregará automáticamente)")
+        try:
+            cursor.execute("SHOW COLUMNS FROM registros LIKE 'id_registro'")
+            if cursor.fetchone():
+                print("✅ Tabla 'registros' tiene columna 'id_registro'")
+            else:
+                print(
+                    "❌ Tabla 'registros' NO tiene columna 'id_registro' (se agregará automáticamente)")
+        except Exception as e:
+            print(f"❌ No se pudo verificar la tabla 'registros': {e}")
+
+        try:
+            cursor.execute("SHOW COLUMNS FROM actividades LIKE 'id_actividad'")
+            if cursor.fetchone():
+                print("✅ Tabla 'actividades' tiene columna 'id_actividad'")
+            else:
+                print("❌ Tabla 'actividades' NO tiene columna 'id_actividad'")
+        except Exception as e:
+            print(f"❌ No se pudo verificar la tabla 'actividades': {e}")
 
         print("="*60 + "\n")
 
