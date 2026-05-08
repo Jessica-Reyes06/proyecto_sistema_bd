@@ -161,6 +161,10 @@ CARRERAS_ITVER = [
 SEMESTRES_ITVER = [str(i) for i in range(1,13)]
 ESTADOS_ALUMNO = ["Activo","Baja temporal","Baja definitiva","Egresado", "Reingreso" ]
 
+def formatear_etiqueta_campo(texto):
+    texto = texto.replace("_", " ").strip()
+    return texto[:1].upper() + texto[1:] if texto else texto
+
 def generar_numero_control_unico():
     year = datetime.date.today().year % 100
     prefijo = f"A{year:02d}"
@@ -177,10 +181,44 @@ def generar_numero_control_unico():
         if not existe:
             return numero
 
+
+def generar_matricula_maestro_unica():
+    year = datetime.date.today().year % 100
+    prefijo = f"M{year:02d}"
+
+    while True:
+        sufijo = "".join(str(random.randint(0,9)) for _ in range(5))
+        matricula = prefijo + sufijo
+
+        existe = ejecutar_select(
+            "SELECT matricula FROM Maestro WHERE matricula=%s",
+            (matricula,)
+        )
+
+        if not existe:
+            return matricula
+
+
+def generar_matricula_administrador_unica():
+    year = datetime.date.today().year % 100
+    prefijo = f"ADM{year:02d}"
+
+    while True:
+        sufijo = "".join(str(random.randint(0,9)) for _ in range(5))
+        matricula = prefijo + sufijo
+
+        existe = ejecutar_select(
+            "SELECT matricula FROM administradores WHERE matricula=%s",
+            (matricula,)
+        )
+
+        if not existe:
+            return matricula
+
 # CAMPOS
 
 def crear_campo(frame,fila,texto):
-    label = customtkinter.CTkLabel(frame,text=texto,font=("Arial",14))
+    label = customtkinter.CTkLabel(frame,text=formatear_etiqueta_campo(texto),font=("Arial",14))
     label.grid(row=fila,column=0,padx=10,pady=5,sticky="w")
 
     entry = customtkinter.CTkEntry(frame,width=260)
@@ -191,7 +229,7 @@ def crear_campo(frame,fila,texto):
 
 def crear_combo(frame,fila,texto,opciones):
 
-    label = customtkinter.CTkLabel(frame,text=texto,font=("Arial",14))
+    label = customtkinter.CTkLabel(frame,text=formatear_etiqueta_campo(texto),font=("Arial",14))
     label.grid(row=fila,column=0,padx=10,pady=5,sticky="w")
 
     combo = customtkinter.CTkComboBox(
@@ -225,12 +263,17 @@ def crear_formulario_generico(frame_contenido,titulo,campos,sql_insert,volver_a_
 
     entradas = {}
     for i, campo in enumerate(campos):
+        campo_normalizado = campo.strip().lower()
         # Si el campo es 'estatus' y es para maestro, usar combo
-        if campo == "estatus" and "maestro" in titulo.lower():
+        if campo_normalizado == "estatus" and "maestro" in titulo.lower():
             opciones_estatus = ["Activo", "Inactivo", "Licencia", "Jubilado"]
             entradas[campo] = crear_combo(cuerpo, i, campo, opciones_estatus)
 
-        elif campo == "estatus" and "grupo" in titulo.lower():
+        elif campo_normalizado in ("tipo", "tipo de carrera") and "carrera" in titulo.lower():
+            opciones_tipo_carrera = ["Ingeniería", "Licenciatura"]
+            entradas[campo] = crear_combo(cuerpo, i, "Tipo de carrera", opciones_tipo_carrera)
+
+        elif campo_normalizado == "estatus" and "grupo" in titulo.lower():
             opciones_estatus = ["Activo","Cerrado","Cancelado"]
             entradas[campo] = crear_combo(cuerpo, i, campo, opciones_estatus)
 
@@ -287,28 +330,45 @@ def mostrar_form_registro_alumno(frame_contenido,volver_a_lista=None):
 
     entradas = {}
 
-    entradas["Nombre"] = crear_campo(cuerpo,0,"Nombre")
-    entradas["ApellidoPaterno"] = crear_campo(cuerpo,1,"Apellido paterno")
-    entradas["ApellidoMaterno"] = crear_campo(cuerpo,2,"Apellido materno")
+    entradas["numero_control"] = crear_campo(cuerpo,0,"Número de control")
+    entradas["Nombre"] = crear_campo(cuerpo,1,"Nombre")
+    entradas["ApellidoPaterno"] = crear_campo(cuerpo,2,"Apellido paterno")
+    entradas["ApellidoMaterno"] = crear_campo(cuerpo,3,"Apellido materno")
+    entradas["correo_alumno"] = crear_campo(cuerpo,4,"Correo")
+    entradas["Carrera"] = crear_combo(cuerpo,5,"Carrera",CARRERAS_ITVER)
+    entradas["Semestre"] = crear_combo(cuerpo,6,"Semestre",SEMESTRES_ITVER)
+    entradas["Estado"] = crear_combo(cuerpo,7,"Estado",ESTADOS_ALUMNO)
 
-    entradas["Carrera"] = crear_combo(cuerpo,3,"Carrera",CARRERAS_ITVER)
-    entradas["Semestre"] = crear_combo(cuerpo,4,"Semestre",SEMESTRES_ITVER)
-    entradas["Estado"] = crear_combo(cuerpo,5,"Estado",ESTADOS_ALUMNO)
+    entradas["numero_control"].configure(state="readonly")
+    entradas["correo_alumno"].configure(state="readonly")
 
     estado_label = customtkinter.CTkLabel(frame_contenido,text="")
     estado_label.pack()
 
     valores_generados = {"numero":"","correo":""}
 
+    def escribir_en_entrada(entrada, valor):
+        entrada.configure(state="normal")
+        entrada.delete(0, "end")
+        entrada.insert(0, valor)
+        entrada.configure(state="readonly")
+
     def generar():
 
-        numero = generar_numero_control_unico()
-        correo = f"{numero}@tecnm.mx"
+        try:
+            numero = generar_numero_control_unico()
+        except Exception:
+            numero = f"L{datetime.date.today().year % 100:02d}{random.randint(0, 99999):05d}"
+
+        correo = f"{numero}@veracruz.tecnm.mx"
 
         valores_generados["numero"]=numero
         valores_generados["correo"]=correo
 
-        estado_label.configure(text=f"Número generado: {numero}",text_color="green")
+        escribir_en_entrada(entradas["numero_control"], numero)
+        escribir_en_entrada(entradas["correo_alumno"], correo)
+
+    generar()
 
     def guardar():
 
@@ -328,7 +388,7 @@ def mostrar_form_registro_alumno(frame_contenido,volver_a_lista=None):
         )
 
         sql = """
-        INSERT INTO alumnos
+        INSERT INTO Alumno
         (numero_control,nombre_alumno,apellido_paterno,apellido_materno,
         correo_alumno,carrera,semestre,estatus_alumno)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
@@ -341,58 +401,184 @@ def mostrar_form_registro_alumno(frame_contenido,volver_a_lista=None):
     botones = customtkinter.CTkFrame(frame_contenido,fg_color="transparent")
     botones.pack(pady=20)
 
-    customtkinter.CTkButton(botones,text="Generar número",command=generar).grid(row=0,column=0,padx=10)
-    customtkinter.CTkButton(botones,text="Guardar",command=guardar).grid(row=0,column=1,padx=10)
-    customtkinter.CTkButton(botones,text="Cancelar",command=lambda: volver_a_lista() if volver_a_lista else None).grid(row=0,column=2,padx=10)
+    customtkinter.CTkButton(botones,text="Guardar",command=guardar).grid(row=0,column=0,padx=10)
+    customtkinter.CTkButton(botones,text="Cancelar",command=lambda: volver_a_lista() if volver_a_lista else None).grid(row=0,column=1,padx=10)
 
 # MAESTROS
-
 def mostrar_form_registro_maestro(frame_contenido,volver_a_lista=None):
+    limpiar_frame(frame_contenido)
 
-    campos = [
-        "matricula_maestro",
-        "nombre_maestro",
-        "apellido_paterno",
-        "apellido_materno",
-        "correo",
-        "estatus",
-        "grado_estudios",
-        "perfil_docente",
-        "carga_academica",
-        "tipo_contrato",
-        "cedula_profesional"
-    ]
+    titulo = customtkinter.CTkLabel(frame_contenido,text="Registrar maestro",font=("Arial",22,"bold"))
+    titulo.pack(pady=(10,20))
 
-    sql = """
-    INSERT INTO maestros
-    (matricula_maestro,nombre_maestro,apellido_paterno,apellido_materno,
-    correo,estatus,grado_estudios,perfil_docente,carga_academica,tipo_contrato,cedula_profesional)
-    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    """
+    cuerpo = customtkinter.CTkFrame(frame_contenido)
+    cuerpo.pack(padx=20,pady=10,fill="x")
 
-    crear_formulario_generico(frame_contenido,"Registrar maestro",campos,sql,volver_a_lista)
+    entradas = {}
+
+    entradas["matricula_maestro"] = crear_campo(cuerpo,0,"Matricula")
+    entradas["nombre_maestro"] = crear_campo(cuerpo,1,"Nombre")
+    entradas["apellido_paterno"] = crear_campo(cuerpo,2,"Apellido Paterno")
+    entradas["apellido_materno"] = crear_campo(cuerpo,3,"Apellido Materno")
+    entradas["correo"] = crear_campo(cuerpo,4,"Correo")
+    entradas["estatus"] = crear_combo(cuerpo,5,"Estatus",["Activo", "Inactivo", "Licencia", "Jubilado"])
+    entradas["grado_estudios"] = crear_campo(cuerpo,6,"Grado de estudios")
+    entradas["perfil_docente"] = crear_campo(cuerpo,7,"Perfil del docente")
+    entradas["carga_academica"] = crear_campo(cuerpo,8,"Carga académica")
+    entradas["tipo_contrato"] = crear_combo(
+        cuerpo,
+        9,
+        "Tipo de contrato",
+        ["Nombramiento de base", "Nombramiento por interinato", "Por jornada laboral"]
+    )
+    entradas["cedula_profesional"] = crear_campo(cuerpo,10,"Cédula profesional")
+
+    entradas["matricula_maestro"].configure(state="readonly")
+    entradas["correo"].configure(state="readonly")
+
+    estado_label = customtkinter.CTkLabel(frame_contenido,text="")
+    estado_label.pack()
+
+    valores_generados = {"matricula":"", "correo":""}
+
+    def escribir_en_entrada(entrada, valor):
+        entrada.configure(state="normal")
+        entrada.delete(0, "end")
+        entrada.insert(0, valor)
+        entrada.configure(state="readonly")
+
+    def generar_datos_maestro():
+        matricula = generar_matricula_maestro_unica()
+        correo = f"{matricula}@veracruz.tecnm.mx"
+
+        valores_generados["matricula"] = matricula
+        valores_generados["correo"] = correo
+
+        escribir_en_entrada(entradas["matricula_maestro"], matricula)
+        escribir_en_entrada(entradas["correo"], correo)
+
+    generar_datos_maestro()
+
+    def guardar():
+
+        valores = (
+            valores_generados["matricula"],
+            entradas["nombre_maestro"].get(),
+            entradas["apellido_paterno"].get(),
+            entradas["apellido_materno"].get(),
+            valores_generados["correo"],
+            entradas["estatus"].get(),
+            entradas["grado_estudios"].get(),
+            entradas["perfil_docente"].get(),
+            entradas["carga_academica"].get(),
+            entradas["tipo_contrato"].get(),
+            entradas["cedula_profesional"].get()
+        )
+
+        if "" in valores:
+            estado_label.configure(text="Todos los campos deben llenarse",text_color="red")
+            return
+
+        sql = """
+        INSERT INTO Maestro
+        (matricula,nombre_maestro,apellido_paterno,apellido_materno,
+        correo,estatus,grado_estudios,perfil_docente,carga_academica,tipo_contrato,cedula_profesional)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """
+
+        try:
+            ejecutar_insert(sql,valores)
+            estado_label.configure(text="Registro guardado correctamente",text_color="green")
+
+            if volver_a_lista:
+                volver_a_lista()
+
+        except Exception as e:
+            estado_label.configure(text=str(e),text_color="red")
+
+    botones = customtkinter.CTkFrame(frame_contenido,fg_color="transparent")
+    botones.pack(pady=20)
+
+    customtkinter.CTkButton(botones,text="Guardar",command=guardar).grid(row=0,column=0,padx=10)
+    customtkinter.CTkButton(botones,text="Cancelar",command=lambda: volver_a_lista() if volver_a_lista else None).grid(row=0,column=1,padx=10)
 
 
 # ADMINISTRADORES
 def mostrar_form_registro_administrador(frame_contenido, volver_a_lista=None):
+    limpiar_frame(frame_contenido)
 
-    # id_administrador se omite por ser AUTO_INCREMENT (AI)
-    campos = [
-        "matricula",
-        "nombre",
-        "apellido_paterno",
-        "apellido_materno",
-        "area",
-        "id_usuario"
-    ]
+    titulo = customtkinter.CTkLabel(frame_contenido, text="Registrar administrador", font=("Arial", 22, "bold"))
+    titulo.pack(pady=(10, 20))
 
-    sql = """
-    INSERT INTO administradores
-    (matricula,nombre,apellido_paterno,apellido_materno,area,id_usuario)
-    VALUES (%s,%s,%s,%s,%s,%s)
-    """
+    cuerpo = customtkinter.CTkFrame(frame_contenido)
+    cuerpo.pack(padx=20, pady=10, fill="x")
 
-    crear_formulario_generico(frame_contenido, "Registrar administrador", campos, sql, volver_a_lista)
+    entradas = {}
+
+    entradas["matricula"] = crear_campo(cuerpo, 0, "Matrícula")
+    entradas["nombre"] = crear_campo(cuerpo, 1, "Nombre")
+    entradas["apellido_paterno"] = crear_campo(cuerpo, 2, "Apellido paterno")
+    entradas["apellido_materno"] = crear_campo(cuerpo, 3, "Apellido materno")
+
+    entradas["matricula"].configure(state="readonly")
+
+    estado_label = customtkinter.CTkLabel(frame_contenido, text="")
+    estado_label.pack()
+
+    valores_generados = {"matricula": ""}
+
+    def escribir_en_entrada(entrada, valor):
+        entrada.configure(state="normal")
+        entrada.delete(0, "end")
+        entrada.insert(0, valor)
+        entrada.configure(state="readonly")
+
+    def generar_matricula():
+        try:
+            matricula = generar_matricula_administrador_unica()
+        except Exception as e:
+            matricula = f"ADM{datetime.date.today().year % 100:02d}{random.randint(0, 99999):05d}"
+            print(f"Error generando matrícula de administrador: {e}")
+
+        valores_generados["matricula"] = matricula
+        escribir_en_entrada(entradas["matricula"], matricula)
+
+    generar_matricula()
+
+    def guardar():
+
+        valores = (
+            valores_generados["matricula"],
+            entradas["nombre"].get(),
+            entradas["apellido_paterno"].get(),
+            entradas["apellido_materno"].get(),
+        )
+
+        if "" in valores:
+            estado_label.configure(text="Todos los campos deben llenarse", text_color="red")
+            return
+
+        sql = """
+        INSERT INTO administradores
+        (matricula,nombre,apellido_paterno,apellido_materno)
+        VALUES (%s,%s,%s,%s)
+        """
+
+        try:
+            ejecutar_insert(sql, valores)
+            estado_label.configure(text="Registro guardado correctamente", text_color="green")
+
+            if volver_a_lista:
+                volver_a_lista()
+
+        except Exception as e:
+            estado_label.configure(text=str(e), text_color="red")
+
+    botones = customtkinter.CTkFrame(frame_contenido, fg_color="transparent")
+    botones.pack(pady=20)
+
+    customtkinter.CTkButton(botones, text="Guardar", command=guardar).grid(row=0, column=0, padx=10)
+    customtkinter.CTkButton(botones, text="Cancelar", command=lambda: volver_a_lista() if volver_a_lista else None).grid(row=0, column=1, padx=10)
 
 
 # CARRERAS
@@ -400,17 +586,16 @@ def mostrar_form_registro_carrera(frame_contenido, volver_a_lista=None):
 
     # id_carrera se omite por ser AUTO_INCREMENT (AI)
     campos = [
-        "nombre_carrera",
-        "tipo_carrera",
-        "horas_semana",
-        "creditos",
-        "id_carrera"
+        "Nombre de la Carrera",
+        "Tipo de carrera",
+        "Semestres",
+        "Clave",
     ]
 
     sql = """
     INSERT INTO carreras
-    (nombre_carrera,tipo_carrera,horas_semana,creditos,id_carrera)
-    VALUES (%s,%s,%s,%s,%s)
+    (nombre_carrera,tipo_carrera,semestres,clave)
+    VALUES (%s,%s,%s,%s)
     """
 
     crear_formulario_generico(frame_contenido, "Registrar carrera", campos, sql, volver_a_lista)
@@ -430,12 +615,132 @@ def mostrar_form_registro_tipo_actividad(frame_contenido, volver_a_lista=None):
     """
 
     crear_formulario_generico(frame_contenido, "Registrar tipo de actividad", campos, sql, volver_a_lista)
+#
+#  ACTIVIDADES
+def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
+
+    limpiar_frame(frame_contenido)
+
+    titulo = customtkinter.CTkLabel(
+        frame_contenido,
+        text="Registrar Actividad",
+        font=("Arial", 22, "bold")
+    )
+    titulo.pack(pady=(10, 20))
+
+    cuerpo = customtkinter.CTkFrame(frame_contenido)
+    cuerpo.pack(padx=20, pady=10, fill="x")
+
+    # Obtener materias
+    materias = obtener_lista("materias", "nombre_materia")
+    combo_materia = crear_combo(cuerpo, 0, "Materia", materias)
+
+    # Grupo será dinámico basado en materia
+    combo_grupo = crear_combo(cuerpo, 1, "Grupo", ["Selecciona materia"])
+
+    # Unidad será readonly (se calcula de la materia)
+    label_unidad = customtkinter.CTkLabel(cuerpo, text=formatear_etiqueta_campo("Unidad"), font=("Arial", 14))
+    label_unidad.grid(row=2, column=0, padx=10, pady=5, sticky="w")
+    unidad_field = customtkinter.CTkEntry(cuerpo, width=260)
+    unidad_field.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+    unidad_field.configure(state="readonly")
+
+    # Tipo de actividad - obtener de tabla Tipos_actividades
+    tipos_actividades = obtener_lista("Tipos_actividades", "nombre")
+    combo_tipo_actividad = crear_combo(cuerpo, 3, "Tipo de actividad", tipos_actividades)
+
+    # Ponderación
+    ponderacion_field = crear_campo(cuerpo, 4, "Ponderación")
+
+    # Detalles
+    detalles_field = crear_campo(cuerpo, 5, "Detalles")
+
+    estado_label = customtkinter.CTkLabel(frame_contenido, text="")
+    estado_label.pack()
+
+    def actualizar_grupo_y_unidad(materia_nombre):
+        # Obtener grupos de la materia seleccionada
+        try:
+            grupos_result = ejecutar_select(
+                "SELECT id_grupo FROM grupos WHERE id_materia = (SELECT id_materia FROM materias WHERE nombre_materia = %s)",
+                (materia_nombre,)
+            )
+            grupos = [str(g[0]) for g in grupos_result] if grupos_result else ["No hay grupos"]
+            combo_grupo.configure(values=grupos)
+            combo_grupo.set(grupos[0])
+        except Exception as e:
+            print(f"Error obteniendo grupos: {e}")
+            combo_grupo.configure(values=["Error"])
+            combo_grupo.set("Error")
+
+        # Obtener unidades de la materia
+        try:
+            unidades_result = ejecutar_select(
+                "SELECT creditos FROM materias WHERE nombre_materia = %s",
+                (materia_nombre,)
+            )
+            unidades = str(unidades_result[0][0]) if unidades_result else "0"
+            unidad_field.configure(state="normal")
+            unidad_field.delete(0, "end")
+            unidad_field.insert(0, unidades)
+            unidad_field.configure(state="readonly")
+        except Exception as e:
+            print(f"Error obteniendo unidades: {e}")
+            unidad_field.configure(state="normal")
+            unidad_field.delete(0, "end")
+            unidad_field.insert(0, "Error")
+            unidad_field.configure(state="readonly")
+
+    # Actualizar grupo y unidad cuando cambia la materia
+    def on_materia_change(event=None):
+        materia = combo_materia.get()
+        actualizar_grupo_y_unidad(materia)
+
+    combo_materia.bind("<<ComboboxChanged>>", on_materia_change)
+
+    # Inicializar con la primera materia
+    if materias and materias[0] != "No hay datos":
+        actualizar_grupo_y_unidad(materias[0])
+
+    def guardar():
+        valores = (
+            combo_materia.get(),
+            combo_grupo.get(),
+            unidad_field.get(),
+            combo_tipo_actividad.get(),
+            ponderacion_field.get(),
+            detalles_field.get()
+        )
+
+        if "" in valores or "No hay" in str(valores) or "Error" in str(valores):
+            estado_label.configure(text="Todos los campos deben llenarse correctamente", text_color="red")
+            return
+
+        sql = """
+        INSERT INTO tipos_actividades
+        (id_grupo, id_tipo, unidades, ponderacion, detalles)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+
+        try:
+            ejecutar_insert(sql, valores[1:6])
+            estado_label.configure(text="Actividad registrada correctamente", text_color="green")
+            if volver_a_lista:
+                volver_a_lista()
+        except Exception as e:
+            estado_label.configure(text=str(e), text_color="red")
+
+    botones = customtkinter.CTkFrame(frame_contenido, fg_color="transparent")
+    botones.pack(pady=20)
+
+    customtkinter.CTkButton(botones, text="Guardar", command=guardar).grid(row=0, column=0, padx=10)
+    customtkinter.CTkButton(botones, text="Cancelar", command=lambda: volver_a_lista() if volver_a_lista else None).grid(row=0, column=1, padx=10)
 
 # MATERIAS
 
 def mostrar_form_registro_materia(frame_contenido,volver_a_lista=None):
 
-    campos = ["id_materia","nombre_materia","horas_semana","creditos","tipo"]
+    campos = ["Clave","Materia","Carrera","Horas a la semana","Unidades"]
 
     sql = """
     INSERT INTO materias
@@ -461,20 +766,33 @@ def mostrar_form_registro_grupo(frame_contenido,volver_a_lista=None):
     cuerpo = customtkinter.CTkFrame(frame_contenido)
     cuerpo.pack(padx=20,pady=10,fill="x")
 
-    maestros = obtener_lista("maestros","matricula_maestro")
-    materias = obtener_lista("materias","id_materia")
+    maestros = obtener_lista("maestros","nombre_maestro")
+    materias = obtener_lista("materias","nombre_materia")
 
-    combo_maestro = crear_combo(cuerpo,0,"Maestro",maestros)
-    combo_materia = crear_combo(cuerpo,1,"Materia",materias)
+    combo_maestro = crear_combo(cuerpo, 0, "Maestro", maestros)
+    combo_materia = crear_combo(cuerpo, 1, "Materia", materias)
 
-    id_grupo = crear_campo(cuerpo,2,"ID Grupo")
-    cupo = crear_campo(cuerpo,3,"Cupo máximo")
+    id_grupo = crear_campo(cuerpo, 2, "Grupo")
+    cupo = crear_campo(cuerpo, 3, "Cupo máximo")
+
+    periodos = ["Enero-Junio", "Agosto-Diciembre", "Verano"]
+    entrada_periodo = crear_combo(cuerpo, 4, "Periodo", periodos)
+
+    # Año: lista desplegable pequeña desde año actual hasta 1990
+    label_anio = customtkinter.CTkLabel(cuerpo, text=formatear_etiqueta_campo("Año"), font=("Arial",14))
+    label_anio.grid(row=5, column=0, padx=10, pady=5, sticky="w")
+    anos = [str(y) for y in range(datetime.date.today().year, 1989, -1)]
+    entrada_anio = customtkinter.CTkComboBox(cuerpo, values=anos, width=120, state="readonly")
+    entrada_anio.set(anos[0])
+    entrada_anio.grid(row=5, column=1, padx=10, pady=5, sticky="w")
+    entrada_inscritos = crear_campo(cuerpo, 6, "Inscritos")
+    entrada_horario = crear_campo(cuerpo, 7, "Horario")
 
     combo_estado = crear_combo(
         cuerpo,
-        4,
+        8,
         "Estado",
-        ["Activo","Cerrado","Cancelado"]
+        ["Activo", "Cerrado", "Cancelado"]
     )
 
     estado_label = customtkinter.CTkLabel(frame_contenido,text="")
@@ -511,13 +829,17 @@ def mostrar_form_registro_grupo(frame_contenido,volver_a_lista=None):
             maestro,
             combo_materia.get(),
             cupo.get(),
+            entrada_periodo.get(),
+            entrada_anio.get(),
+            entrada_inscritos.get(),
+            entrada_horario.get(),
             combo_estado.get()
         )
 
         sql = """
         INSERT INTO grupos
-        (id_grupo,matricula_maestro,id_materia,cupo_maximo,estado)
-        VALUES (%s,%s,%s,%s,%s)
+        (id_grupo,matricula_maestro,id_materia,cupo_maximo,periodo,anio,inscritos,horario,estado)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
         """
 
         try:
@@ -662,18 +984,6 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
     customtkinter.CTkButton(botones,text="Cancelar",command=lambda: volver_a_lista() if volver_a_lista else None).grid(row=0,column=1,padx=10)
 
 # USUARIOS
-
-def mostrar_form_registro_usuario(frame_contenido,volver_a_lista=None):
-
-    campos = ["usuario","contrasena","rol"]
-
-    sql = """
-    INSERT INTO usuarios
-    (usuario,contrasena,rol)
-    VALUES (%s,%s,%s)
-    """
-
-    crear_formulario_generico(frame_contenido,"Registrar usuario",campos,sql,volver_a_lista)
 def importar_csv(tabla, ruta_csv):
 
         with open(ruta_csv, newline="", encoding="utf-8") as archivo:

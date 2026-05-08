@@ -240,8 +240,8 @@ def iniciar_admin():
 
     frame_cerrar.bind("<Button-1>", lambda event: ventana_principal.destroy())
 
-    # Temporal: abrir la vista de Solicitudes al iniciar para depurar el espaciado
-    mostrar_solicitudes(main_frame)
+    # Mostrar Inicio por defecto
+    mostrar_dashboard(main_frame)
 
     ventana_principal.mainloop()
 

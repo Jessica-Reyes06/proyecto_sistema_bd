@@ -20,22 +20,74 @@ def color_texto_legible(color_hex):
     luminosidad = (0.299 * rojo) + (0.587 * verde) + (0.114 * azul)
     return "black" if luminosidad > 160 else "white"
 
-def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0e0e0", actualizar_callback=None, eliminar_callback=None):
-
+def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0e0e0", actualizar_callback=None, eliminar_callback=None, header_text_color=None):
+    """
+    Crea tabla editable con:
+    - Ancho máximo de celdas (180px)
+    - Texto envuelto verticalmente
+    - Scroll horizontal para tablas anchas
+    """
     tabla = CTkFrame(parent)
     tabla.pack(fill="both", expand=True)
 
+    # ENCABEZADO FIJO
     encabezado = CTkFrame(tabla, fg_color=color_tabla)
     encabezado.pack(fill="x")
-    color_texto = color_texto_legible(color_tabla)
+    color_texto = header_text_color or color_texto_legible(color_tabla)
+    
+    # Ancho fijo para columnas
+    ANCHO_CELDA = 180
+    
     for i, h in enumerate(headers):
-        encabezado.grid_columnconfigure(i, weight=1)
-        CTkLabel(encabezado, text=h, text_color=color_texto, font=("Arial", 14, "bold"), anchor="w", justify="left").grid(row=0, column=i, padx=10, pady=10, sticky="w")
-    encabezado.grid_columnconfigure(len(headers), weight=1)
-    encabezado.grid_columnconfigure(len(headers) + 1, weight=1)
+        encabezado.grid_columnconfigure(i, minsize=ANCHO_CELDA)
+        CTkLabel(
+            encabezado, 
+            text=h, 
+            text_color=color_texto, 
+            font=("Arial", 14, "bold"), 
+            anchor="w", 
+            justify="left",
+            wraplength=ANCHO_CELDA - 20
+        ).grid(row=0, column=i, padx=10, pady=10, sticky="ew")
+    
+    # Columnas para botones
+    encabezado.grid_columnconfigure(len(headers), minsize=100)
+    if eliminar_callback:
+        encabezado.grid_columnconfigure(len(headers) + 1, minsize=100)
 
-    cuerpo = CTkFrame(tabla)
-    cuerpo.pack(fill="both", expand=True)
+    # CONTENEDOR CON SCROLL (Canvas para scroll horizontal)
+    from tkinter import Canvas, Scrollbar
+    
+    canvas_frame = CTkFrame(tabla)
+    canvas_frame.pack(fill="both", expand=True)
+    
+    canvas = Canvas(canvas_frame, bg="#ffffff", highlightthickness=0)
+    scrollbar_h = Scrollbar(canvas_frame, orient="horizontal", command=canvas.xview)
+    scrollbar_v = Scrollbar(canvas_frame, orient="vertical")
+    
+    canvas.config(xscrollcommand=scrollbar_h.set, yscrollcommand=scrollbar_v.set)
+    
+    # Frame interno para el contenido
+    cuerpo = CTkFrame(canvas, fg_color="#ffffff")
+    canvas_window = canvas.create_window((0, 0), window=cuerpo, anchor="nw")
+    
+    # Posicionar scrollbars y canvas
+    canvas.grid(row=0, column=0, sticky="nsew")
+    scrollbar_h.grid(row=1, column=0, sticky="ew")
+    scrollbar_v.grid(row=0, column=1, sticky="ns")
+    
+    canvas_frame.grid_rowconfigure(0, weight=1)
+    canvas_frame.grid_columnconfigure(0, weight=1)
+    
+    def on_frame_configure(event=None):
+        canvas.configure(scrollregion=canvas.bbox("all"))
+        # Ajustar ancho del canvas window al ancho del canvas
+        canvas_width = canvas.winfo_width()
+        if canvas_width > 1:
+            canvas.itemconfig(canvas_window, width=canvas_width)
+    
+    cuerpo.bind("<Configure>", on_frame_configure)
+    canvas.bind("<Configure>", lambda e: cuerpo.event_generate("<Configure>"))
 
     fila_editando = {"idx": None}
     entries = {}
@@ -47,7 +99,7 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
         for widget in cuerpo.grid_slaves(row=idx):
             widget.destroy()
         for col_idx, valor in enumerate(fila):
-            e = CTkEntry(cuerpo)
+            e = CTkEntry(cuerpo, width=ANCHO_CELDA - 20)
             e.insert(0, str(valor))
             e.grid(row=idx, column=col_idx, padx=10, pady=4, sticky="ew")
             entries[col_idx] = e
@@ -57,7 +109,7 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
                 actualizar_callback(tabla_sql, fila[0], nuevos)
             fila_editando["idx"] = None
             mostrar_filas()
-        CTkButton(cuerpo, text="Confirmar", fg_color="#007b3a", command=confirmar).grid(row=idx, column=len(headers), padx=10, pady=4)
+        CTkButton(cuerpo, text="Confirmar", fg_color="#007b3a", command=confirmar, width=80).grid(row=idx, column=len(headers), padx=10, pady=4)
 
     def on_row_enter(event, idx):
         btn = btn_editar_ref.get(idx)
@@ -80,29 +132,44 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
             widget.destroy()
         btn_editar_ref.clear()
         btn_eliminar_ref.clear()
+        
+        for i in range(len(headers)):
+            cuerpo.grid_columnconfigure(i, minsize=ANCHO_CELDA)
+        
         for fila_idx, fila in enumerate(registros):
             row_widgets = []
             for col_idx, valor in enumerate(fila):
-                l = CTkLabel(cuerpo, text=str(valor), font=("Arial", 13), anchor="w", justify="left", wraplength=200, text_color="#000000")
-                l.grid(row=fila_idx, column=col_idx, padx=10, pady=4, sticky="ew")
+                # CTkLabel con wraplength para que el texto se envuelva verticalmente
+                l = CTkLabel(
+                    cuerpo, 
+                    text=str(valor), 
+                    font=("Arial", 13), 
+                    anchor="nw", 
+                    justify="left", 
+                    wraplength=ANCHO_CELDA - 20,
+                    text_color="#000000"
+                )
+                l.grid(row=fila_idx, column=col_idx, padx=10, pady=8, sticky="nsew")
                 row_widgets.append(l)
+            
             def hacer_editar(idx=fila_idx):
                 return lambda: editar_fila(idx)
-            btn_editar = CTkButton(cuerpo, text="Editar", fg_color="#715a72", command=hacer_editar(fila_idx))
-            btn_editar.grid(row=fila_idx, column=len(headers), padx=10, pady=4)
+            
+            btn_editar = CTkButton(cuerpo, text="Editar", fg_color="#715a72", command=hacer_editar(fila_idx), width=80)
+            btn_editar.grid(row=fila_idx, column=len(headers), padx=10, pady=8, sticky="ew")
             btn_editar.grid_remove()
             btn_editar_ref[fila_idx] = btn_editar
 
-            # BOTÓN ELIMINAR (NUEVO)
+            # BOTÓN ELIMINAR
             if eliminar_callback:
                 def hacer_eliminar(idx=fila_idx):
                     return lambda: eliminar_callback(tabla_sql, fila[0], mostrar_filas)
-                btn_eliminar = CTkButton(cuerpo, text="Eliminar", fg_color="#962d22", command=hacer_eliminar(fila_idx))
-                btn_eliminar.grid(row=fila_idx, column=len(headers) + 1, padx=10, pady=4)
+                btn_eliminar = CTkButton(cuerpo, text="Eliminar", fg_color="#962d22", command=hacer_eliminar(fila_idx), width=80)
+                btn_eliminar.grid(row=fila_idx, column=len(headers) + 1, padx=10, pady=8, sticky="ew")
                 btn_eliminar.grid_remove()
                 btn_eliminar_ref[fila_idx] = btn_eliminar
 
-            # Vincular eventos de mouse para mostrar/ocultar los botones
+            # Vincular eventos
             for w in row_widgets:
                 w.bind("<Enter>", lambda e, idx=fila_idx: on_row_enter(e, idx))
                 w.bind("<Leave>", lambda e, idx=fila_idx: on_row_leave(e, idx))
@@ -478,7 +545,7 @@ def mostrar_seccion_pendiente(frame, titulo):
     ).pack(pady=30)
 
 
-def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,botones,headers,tabla_sql=None):
+def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,botones,headers,tabla_sql=None,header_text_color=None):
     limpiar_frame(frame)
 
     CTkButton(frame,text="←",width=80,command=lambda: mostrar_dashboard(frame)).pack(anchor="w",padx=20,pady=10)
@@ -522,7 +589,8 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
                 tabla_sql or "pendiente",
                 color_tabla,
                 actualizar_callback=actualizar_registro if tabla_sql else None,
-                eliminar_callback=eliminar_registro if tabla_sql else None
+                eliminar_callback=eliminar_registro if tabla_sql else None,
+                header_text_color=header_text_color
             )
             
             # Mostrar mensaje si no hay registros
@@ -778,7 +846,7 @@ def mostrar_admin(frame):
         {"texto":"Importar CSV","color":"#610139","comando":importar},
         {"texto":"Exportar CSV","color":"#610139","comando":exportar},
     ]
-    headers = ["Matrícula","Nombre","Apellido Paterno","Apellido Materno","Área"]
+    headers = ["Matrícula","Nombre","Apellido Paterno","Apellido Materno"]
     mostrar_seccion_gestion(frame, "Gestión de Administradores", "#610139", "#ffffff", "#9880a0", botones, headers, "administradores")
 
 def mostrar_carreras(frame):
@@ -795,8 +863,8 @@ def mostrar_carreras(frame):
         {"texto":"Importar CSV","color":"#43000E","comando":importar},
         {"texto":"Exportar CSV","color":"#43000E","comando":exportar},
     ]
-    headers = ["Nombre de la Carrera","Siglas","Semestres","Tipo"]
-    mostrar_seccion_gestion(frame, "Gestión de Carreras", "#43000E", "#ffffff", "#d1c4b3", botones, headers, "carreras")
+    headers = ["Nombre de la Carrera","Tipo","Semestres","Clave"]
+    mostrar_seccion_gestion(frame, "Gestión de Carreras", "#43000E", "#ffffff", "#d1c4b3", botones, headers, "carreras", header_text_color="white")
 
 def mostrar_materias(frame):
 
@@ -815,7 +883,7 @@ def mostrar_materias(frame):
         {"texto":"Exportar CSV","color":"#510113","comando":exportar},
     ]
 
-    headers = ["Clave","Materia","Carrera","Horas","Créditos",]
+    headers = ["Clave","Materia","Carrera","Horas a la semana","Unidades",]
 
     mostrar_seccion_gestion(frame,"Gestión de Materias","#761127","#ffffff","#9A0000",botones,headers,"materias")
 
@@ -838,7 +906,7 @@ def mostrar_grupos(frame):
 
     headers = ["Grupo","Materia","Maestro","Periodo", "Año","Cupo", "Inscritos", "Horario","Estado" ]
 
-    mostrar_seccion_gestion(frame,"Gestión de Grupos","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"grupos")
+    mostrar_seccion_gestion(frame,"Gestión de Grupos","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"grupos",header_text_color="white")
 
 def mostrar_inscripciones(frame):
 
@@ -857,38 +925,48 @@ def mostrar_inscripciones(frame):
         {"texto":"Exportar CSV","color":"#A64500","comando":exportar},
     ]
 
-    headers = ["Alumno","Número de Control","Grupo","Estatus","Tipo de inscripción"]
+    headers = ["Alumno","Número de Control","Grupo","Materia","Estatus","Tipo de inscripción"]
 
     mostrar_seccion_gestion(frame,"Inscripciones","#7A3500","#ffffff","#C75C00",botones,headers,"registros")
 
 
 def mostrar_usuarios(frame):
-
-    def registrar(area,volver):
-        mostrar_form_registro_usuario(area,volver)
-
+    """Mostrar tabla de usuarios con datos de Cuentas, Roles y tablas de alumnos/maestros/administradores"""
     def importar(area,volver):
-        ejecutar_importacion("usuarios",volver)
+        ejecutar_importacion("cuentas",volver)
 
     def exportar(area,volver):
-        ejecutar_exportacion("usuarios","usuarios.csv")
+        ejecutar_exportacion("cuentas","usuarios.csv")
 
     botones = [
-        {"texto":"Registrar usuario","color":"#2b4d7a","comando":registrar},
         {"texto":"Importar CSV","color":"#2b4d7a","comando":importar},
         {"texto":"Exportar CSV","color":"#2b4d7a","comando":exportar},
     ]
 
-    headers = ["Usuario","Contraseña","Rol"]
+    headers = ["Usuario","Contraseña","Tipo de Usuario"]
+    
+    # Consulta SQL personalizada que obtiene datos de Cuentas unidos con tablas de usuarios
+    tabla_sql = """
+    SELECT 
+        COALESCE(a.numero_control, m.matricula, adm.matricula) AS usuario,
+        c.password,
+        r.nombre AS tipo_usuario
+    FROM Cuentas c
+    JOIN Roles r ON c.id_rol = r.id_rol
+    LEFT JOIN Alumno a ON a.id_cuenta = c.id_cuenta
+    LEFT JOIN Maestro m ON m.id_cuenta = c.id_cuenta
+    LEFT JOIN Administrador adm ON adm.id_cuenta = c.id_cuenta
+    """
 
-    mostrar_seccion_gestion(frame,"Gestión de Usuarios","#2b4d7a","#ffffff","#4c6fa0",botones,headers,"usuarios")
+    mostrar_seccion_gestion(frame,"Gestión de Usuarios","#2b4d7a","#ffffff","#4c6fa0",botones,headers,tabla_sql)
 
 
 # === ACTIVIDADES ===
 def mostrar_actividades(frame):
-    def registrar(area,volver):
+    def registrar1(area,volver):
         mostrar_form_registro_tipo_actividad(area,volver)
-
+    def registrar2(area,volver):
+        mostrar_form_actividad(area,volver)
     def importar(area,volver):
         ejecutar_importacion("tipos_actividades",volver)
 
@@ -896,14 +974,15 @@ def mostrar_actividades(frame):
         ejecutar_exportacion("tipos_actividades","tipos_actividades.csv")
 
     botones = [
-        {"texto":"Crear nueva actividad","color":"#1f6aa5","comando":registrar},
+        {"texto":"Nuevo tipo de actividad","color":"#1f6aa5","comando":registrar1},
+        {"texto":"Registrar Actividad","color":"#1f6aa5","comando":registrar2},
         {"texto":"Importar CSV","color":"#1f6aa5","comando":importar},
         {"texto":"Exportar CSV","color":"#1f6aa5","comando":exportar},
     ]
 
     headers = ["Tipo de Actividad","Unidad","Grupo","Materia","Ponderacion", "Detalles"]
 
-    mostrar_seccion_gestion(frame,"Gestión de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"tipos_actividades")
+    mostrar_seccion_gestion(frame,"Gestión de Actividades","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"actividades", header_text_color="white")
 
 def mostrar_calificaciones_finales(frame):
     def registrar(area, volver):
@@ -931,7 +1010,8 @@ def mostrar_calificaciones_finales(frame):
         "#8fb1cb",
         botones,
         headers,
-        "calificaciones_finales"
+        "calificaciones_finales",
+        header_text_color="white"
     )
 
 
@@ -948,7 +1028,7 @@ def mostrar_calificaciones_actividades(frame):
         {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": exportar},
     ]
 
-    headers = ["Numero de Control", "Alumno", "Actividad", "Calificación", "Fecha", "Observaciones"]
+    headers = ["Numero de Control", "Alumno", "Actividad","Materia y Grupo", "Calificación", "Fecha", "Observaciones"]
 
     mostrar_seccion_gestion(
         frame,
@@ -958,7 +1038,8 @@ def mostrar_calificaciones_actividades(frame):
         "#8fb1cb",
         botones,
         headers,
-        "calificaciones_actividades"
+        "calificaciones_actividades",
+        header_text_color="white"
     )
 
 def mostrar_solicitudes(frame, datos=None):
