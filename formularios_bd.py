@@ -984,18 +984,6 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
     customtkinter.CTkButton(botones,text="Cancelar",command=lambda: volver_a_lista() if volver_a_lista else None).grid(row=0,column=1,padx=10)
 
 # USUARIOS
-
-def mostrar_form_registro_usuario(frame_contenido,volver_a_lista=None):
-
-    campos = ["usuario","contrasena","rol"]
-
-    sql = """
-    INSERT INTO usuarios
-    (usuario,contrasena,rol)
-    VALUES (%s,%s,%s)
-    """
-
-    crear_formulario_generico(frame_contenido,"Registrar usuario",campos,sql,volver_a_lista)
 def importar_csv(tabla, ruta_csv):
 
         with open(ruta_csv, newline="", encoding="utf-8") as archivo:
