@@ -154,18 +154,7 @@ def obtener_lista(tabla, campo):
 # -------------------------------
 
 
-CARRERAS_ITVER = [
-    "Ingeniería en Sistemas Computacionales",
-    "Ingeniería Industrial",
-    "Ingeniería Electromecánica",
-    "Ingeniería Eléctrica",
-    "Ingeniería Electrónica",
-    "Ingeniería Civil",
-    "Ingeniería Química",
-    "Ingeniería Bioquímica",
-    "Ingeniería en Gestión Empresarial",
-    "Licenciatura en Administración",
-]
+CARRERAS_ITVER = []
 
 SEMESTRES_ITVER = [str(i) for i in range(1, 13)]
 ESTADOS_ALUMNO = ["Activo", "Baja temporal",
@@ -355,7 +344,8 @@ def mostrar_form_registro_alumno(frame_contenido, volver_a_lista=None):
     entradas["ApellidoPaterno"] = crear_campo(cuerpo, 2, "Apellido paterno")
     entradas["ApellidoMaterno"] = crear_campo(cuerpo, 3, "Apellido materno")
     entradas["correo_alumno"] = crear_campo(cuerpo, 4, "Correo")
-    entradas["Carrera"] = crear_combo(cuerpo, 5, "Carrera", CARRERAS_ITVER)
+    carreras = obtener_lista("Carreras", "nombre_carrera")
+    entradas["Carrera"] = crear_combo(cuerpo, 5, "Carrera", carreras)
     entradas["Semestre"] = crear_combo(cuerpo, 6, "Semestre", SEMESTRES_ITVER)
     entradas["Estado"] = crear_combo(cuerpo, 7, "Estado", ESTADOS_ALUMNO)
 
@@ -625,13 +615,13 @@ def mostrar_form_registro_carrera(frame_contenido, volver_a_lista=None):
     campos = [
         "Nombre de la Carrera",
         "Tipo de carrera",
-        "Semestres",
-        "Clave",
+        "Número de semestres",
+        "Clave de la carrera",
     ]
 
     sql = """
-    INSERT INTO carreras
-    (nombre_carrera,tipo_carrera,semestres,clave)
+    INSERT INTO Carreras
+    (nombre_carrera,tipo_carrera,numero_semestres,clave_carrera)
     VALUES (%s,%s,%s,%s)
     """
 
@@ -649,7 +639,7 @@ def mostrar_form_registro_tipo_actividad(frame_contenido, volver_a_lista=None):
     ]
 
     sql = """
-    INSERT INTO tipos_actividades
+    INSERT INTO Tipos_actividades
     (nombre)
     VALUES (%s)
     """
@@ -690,7 +680,7 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
     unidad_field.configure(state="readonly")
 
     # Tipo de actividad - obtener de tabla Tipos_actividades
-    tipos_actividades = obtener_lista("tipos_actividades", "nombre")
+    tipos_actividades = obtener_lista("Tipos_actividades", "nombre")
     combo_tipo_actividad = crear_combo(
         cuerpo, 3, "Tipo de actividad", tipos_actividades)
 
@@ -1104,8 +1094,8 @@ def mostrar_form_registro_calificacion_final(frame_contenido, volver_a_lista=Non
     cuerpo.pack(padx=20, pady=10, fill="x")
 
     # COMBOS PARA ALUMNO Y GRUPO
-    alumnos = obtener_lista("alumnos", "numero_control")
-    grupos = obtener_lista("grupos", "id_grupo")
+    alumnos = obtener_lista("Alumno", "numero_control")
+    grupos = obtener_lista("Grupo", "id_grupo")
 
     combo_alumno = crear_combo(cuerpo, 0, "Alumno", alumnos)
     combo_grupo = crear_combo(cuerpo, 1, "Grupo", grupos)

@@ -1,3 +1,4 @@
+import os
 import mysql.connector
 
 # Leer contraseña desde variable de entorno

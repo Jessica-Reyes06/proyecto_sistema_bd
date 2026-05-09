@@ -214,6 +214,7 @@ def actualizar_registro(tabla, id_valor, nuevos_valores):
         "actividades": "id_actividad",
         "tipos_actividades": "id_tipo",
         "calificaciones_finales": "id_calificacion",
+        "Carreras": "id_carrera",
     }
 
     campo_id = campos_id.get(tabla, "id")
@@ -268,7 +269,7 @@ def verificar_dependencias(tabla, campo_id, id_valor):
         "actividades": [],
         "calificaciones_finales": [],
         "materias": [],
-        "carreras": [],
+        "Carreras": [],
     }
 
     deps_encontradas = []
@@ -311,6 +312,7 @@ def eliminar_registro(tabla, id_valor, callback_recargar):
         "actividades": "id_actividad",
         "tipos_actividades": "id_tipo",
         "calificaciones_finales": "id_calificacion",
+        "Carreras": "id_carrera",
     }
 
     campo_id = campos_id.get(tabla, "id")
@@ -422,26 +424,18 @@ def mostrar_dashboard(frame):
                  text_color="white").pack(anchor="w", padx=12, pady=(0, 10))
 
     # ── CARGA DE ÍCONOS ──────────────────────────────────────
-    icono_alumnos = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/alumnos.png")),        size=(64, 64))
-    icono_maestros = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/maestros.png")),       size=(64, 64))
-    icono_materias = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/materias.png")),       size=(64, 64))
-    icono_grupos = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/grupos.png")),         size=(64, 64))
-    icono_inscripciones = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/inscripciones.png")), size=(64, 64))
-    icono_admin = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/admin.png")),          size=(64, 64))
-    icono_carreras = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/carreras.png")),       size=(64, 64))
-    icono_calificaciones = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/calificaciones.png")), size=(64, 64))
-    icono_actividades = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/actividades.png")),    size=(64, 64))
-    icono_reportes = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/reportes.png")),       size=(64, 64))
+    icono_alumnos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/alumnos.png")),        size=(64, 64))
+    icono_maestros = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/maestros.png")),       size=(64, 64))
+    icono_materias = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/materias.png")),       size=(64, 64))
+    icono_grupos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/grupos.png")),         size=(64, 64))
+    icono_inscripciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/inscripciones.png")), size=(64, 64))
+    icono_admin = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/admin.png")),          size=(64, 64))
+    icono_carreras = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/carreras.png")),       size=(64, 64))
+    icono_calificaciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/calificaciones.png")), size=(64, 64))
+    icono_actividades = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/actividades.png")),    size=(64, 64))
+    icono_reportes = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/reportes.png")),       size=(64, 64))
+    icono_usuario = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/usuario.png")),       size=(64, 64))
+
 
     # ── ÁREA PRINCIPAL: izquierda + derecha ──────────────────
     main_area = CTkFrame(frame, fg_color="transparent")
@@ -502,26 +496,18 @@ def mostrar_dashboard(frame):
         grid_frame.grid_columnconfigure(col, weight=1)
 
     catalogos = [
-        ("Alumnos",              "Gestión de estudiantes", lambda: mostrar_alumnos(
-            frame),                      "#510054", icono_alumnos),
-        ("Maestros",             "Gestión de docentes", lambda: mostrar_maestros(
-            frame),                     "#004235", icono_maestros),
-        ("Administradores",      "Gestión de administradores", lambda: mostrar_admin(
-            frame),                        "#1A3A8F", icono_admin),
-        ("Materias",             "Catálogo de materias", lambda: mostrar_materias(
-            frame),                     "#2D3250", icono_materias),
-        ("Grupos",               "Gestión de grupos", lambda: mostrar_grupos(
-            frame),                       "#2D3250", icono_grupos),
-        ("Carreras",             "Catálogo de carreras", lambda: mostrar_carreras(
-            frame),                     "#2D3250", icono_carreras),
-        ("Actividades",          "Gestión de actividades", lambda: mostrar_actividades(
-            frame),                  "#2D3250", icono_actividades),
-        ("Inscripciones",        "Registro de inscripciones", lambda: mostrar_inscripciones(
-            frame),                "#2D3250", icono_inscripciones),
-        ("Reportes",             "Generación de reportes", lambda: mostrar_reportes(
-            frame),                     "#2D3250", icono_reportes),
-        ("Calificaciones",       "Gestión de calificaciones",
-         lambda: mostrar_calificaciones_finales(frame),       "#2D3250", icono_calificaciones),
+        ("Alumnos","Gestión de estudiantes", lambda: mostrar_alumnos(frame),                      "#510054", icono_alumnos),
+        ("Maestros","Gestión de docentes", lambda: mostrar_maestros(frame),                     "#004235", icono_maestros),
+        ("Administradores","Gestión de administradores", lambda: mostrar_admin(frame),                        "#1A3A8F", icono_admin),
+        ("Materias","Catálogo de materias", lambda: mostrar_materias(frame),                     "#2D3250", icono_materias),
+        ("Grupos","Gestión de grupos", lambda: mostrar_grupos(frame),                       "#2D3250", icono_grupos),
+        ("Carreras","Catálogo de carreras", lambda: mostrar_carreras(frame),                     "#2D3250", icono_carreras),
+        ("Actividades","Gestión de actividades", lambda: mostrar_actividades(frame),                  "#2D3250", icono_actividades),
+        ("Inscripciones","Registro de inscripciones", lambda: mostrar_inscripciones(frame),                "#2D3250", icono_inscripciones),
+        ("Reportes","Generación de reportes", lambda: mostrar_reportes(frame),                     "#2D3250", icono_reportes),
+        ("Calificaciones","Gestión de calificaciones",lambda: mostrar_calificaciones_finales(frame),       "#2D3250", icono_calificaciones),
+        ("Usuarios","Gestión de las cuentas de usuarios", lambda: mostrar_usuarios(frame),                     "#2D3250", icono_usuario),
+
     ]
 
     for idx, (titulo_c, subtitulo_c, comando_c, color_c, icono_c) in enumerate(catalogos):
@@ -587,7 +573,7 @@ def mostrar_seccion_pendiente(frame, titulo):
     ).pack(pady=30)
 
 
-def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla, botones, headers, tabla_sql=None, header_text_color=None):
+def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla, botones, headers, tabla_sql=None, header_text_color=None, ocultar_id=False):
     limpiar_frame(frame)
 
     CTkButton(frame, text="←", width=80, command=lambda: mostrar_dashboard(
@@ -635,7 +621,8 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
             color_tabla,
             actualizar_callback=actualizar_registro if tabla_sql else None,
             eliminar_callback=eliminar_registro if tabla_sql else None,
-            header_text_color=header_text_color
+            header_text_color=header_text_color,
+            ocultar_primer_campo=ocultar_id
         )
 
         # Mostrar mensaje si no hay registros
@@ -740,7 +727,7 @@ def crear_respaldo_completo():
 
     tablas = [
         "alumnos", "maestros", "administradores",
-        "carreras", "materias", "grupos", "registros",
+        "Carreras", "materias", "grupos", "registros",
         "tipos_actividades",
         "calificaciones_finales"
     ]
@@ -921,10 +908,10 @@ def mostrar_carreras(frame):
         mostrar_form_registro_carrera(area, volver)
 
     def importar(area, volver):
-        ejecutar_importacion("carreras", volver)
+        ejecutar_importacion("Carreras", volver)
 
     def exportar(area, volver):
-        ejecutar_exportacion("carreras", "carreras.csv")
+        ejecutar_exportacion("Carreras", "carreras.csv")
 
     botones = [
         {"texto": "Registrar Carrera nueva",
@@ -934,7 +921,7 @@ def mostrar_carreras(frame):
     ]
     headers = ["Nombre de la Carrera", "Tipo", "Semestres", "Clave"]
     mostrar_seccion_gestion(frame, "Gestión de Carreras", "#43000E", "#ffffff",
-                            "#d1c4b3", botones, headers, "carreras", header_text_color="white")
+                            "#d1c4b3", botones, headers, "Carreras", header_text_color="white", ocultar_id=True)
 
 
 def mostrar_materias(frame):
@@ -1008,7 +995,86 @@ def mostrar_inscripciones(frame):
                             "#ffffff", "#C75C00", botones, headers, "registros")
 
 
+def mostrar_usuarios(frame):
+    """Mostrar tabla de usuarios con datos de Cuentas, Roles y alumnos/maestros/administradores"""
+   
+    def importar(area, volver):
+        ejecutar_importacion("Cuentas", volver)
 
+    def exportar(area, volver):
+        ejecutar_exportacion("Cuentas", "usuarios.csv")
+
+    botones = [
+        {"texto": "Importar CSV", "color": "#2D3250", "comando": importar},
+        {"texto": "Exportar CSV", "color": "#2D3250", "comando": exportar},
+    ]
+
+    headers = ["Usuario", "Contraseña", "Rol"]
+
+    limpiar_frame(frame)
+
+    CTkButton(frame, text="←", width=80, command=lambda: mostrar_dashboard(
+        frame)).pack(anchor="w", padx=20, pady=10)
+
+    header = CTkFrame(frame, height=60, fg_color="#2D3250")
+    header.pack(fill="x")
+
+    CTkLabel(header, text="Gestión de Usuarios", text_color="white",
+             font=("Arial", 26, "bold")).pack(pady=15)
+
+    menu = CTkFrame(frame, fg_color="#ffffff")
+    menu.pack(fill="x", padx=20, pady=10)
+
+    for i in range(len(botones)):
+        menu.grid_columnconfigure(i, weight=1)
+
+    area_contenido = CTkFrame(frame)
+    area_contenido.pack(fill="both", expand=True, padx=20, pady=10)
+
+    def mostrar_tabla_usuarios():
+        limpiar_frame(area_contenido)
+
+        try:
+            sql = """
+            SELECT 
+                c.id_cuenta,
+                COALESCE(a.numero_control, m.matricula, adm.matricula) AS usuario,
+                c.password,
+                r.nombre AS rol
+            FROM Cuentas c
+            JOIN Roles r ON c.id_rol = r.id_rol
+            LEFT JOIN Alumno a ON a.id_cuenta = c.id_cuenta
+            LEFT JOIN Maestro m ON m.id_cuenta = c.id_cuenta
+            LEFT JOIN Administrador adm ON adm.id_cuenta = c.id_cuenta
+            """
+            registros = ejecutar_select(sql)
+        except Exception as e:
+            print(f"Error cargando usuarios: {e}")
+            registros = []
+
+        crear_tabla_editable(
+            area_contenido,
+            headers,
+            registros,
+            "Cuentas",
+            color_tabla="#6d8fa3",
+            actualizar_callback=actualizar_registro,
+            eliminar_callback=eliminar_registro,
+            header_text_color="white",
+            ocultar_primer_campo=True
+        )
+
+        if not registros:
+            CTkLabel(area_contenido, text="No hay registros en la base de datos",
+                     font=("Arial", 15, "bold"), text_color="#000000").pack(pady=(10, 12))
+
+    mostrar_tabla_usuarios()
+
+    for i, btn in enumerate(botones):
+        comando_base = btn.get("comando")
+        cmd = (lambda cb=comando_base: cb(area_contenido, mostrar_tabla_usuarios)) if comando_base else mostrar_tabla_usuarios
+        CTkButton(menu, text=btn["texto"], fg_color=btn["color"], command=cmd).grid(
+            row=0, column=i, padx=10, pady=10)
 
 
 # === ACTIVIDADES ===
