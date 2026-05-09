@@ -209,14 +209,11 @@ def actualizar_registro(tabla, id_valor, nuevos_valores):
         "alumnos": "numero_control",
         "maestros": "matricula_maestro",
         "administradores": "matricula",
-        "usuarios": "usuario",
         "registros": "id_registro",
-        "salones": "id_salon",
         "grupos": "id_grupo",
         "actividades": "id_actividad",
         "tipos_actividades": "id_tipo",
         "calificaciones_finales": "id_calificacion",
-        "calificaciones_actividades": "id_calif_actividad",
     }
 
     campo_id = campos_id.get(tabla, "id")
@@ -258,26 +255,18 @@ def verificar_dependencias(tabla, campo_id, id_valor):
         "alumnos": [
             ("registros", "numero_control", "inscripciones"),
             ("calificaciones_finales", "numero_control", "calificaciones finales"),
-            ("calificaciones_actividades", "numero_control",
-             "calificaciones de actividades"),
         ],
         "maestros": [
             ("grupos", "matricula_maestro", "grupos asignados"),
         ],
         "administradores": [],
-        "usuarios": [],
-        "salones": [
-            ("horario", "id_salon", "horarios asignados"),
-        ],
+        "registros": [],
         "grupos": [
             ("registros", "id_grupo", "inscripciones"),
             ("calificaciones_finales", "id_grupo", "calificaciones finales"),
-            ("horario", "id_grupo", "horarios"),
         ],
         "actividades": [],
         "calificaciones_finales": [],
-        "calificaciones_actividades": [],
-        "registros": [],
         "materias": [],
         "carreras": [],
     }
@@ -317,14 +306,11 @@ def eliminar_registro(tabla, id_valor, callback_recargar):
         "alumnos": "numero_control",
         "maestros": "matricula_maestro",
         "administradores": "matricula",
-        "usuarios": "usuario",
         "registros": "id_registro",
-        "salones": "id_salon",
         "grupos": "id_grupo",
         "actividades": "id_actividad",
         "tipos_actividades": "id_tipo",
         "calificaciones_finales": "id_calificacion",
-        "calificaciones_actividades": "id_calif_actividad",
     }
 
     campo_id = campos_id.get(tabla, "id")
@@ -456,8 +442,6 @@ def mostrar_dashboard(frame):
         "carpeta_iconos/iconos_admin/actividades.png")),    size=(64, 64))
     icono_reportes = CTkImage(light_image=Image.open(ruta_recurso(
         "carpeta_iconos/iconos_admin/reportes.png")),       size=(64, 64))
-    icono_usuarios = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/usuario.png")),        size=(64, 64))
 
     # ── ÁREA PRINCIPAL: izquierda + derecha ──────────────────
     main_area = CTkFrame(frame, fg_color="transparent")
@@ -538,10 +522,6 @@ def mostrar_dashboard(frame):
             frame),                     "#2D3250", icono_reportes),
         ("Calificaciones",       "Gestión de calificaciones",
          lambda: mostrar_calificaciones_finales(frame),       "#2D3250", icono_calificaciones),
-        ("Calif. Actividades",   "Gestión de calif. parciales",
-         lambda: mostrar_calificaciones_actividades(frame),   "#2D3250", icono_actividades),
-        ("Usuarios",             "Gestión de usuarios", lambda: mostrar_usuarios(
-            frame),                     "#2D3250", icono_usuarios),
     ]
 
     for idx, (titulo_c, subtitulo_c, comando_c, color_c, icono_c) in enumerate(catalogos):
@@ -759,10 +739,10 @@ def crear_respaldo_completo():
         return
 
     tablas = [
-        "alumnos", "maestros", "administradores", "usuarios",
+        "alumnos", "maestros", "administradores",
         "carreras", "materias", "grupos", "registros",
-        "tipos_actividades", "salones",
-        "calificaciones_finales", "calificaciones_actividades", "horario"
+        "tipos_actividades",
+        "calificaciones_finales"
     ]
 
     exportados = 0
@@ -1028,36 +1008,7 @@ def mostrar_inscripciones(frame):
                             "#ffffff", "#C75C00", botones, headers, "registros")
 
 
-def mostrar_usuarios(frame):
-    """Mostrar tabla de usuarios con datos de Cuentas, Roles y tablas de alumnos/maestros/administradores"""
-    def importar(area, volver):
-        ejecutar_importacion("cuentas", volver)
 
-    def exportar(area, volver):
-        ejecutar_exportacion("cuentas", "usuarios.csv")
-
-    botones = [
-        {"texto": "Importar CSV", "color": "#2b4d7a", "comando": importar},
-        {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": exportar},
-    ]
-
-    headers = ["Usuario", "Contraseña", "Tipo de Usuario"]
-
-    # Consulta SQL personalizada que obtiene datos de Cuentas unidos con tablas de usuarios
-    tabla_sql = """
-    SELECT 
-        COALESCE(a.numero_control, m.matricula, adm.matricula) AS usuario,
-        c.password,
-        r.nombre AS tipo_usuario
-    FROM Cuentas c
-    JOIN Roles r ON c.id_rol = r.id_rol
-    LEFT JOIN Alumno a ON a.id_cuenta = c.id_cuenta
-    LEFT JOIN Maestro m ON m.id_cuenta = c.id_cuenta
-    LEFT JOIN Administrador adm ON adm.id_cuenta = c.id_cuenta
-    """
-
-    mostrar_seccion_gestion(frame, "Gestión de Usuarios", "#2b4d7a",
-                            "#ffffff", "#4c6fa0", botones, headers, tabla_sql)
 
 
 # === ACTIVIDADES ===
@@ -1200,34 +1151,7 @@ def mostrar_calificaciones_finales(frame):
     )
 
 
-def mostrar_calificaciones_actividades(frame):
 
-    def importar(area, volver):
-        ejecutar_importacion("calificaciones_actividades", volver)
-
-    def exportar(area, volver):
-        ejecutar_exportacion("calificaciones_actividades",
-                             "calificaciones_actividades.csv")
-
-    botones = [
-        {"texto": "Importar CSV", "color": "#2b4d7a", "comando": importar},
-        {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": exportar},
-    ]
-
-    headers = ["Numero de Control", "Alumno", "Actividad",
-               "Materia y Grupo", "Calificación", "Fecha", "Observaciones"]
-
-    mostrar_seccion_gestion(
-        frame,
-        "Gestión de Calificaciones de Actividades",
-        "#2b4d7a",
-        "#ffffff",
-        "#8fb1cb",
-        botones,
-        headers,
-        "calificaciones_actividades",
-        header_text_color="white"
-    )
 
 
 def mostrar_solicitudes(frame, datos=None):

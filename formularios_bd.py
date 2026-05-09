@@ -1086,16 +1086,7 @@ def exportar_csv(tabla, ruta_destino):
     cursor.close()
 
 
-def mostrar_form_registro_horario(frame_contenido, volver_a_lista=None):
-    campos = ["id_horario", "id_grupo", "dia",
-              "hora_inicio", "hora_fin", "id_salon"]
-    sql = """
-    INSERT INTO horario
-    (id_horario, id_grupo, dia, hora_inicio, hora_fin, id_salon)
-    VALUES (%s, %s, %s, %s, %s, %s)
-    """
-    crear_formulario_generico(
-        frame_contenido, "Registrar horario", campos, sql, volver_a_lista)
+
 
 
 def mostrar_form_registro_calificacion_final(frame_contenido, volver_a_lista=None):
@@ -1170,105 +1161,7 @@ def mostrar_form_registro_calificacion_final(frame_contenido, volver_a_lista=Non
                             ).grid(row=0, column=1, padx=10)
 
 
-def mostrar_form_registro_calificacion_actividad(frame_contenido, volver_a_lista=None):
-    """Formulario para registrar calificación de actividad"""
-    limpiar_frame(frame_contenido)
-
-    titulo = customtkinter.CTkLabel(
-        frame_contenido,
-        text="Registrar Calificación de Actividad",
-        font=("Arial", 22, "bold")
-    )
-    titulo.pack(pady=(10, 20))
-
-    cuerpo = customtkinter.CTkFrame(frame_contenido)
-    cuerpo.pack(padx=20, pady=10, fill="x")
-
-    # COMBOS PARA ALUMNO Y ACTIVIDAD
-    alumnos = obtener_lista("Alumno", "numero_control")
-    actividades = obtener_lista("Tipos_actividades", "nombre")
-
-    combo_alumno = crear_combo(cuerpo, 0, "Alumno", alumnos)
-    combo_actividad = crear_combo(cuerpo, 1, "Actividad", actividades)
-    entrada_calif = crear_campo(cuerpo, 2, "Calificación (0-100)")
-
-    # Fecha actual por defecto
-    import datetime
-    fecha_actual = datetime.date.today().strftime("%Y-%m-%d")
-    entrada_fecha = crear_campo(cuerpo, 3, "Fecha (YYYY-MM-DD)")
-
-    entrada_observaciones = customtkinter.CTkEntry(
-        cuerpo, width=260, placeholder_text="Observaciones (opcional)")
-    entrada_observaciones.grid(row=4, column=1, padx=10, pady=5, sticky="w")
-
-    customtkinter.CTkLabel(cuerpo, text="Observaciones", font=("Arial", 14)
-                           ).grid(row=4, column=0, padx=10, pady=5, sticky="w")
-
-    estado_label = customtkinter.CTkLabel(frame_contenido, text="")
-    estado_label.pack()
-
-    def guardar():
-        alumno = combo_alumno.get()
-        actividad = combo_actividad.get()
-        calif = entrada_calif.get()
-
-        # VALIDAR CALIFICACIÓN
-        try:
-            calif_float = float(calif)
-            if calif_float < 0 or calif_float > 100:
-                estado_label.configure(
-                    text="La calificación debe estar entre 0 y 100",
-                    text_color="red"
-                )
-                return
-        except ValueError:
-            estado_label.configure(
-                text="Ingrese una calificación válida", text_color="red")
-            return
-
-        valores = (
-            alumno,
-            actividad,
-            calif,
-            entrada_fecha.get() or fecha_actual,
-            entrada_observaciones.get() or ""
-        )
-
-        sql = """
-        INSERT INTO calificaciones_actividades
-        (numero_control, id_actividad, calificacion, fecha_registro, observaciones)
-        VALUES (%s, %s, %s, %s, %s)
-        """
-
-        try:
-            ejecutar_insert(sql, valores)
-            estado_label.configure(
-                text="Calificación registrada", text_color="green")
-            if volver_a_lista:
-                volver_a_lista()
-        except Exception as e:
-            estado_label.configure(text=str(e), text_color="red")
-
-    botones = customtkinter.CTkFrame(frame_contenido, fg_color="transparent")
-    botones.pack(pady=20)
-
-    customtkinter.CTkButton(botones, text="Guardar", command=guardar).grid(
-        row=0, column=0, padx=10)
-    customtkinter.CTkButton(botones, text="Cancelar",
-                            command=lambda: volver_a_lista() if volver_a_lista else None
-                            ).grid(row=0, column=1, padx=10)
 
 
-def mostrar_form_registro_salon(frame_contenido, volver_a_lista=None):
-    """Formulario para registrar un nuevo salón"""
-    campos = ["id_salon", "nombre_salon", "capacidad",
-              "tipo", "edificio", "piso", "estatus"]
 
-    sql = """
-    INSERT INTO salones
-    (id_salon, nombre_salon, capacidad, tipo, edificio, piso, estatus)
-    VALUES (%s, %s, %s, %s, %s, %s, %s)
-    """
 
-    crear_formulario_generico(
-        frame_contenido, "Registrar Salón", campos, sql, volver_a_lista)
