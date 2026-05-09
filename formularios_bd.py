@@ -186,7 +186,7 @@ def generar_numero_control_unico():
         numero = prefijo + sufijo
 
         existe = ejecutar_select(
-            "SELECT numero_control FROM alumnos WHERE numero_control=%s",
+            "SELECT numero_control FROM Alumno WHERE numero_control=%s",
             (numero,)
         )
 
@@ -220,7 +220,7 @@ def generar_matricula_administrador_unica():
         matricula = prefijo + sufijo
 
         existe = ejecutar_select(
-            "SELECT matricula FROM administradores WHERE matricula=%s",
+            "SELECT matricula FROM Administrador WHERE matricula=%s",
             (matricula,)
         )
 
@@ -593,7 +593,7 @@ def mostrar_form_registro_administrador(frame_contenido, volver_a_lista=None):
             return
 
         sql = """
-        INSERT INTO administradores
+        INSERT INTO Administrador
         (matricula,nombre,apellido_paterno,apellido_materno)
         VALUES (%s,%s,%s,%s)
         """
@@ -675,7 +675,7 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
     cuerpo.pack(padx=20, pady=10, fill="x")
 
     # Obtener materias
-    materias = obtener_lista("materias", "nombre_materia")
+    materias = obtener_lista("Materia", "nombre_materia")
     combo_materia = crear_combo(cuerpo, 0, "Materia", materias)
 
     # Grupo será dinámico basado en materia
@@ -707,7 +707,7 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
         # Obtener grupos de la materia seleccionada
         try:
             grupos_result = ejecutar_select(
-                "SELECT id_grupo FROM grupos WHERE id_materia = (SELECT id_materia FROM materias WHERE nombre_materia = %s)",
+                "SELECT id_grupo FROM Grupo WHERE id_materia = (SELECT id_materia FROM Materia WHERE nombre_materia = %s)",
                 (materia_nombre,)
             )
             grupos = [str(g[0]) for g in grupos_result] if grupos_result else [
@@ -722,7 +722,7 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
         # Obtener unidades de la materia
         try:
             unidades_result = ejecutar_select(
-                "SELECT creditos FROM materias WHERE nombre_materia = %s",
+                "SELECT creditos FROM Materia WHERE nombre_materia = %s",
                 (materia_nombre,)
             )
             unidades = str(unidades_result[0][0]) if unidades_result else "0"
@@ -764,7 +764,7 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
             return
 
         sql = """
-        INSERT INTO actividades
+        INSERT INTO Actividad
         (tipo_actividad, unidad, id_grupo, materia, ponderacion, detalles)
         VALUES (%s, %s, %s, %s, %s, %s)
         """
@@ -794,7 +794,7 @@ def mostrar_form_registro_materia(frame_contenido, volver_a_lista=None):
     campos = ["Clave", "Materia", "Carrera", "Horas a la semana", "Unidades"]
 
     sql = """
-    INSERT INTO materias
+    INSERT INTO Materia
     (id_materia,nombre_materia,horas_semana,creditos,tipo)
     VALUES (%s,%s,%s,%s,%s)
     """
@@ -819,8 +819,8 @@ def mostrar_form_registro_grupo(frame_contenido, volver_a_lista=None):
     cuerpo = customtkinter.CTkFrame(frame_contenido)
     cuerpo.pack(padx=20, pady=10, fill="x")
 
-    maestros = obtener_lista("maestros", "nombre_maestro")
-    materias = obtener_lista("materias", "nombre_materia")
+    maestros = obtener_lista("Maestro", "nombre_maestro")
+    materias = obtener_lista("Materia", "nombre_materia")
 
     combo_maestro = crear_combo(cuerpo, 0, "Maestro", maestros)
     combo_materia = crear_combo(cuerpo, 1, "Materia", materias)
@@ -859,7 +859,7 @@ def mostrar_form_registro_grupo(frame_contenido, volver_a_lista=None):
 
         # VALIDAR ESTADO DEL MAESTRO
         estado_maestro = ejecutar_select(
-            "SELECT estatus FROM maestros WHERE matricula_maestro=%s",
+            "SELECT estatus FROM Maestro WHERE matricula_maestro=%s",
             (maestro,)
         )
 
@@ -892,7 +892,7 @@ def mostrar_form_registro_grupo(frame_contenido, volver_a_lista=None):
         )
 
         sql = """
-        INSERT INTO grupos
+        INSERT INTO Grupo
         (id_grupo,matricula_maestro,id_materia,cupo_maximo,periodo,anio,inscritos,horario,estado)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
         """
@@ -947,8 +947,8 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
     cuerpo = customtkinter.CTkFrame(frame_contenido)
     cuerpo.pack(padx=20, pady=10, fill="x")
 
-    alumnos = obtener_lista("alumnos", "numero_control")
-    grupos = obtener_lista("grupos", "id_grupo")
+    alumnos = obtener_lista("Alumno", "numero_control")
+    grupos = obtener_lista("Grupo", "id_grupo")
 
     combo_alumno = crear_combo(cuerpo, 0, "Alumno", alumnos)
     combo_grupo = crear_combo(cuerpo, 1, "Grupo", grupos)
@@ -974,7 +974,7 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
 
         # VALIDAR ESTADO ALUMNO
         estado_alumno = ejecutar_select(
-            "SELECT estatus_alumno FROM alumnos WHERE numero_control=%s",
+            "SELECT estatus_alumno FROM Alumno WHERE numero_control=%s",
             (alumno,)
         )
 
@@ -988,7 +988,7 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
 
         # VALIDAR ESTADO GRUPO
         estado_grupo = ejecutar_select(
-            "SELECT estatus FROM grupos WHERE id_grupo=%s",
+            "SELECT estatus FROM Grupo WHERE id_grupo=%s",
             (grupo,)
         )
 
@@ -1009,7 +1009,7 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
         )
 
         sql = """
-        INSERT INTO registros
+        INSERT INTO Registro
         (numero_control,id_grupo,fecha_registro,estatus_materia,tipo_registro)
         VALUES (%s,%s,%s,%s,%s)
         """
@@ -1146,7 +1146,7 @@ def mostrar_form_registro_calificacion_final(frame_contenido, volver_a_lista=Non
         valores = (alumno, grupo, calif, entrada_periodo.get())
 
         sql = """
-        INSERT INTO calificaciones_finales
+        INSERT INTO Calificacion_final
         (numero_control, id_grupo, calificacion_final, periodo)
         VALUES (%s, %s, %s, %s)
         """
@@ -1185,8 +1185,8 @@ def mostrar_form_registro_calificacion_actividad(frame_contenido, volver_a_lista
     cuerpo.pack(padx=20, pady=10, fill="x")
 
     # COMBOS PARA ALUMNO Y ACTIVIDAD
-    alumnos = obtener_lista("alumnos", "numero_control")
-    actividades = obtener_lista("tipos_actividades", "nombre")
+    alumnos = obtener_lista("Alumno", "numero_control")
+    actividades = obtener_lista("Tipos_actividades", "nombre")
 
     combo_alumno = crear_combo(cuerpo, 0, "Alumno", alumnos)
     combo_actividad = crear_combo(cuerpo, 1, "Actividad", actividades)

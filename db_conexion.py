@@ -1,44 +1,15 @@
-import os
 import mysql.connector
 
 # Leer contraseña desde variable de entorno
 conexion = mysql.connector.connect(
-    host="mainline.proxy.rlwy.net",
-    port=33989,
+    host="viaduct.proxy.rlwy.net",
+    port=56578,
     user="root",
-    password="eCjzlyNIPozVeLnSIFfMVLiaeAJRURPE",
+    password="JcDUGyUdJGdIVdoZljhHhfDlnpwfLEgP",
     database="db_escolar"
 )
 
 print("Conectado a MySQL - Base de datos: db_escolar")
-
-
-def crear_tablas_nuevas():
-    cursor = conexion.cursor()
-
-    try:
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS actividades (
-                id_actividad INT AUTO_INCREMENT PRIMARY KEY,
-                tipo_actividad VARCHAR(150) NOT NULL,
-                unidad VARCHAR(50) NOT NULL,
-                id_grupo VARCHAR(50) NOT NULL,
-                materia VARCHAR(150) NOT NULL,
-                ponderacion VARCHAR(50) NOT NULL,
-                detalles TEXT NOT NULL
-            )
-            """
-        )
-        conexion.commit()
-        print("Tabla 'actividades' verificada")
-    except Exception as e:
-        print(f"No se pudo verificar la tabla 'actividades': {e}")
-    finally:
-        cursor.close()
-
-
-crear_tablas_nuevas()
 
 
 def ejecutar_insert(sql, datos):
