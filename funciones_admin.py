@@ -198,9 +198,9 @@ def actualizar_registro(tabla, id_valor, nuevos_valores):
 
     # Determinar el campo ID según la tabla
     campos_id = {
-        "alumnos": "numero_control",
-        "maestros": "matricula_maestro",
-        "administradores": "matricula",
+        "Alumno": "numero_control",
+        "Maestro": "matricula_maestro",
+        "Administrador": "matricula",
         "usuarios": "usuario",
         "Carreras": "id_carrera",
         "Materia": "id_materia",
@@ -248,14 +248,14 @@ def verificar_dependencias(tabla, campo_id, id_valor):
 
     # Mapa de dependencias por tabla
     dependencias = {
-        "alumnos": [
+        "Alumno": [
             ("registros", "numero_control", "inscripciones"),
             ("calificaciones_finales", "numero_control", "calificaciones finales"),
         ],
-        "maestros": [
-            ("Grupo", "matricula_maestro", "grupos asignados"),
+        "Maestro": [
+            ("Grupo", "id_maestro", "grupos asignados"),
         ],
-        "administradores": [],
+        "Administrador": [],
         "usuarios": [],
         "Carreras": [],
         "salones": [
@@ -304,9 +304,9 @@ def eliminar_registro(tabla, id_valor, callback_recargar):
     from tkinter import messagebox
 
     campos_id = {
-        "alumnos": "numero_control",
-        "maestros": "matricula_maestro",
-        "administradores": "matricula",
+        "Alumno": "numero_control",
+        "Maestro": "matricula_maestro",
+        "Administrador": "matricula",
         "usuarios": "usuario",
         "Carreras": "id_carrera",
         "Materia": "id_materia",
@@ -576,7 +576,7 @@ def mostrar_seccion_pendiente(frame, titulo):
     ).pack(pady=30)
 
 
-def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,botones,headers,tabla_sql=None,header_text_color=None,registros_precargados=None):
+def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,botones,headers,tabla_sql=None,header_text_color=None,registros_precargados=None,ocultar_id=False):
     limpiar_frame(frame)
 
     CTkButton(frame, text="←", width=80, command=lambda: mostrar_dashboard(
@@ -629,6 +629,30 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
             except Exception as e:
                 print(f"Error cargando datos de Grupo: {e}")
                 registros = []
+        elif tabla_sql == "Alumno":
+            # Usar función personalizada para Alumnos
+            from funciones_datos import obtener_alumnos_ordenados
+            try:
+                registros = obtener_alumnos_ordenados()
+            except Exception as e:
+                print(f"Error cargando datos de Alumno: {e}")
+                registros = []
+        elif tabla_sql == "Maestro":
+            # Usar función personalizada para Maestros
+            from funciones_datos import obtener_maestros_ordenados
+            try:
+                registros = obtener_maestros_ordenados()
+            except Exception as e:
+                print(f"Error cargando datos de Maestro: {e}")
+                registros = []
+        elif tabla_sql == "Administrador":
+            # Usar función personalizada para Administradores
+            from funciones_datos import obtener_administradores_ordenados
+            try:
+                registros = obtener_administradores_ordenados()
+            except Exception as e:
+                print(f"Error cargando datos de Administrador: {e}")
+                registros = []
         elif tabla_sql:
             from db_conexion import ejecutar_select_todo
             try:
@@ -666,7 +690,7 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
             from formularios_edicion import editar_grupo
             def editar_cb(fila, callback_recargar):
                 try:
-                    # fila = (id_grupo, nombre_maestro, nombre_materia, cupo_maximo, periodo, anio, inscritos, horario, estado)
+                    # fila = (id_grupo, nombre_maestro, nombre_materia, cupo_maximo, periodo, years, alumnos_inscritos, horario, estado)
                     editar_grupo(area_contenido, fila[0], fila[1], fila[2], fila[3], fila[4], fila[5], fila[6], fila[7], fila[8], mostrar_tabla_base)
                 except Exception as e:
                     print(f"Error en edición de grupo: {e}")
@@ -680,6 +704,7 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
             actualizar_callback=actualizar_registro if tabla_sql else None,
             eliminar_callback=eliminar_registro if tabla_sql else None,
             header_text_color=header_text_color,
+            ocultar_primer_campo=ocultar_id,
             editar_callback=editar_cb,
             callback_recargar_tabla=mostrar_tabla_base if tabla_sql else None
         )
@@ -785,7 +810,7 @@ def crear_respaldo_completo():
         return
 
     tablas = [
-        "alumnos", "maestros", "administradores", "usuarios",
+        "Alumno", "Maestro", "Administrador", "usuarios",
         "Carreras", "Materia", "Grupo", "registros",
         "tipos_actividades", "salones",
         "calificaciones_finales", "calificaciones_actividades", "horario"
@@ -899,10 +924,10 @@ def mostrar_alumnos(frame):
         mostrar_form_registro_alumno(area, volver)
 
     def importar(area, volver):
-        ejecutar_importacion("alumnos", volver)
+        ejecutar_importacion("Alumno", volver)
 
     def exportar(area, volver):
-        ejecutar_exportacion("alumnos", "alumnos.csv")
+        ejecutar_exportacion("Alumno", "Alumno.csv")
 
     botones = [
         {"texto": "Registrar alumno", "color": "#552157", "comando": registrar},
@@ -911,10 +936,10 @@ def mostrar_alumnos(frame):
     ]
 
     headers = ["Número de Control", "Nombre", "Apellido Paterno",
-               "Apellido Materno", "Correo", "Carrera", "Semestre", "Estado"]
+               "Apellido Materno", "Correo", "Carrera", "Estado"]
 
     mostrar_seccion_gestion(frame, "Gestión de Alumnos", "#510054",
-                            "#fafafa", "#9880a0", botones, headers, "alumnos")
+                            "#fafafa", "#9880a0", botones, headers, "Alumno")
 
 
 def mostrar_maestros(frame):
@@ -923,10 +948,10 @@ def mostrar_maestros(frame):
         mostrar_form_registro_maestro(area, volver)
 
     def importar(area, volver):
-        ejecutar_importacion("maestros", volver)
+        ejecutar_importacion("Maestro", volver)
 
     def exportar(area, volver):
-        ejecutar_exportacion("maestros", "maestros.csv")
+        ejecutar_exportacion("Maestro", "Maestro.csv")
 
     botones = [
         {"texto": "Registrar maestro", "color": "#022A22", "comando": registrar},
@@ -935,10 +960,10 @@ def mostrar_maestros(frame):
     ]
 
     headers = ["Matrícula", "Nombre", "Apellido Paterno", "Apellido Materno", "Correo",
-               "Estatus", "Estudios", "Perfil", "Carga Académica", "Contrato", "Cédula"]
+               "Estatus", "Grado de Estudios", "Perfil Docente"]
 
     mostrar_seccion_gestion(frame, "Gestión de Maestros", "#004235",
-                            "#ffffff", "#6F8A90", botones, headers, "maestros")
+                            "#ffffff", "#6F8A90", botones, headers, "Maestro")
 
 
 def mostrar_admin(frame):
@@ -946,10 +971,10 @@ def mostrar_admin(frame):
         mostrar_form_registro_administrador(area, volver)
 
     def importar(area, volver):
-        ejecutar_importacion("administradores", volver)
+        ejecutar_importacion("Administrador", volver)
 
     def exportar(area, volver):
-        ejecutar_exportacion("administradores", "administradores.csv")
+        ejecutar_exportacion("Administrador", "Administrador.csv")
 
     botones = [
         {"texto": "Registrar administrador",
@@ -959,7 +984,7 @@ def mostrar_admin(frame):
     ]
     headers = ["Matrícula", "Nombre", "Apellido Paterno", "Apellido Materno"]
     mostrar_seccion_gestion(frame, "Gestión de Administradores", "#610139",
-                            "#ffffff", "#9880a0", botones, headers, "administradores")
+                            "#ffffff", "#9880a0", botones, headers, "Administrador")
 
 
 def mostrar_carreras(frame):
@@ -979,7 +1004,7 @@ def mostrar_carreras(frame):
     ]
     headers = ["Nombre de la Carrera", "Tipo", "Semestres", "Clave"]
     mostrar_seccion_gestion(frame, "Gestión de Carreras", "#43000E", "#ffffff",
-                            "#d1c4b3", botones, headers, "Carreras", header_text_color="white")
+                            "#d1c4b3", botones, headers, "Carreras", header_text_color="white", ocultar_id=True)
 
 
 def mostrar_materias(frame):
@@ -998,9 +1023,9 @@ def mostrar_materias(frame):
         {"texto": "Exportar CSV", "color": "#510113", "comando": exportar},
     ]
 
-    headers = ["Clave", "Nombre Materia", "Carrera", "Horas a la semana", "Unidades"]
+    headers = ["Clave", "Nombre Materia", "Horas a la semana", "Carrera", "Unidades"]
 
-    mostrar_seccion_gestion(frame, "Gestión de Materias", "#761127", "#ffffff", "#9A0000", botones, headers, tabla_sql="Materia", header_text_color="white")
+    mostrar_seccion_gestion(frame, "Gestión de Materias", "#761127", "#ffffff", "#9A0000", botones, headers, tabla_sql="Materia", header_text_color="white", ocultar_id=True)
 
 def mostrar_grupos(frame):
 
@@ -1022,7 +1047,7 @@ def mostrar_grupos(frame):
     # Headers sin el ID (que se salta): nombre_maestro, nombre_materia, cupo_maximo, periodo, anio, inscritos, horario, estado
     headers = ["Maestro", "Materia", "Cupo máximo", "Período", "Año", "Inscritos", "Horario", "Estado"]
 
-    mostrar_seccion_gestion(frame,"Gestión de Grupos","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"Grupo",header_text_color="white")
+    mostrar_seccion_gestion(frame,"Gestión de Grupos","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"Grupo",header_text_color="white", ocultar_id=True)
 
 def mostrar_inscripciones(frame):
 
@@ -1551,9 +1576,9 @@ def mostrar_reportes(frame):
             g.periodo, 
             g.years, 
             g.estado 
-        FROM grupos g
-        LEFT JOIN materias m ON g.id_materia = m.id_materia
-        LEFT JOIN maestros ma ON g.id_maestro = ma.id_maestro
+        FROM Grupo g
+        LEFT JOIN Materia m ON g.id_materia = m.id_materia
+        LEFT JOIN Maestro ma ON g.id_maestro = ma.id_maestro
         WHERE 1=1"""
         params = []
 

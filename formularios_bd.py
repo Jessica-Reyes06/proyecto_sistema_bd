@@ -174,7 +174,7 @@ def generar_numero_control_unico():
         numero = prefijo + sufijo
 
         existe = ejecutar_select(
-            "SELECT numero_control FROM alumnos WHERE numero_control=%s",
+            "SELECT numero_control FROM Alumno WHERE numero_control=%s",
             (numero,)
         )
 
@@ -208,7 +208,7 @@ def generar_matricula_administrador_unica():
         matricula = prefijo + sufijo
 
         existe = ejecutar_select(
-            "SELECT matricula FROM administradores WHERE matricula=%s",
+            "SELECT matricula FROM Administrador WHERE matricula=%s",
             (matricula,)
         )
 
@@ -559,7 +559,7 @@ def mostrar_form_registro_administrador(frame_contenido, volver_a_lista=None):
             return
 
         sql = """
-        INSERT INTO administradores
+        INSERT INTO Administrador
         (matricula,nombre,apellido_paterno,apellido_materno)
         VALUES (%s,%s,%s,%s)
         """
@@ -890,14 +890,14 @@ def mostrar_form_registro_grupo(frame_contenido,volver_a_lista=None):
     estado_label.pack()
 
     def guardar():
-        from funciones_datos import obtener_matricula_maestro_por_nombre, obtener_id_materia_por_nombre
+        from funciones_datos import obtener_id_maestro_por_nombre, obtener_id_materia_por_nombre
 
         nombre_maestro = combo_maestro.get()
         nombre_materia = combo_materia.get()
 
-        # Obtener matricula del maestro por nombre
-        matricula_maestro = obtener_matricula_maestro_por_nombre(nombre_maestro)
-        if not matricula_maestro:
+        # Obtener id del maestro por nombre
+        id_maestro = obtener_id_maestro_por_nombre(nombre_maestro)
+        if not id_maestro:
             estado_label.configure(
                 text="No se pudo completar el registro: Maestro no encontrado",
                 text_color="red"
@@ -906,8 +906,8 @@ def mostrar_form_registro_grupo(frame_contenido,volver_a_lista=None):
 
         # VALIDAR ESTADO DEL MAESTRO
         estado_maestro = ejecutar_select(
-            "SELECT estatus FROM Maestro WHERE matricula_maestro=%s",
-            (matricula_maestro,)
+            "SELECT estatus FROM Maestro WHERE id_maestro=%s",
+            (id_maestro,)
         )
 
         if not estado_maestro:
@@ -935,7 +935,7 @@ def mostrar_form_registro_grupo(frame_contenido,volver_a_lista=None):
 
         valores = (
             id_grupo.get(),
-            matricula_maestro,
+            id_maestro,
             id_materia,
             cupo.get(),
             entrada_periodo.get(),
@@ -947,7 +947,7 @@ def mostrar_form_registro_grupo(frame_contenido,volver_a_lista=None):
 
         sql = """
         INSERT INTO Grupo
-        (id_grupo,matricula_maestro,id_materia,cupo_maximo,periodo,anio,inscritos,horario,estado)
+        (id_grupo,id_maestro,id_materia,cupo_maximo,periodo,years,alumnos_inscritos,horario,estado)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
         """
 
@@ -1025,7 +1025,7 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
 
         # VALIDAR ESTADO ALUMNO
         estado_alumno = ejecutar_select(
-            "SELECT estatus_alumno FROM alumnos WHERE numero_control=%s",
+            "SELECT estatus_alumno FROM Alumno WHERE numero_control=%s",
             (alumno,)
         )
 

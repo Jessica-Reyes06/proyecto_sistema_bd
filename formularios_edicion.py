@@ -203,13 +203,13 @@ def editar_materias(frame_contenido, id_materia, clave, nombre_materia, horas_se
     ).grid(row=0, column=1, padx=10)
 
 
-def editar_grupo(frame_contenido, id_grupo, nombre_maestro, nombre_materia, cupo_maximo, periodo, anio, inscritos, horario, estado, volver_a_lista=None):
+def editar_grupo(frame_contenido, id_grupo, nombre_maestro, nombre_materia, cupo_maximo, periodo, years, alumnos_inscritos, horario, estado, volver_a_lista=None):
     """
     Formulario para editar un grupo existente.
     Recibe los datos actuales del registro y permite modificarlos.
     """
     from db_conexion import ejecutar_select
-    from funciones_datos import obtener_nombre_maestro_por_matricula, obtener_nombre_materia_por_id, obtener_matricula_maestro_por_nombre, obtener_id_materia_por_nombre
+    from funciones_datos import obtener_id_maestro_por_nombre, obtener_id_materia_por_nombre
     
     limpiar_frame(frame_contenido)
 
@@ -267,11 +267,11 @@ def editar_grupo(frame_contenido, id_grupo, nombre_maestro, nombre_materia, cupo
     label_anio.grid(row=5, column=0, padx=10, pady=5, sticky="w")
     anos = [str(y) for y in range(datetime.date.today().year, 1989, -1)]
     entrada_anio = customtkinter.CTkComboBox(cuerpo, values=anos, width=120, state="readonly")
-    entrada_anio.set(str(anio))
+    entrada_anio.set(str(years))
     entrada_anio.grid(row=5, column=1, padx=10, pady=5, sticky="w")
 
     entrada_inscritos = crear_campo(cuerpo, 6, "Inscritos")
-    entrada_inscritos.insert(0, str(inscritos))
+    entrada_inscritos.insert(0, str(alumnos_inscritos))
 
     entrada_horario = crear_campo(cuerpo, 7, "Horario")
     entrada_horario.insert(0, horario)
@@ -303,10 +303,10 @@ def editar_grupo(frame_contenido, id_grupo, nombre_maestro, nombre_materia, cupo
             estado_label.configure(text="Todos los campos deben llenarse", text_color="red")
             return
 
-        # Buscar la matricula del maestro por nombre
-        nueva_matricula_maestro = obtener_matricula_maestro_por_nombre(nombre_maestro_seleccionado)
+        # Buscar el ID del maestro por nombre
+        nuevo_id_maestro = obtener_id_maestro_por_nombre(nombre_maestro_seleccionado)
         
-        if nueva_matricula_maestro is None:
+        if nuevo_id_maestro is None:
             estado_label.configure(text="Error: Maestro no encontrado", text_color="red")
             return
 
@@ -320,10 +320,10 @@ def editar_grupo(frame_contenido, id_grupo, nombre_maestro, nombre_materia, cupo
         try:
             sql = """
             UPDATE Grupo 
-            SET matricula_maestro=%s, id_materia=%s, cupo_maximo=%s, periodo=%s, anio=%s, inscritos=%s, horario=%s, estado=%s
+            SET id_maestro=%s, id_materia=%s, cupo_maximo=%s, periodo=%s, years=%s, alumnos_inscritos=%s, horario=%s, estado=%s
             WHERE id_grupo=%s
             """
-            valores = (nueva_matricula_maestro, nuevo_id_materia, nuevo_cupo, nuevo_periodo, nuevo_anio, nuevos_inscritos, nuevo_horario, nuevo_estado, id_grupo)
+            valores = (nuevo_id_maestro, nuevo_id_materia, nuevo_cupo, nuevo_periodo, nuevo_anio, nuevos_inscritos, nuevo_horario, nuevo_estado, id_grupo)
             ejecutar_update(sql, valores)
             
             # Recarga la tabla inmediatamente después de actualizar
