@@ -58,7 +58,7 @@ try:
     grupos_lista = obtener_lista("grupo", "id_grupo")
     print(f"   ✅ Grupos: {len(grupos_lista)} elementos")
 
-    tipos_actividades_lista = obtener_lista("tipos_actividades", "nombre")
+    tipos_actividades_lista = obtener_lista("Tipos_actividades", "nombre")
     print(f"   ✅ Tipos de Actividades: {len(tipos_actividades_lista)} elementos")
 
     print()

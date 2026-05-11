@@ -255,12 +255,12 @@ def actualizar_registro(tabla, id_valor, nuevos_valores):
         "usuarios": "usuario",
         "Carreras": "id_carrera",
         "Materia": "id_materia",
-        "registros": "id_registro",
+        "Registro": "id_registro",
         "salones": "id_salon",
         "Grupo": "id_grupo",
-        "actividades": "id_actividad",
-        "tipos_actividades": "id_tipo",
-        "calificaciones_finales": "id_calificacion",
+        "Actividad": "id_actividad",
+        "Tipos_actividades": "id_tipo",
+        "Calificacion_final": "id_final",
     }
 
     campo_id = campos_id.get(tabla, "id")
@@ -305,8 +305,8 @@ def verificar_dependencias(tabla, campo_id, id_valor):
     # Mapa de dependencias por tabla
     dependencias = {
         "Alumno": [
-            ("registros", "numero_control", "inscripciones"),
-            ("calificaciones_finales", "numero_control", "calificaciones finales"),
+            ("Registro", "numero_control", "inscripciones"),
+            ("Calificacion_final", "numero_control", "calificaciones finales"),
         ],
         "Maestro": [
             ("Grupo", "id_maestro", "grupos asignados"),
@@ -318,13 +318,12 @@ def verificar_dependencias(tabla, campo_id, id_valor):
             ("horario", "id_salon", "horarios asignados"),
         ],
         "Grupo": [
-            ("registros", "id_grupo", "inscripciones"),
-            ("calificaciones_finales", "id_grupo", "calificaciones finales"),
+            ("Registro", "id_grupo", "inscripciones"),
+            ("Calificacion_final", "id_grupo", "calificaciones finales"),
         ],
-        "actividades": [],
-        "calificaciones_finales": [],
-        "calificaciones_actividades": [],
-        "registros": [],
+        "Actividad": [],
+        "Calificacion_final": [],
+        "Registro": [],
         "Materia": [],
     }
 
@@ -366,12 +365,12 @@ def eliminar_registro(tabla, id_valor, callback_recargar):
         "usuarios": "usuario",
         "Carreras": "id_carrera",
         "Materia": "id_materia",
-        "registros": "id_registro",
+        "Registro": "id_registro",
         "salones": "id_salon",
         "Grupo": "id_grupo",
-        "actividades": "id_actividad",
-        "tipos_actividades": "id_tipo",
-        "calificaciones_finales": "id_calificacion",
+        "Actividad": "id_actividad",
+        "Tipos_actividades": "id_tipo",
+        "Calificacion_final": "id_final",
     }
 
     campo_id = campos_id.get(tabla, "id")
@@ -929,9 +928,9 @@ def crear_respaldo_completo():
 
     tablas = [
         "Alumno", "Maestro", "Administrador", "usuarios",
-        "Carreras", "Materia", "Grupo", "registros",
-        "tipos_actividades", "salones",
-        "calificaciones_finales", "calificaciones_actividades", "horario"
+        "Carreras", "Materia", "Grupo", "Registro",
+        "Tipos_actividades", "salones",
+        "Calificacion_final", "Actividad", "horario"
     ]
 
     exportados = 0
@@ -1173,10 +1172,10 @@ def mostrar_inscripciones(frame):
         mostrar_form_registro_inscripcion(area, volver)
 
     def importar(area, volver):
-        ejecutar_importacion("registros", volver)
+        ejecutar_importacion("Registro", volver)
 
     def exportar(area, volver):
-        ejecutar_exportacion("registros", "inscripciones.csv")
+        ejecutar_exportacion("Registro", "inscripciones.csv")
 
     botones = [
         {"texto": "Inscribir alumno", "color": "#A64500", "comando": registrar},
@@ -1188,7 +1187,7 @@ def mostrar_inscripciones(frame):
                "Materia", "Estatus", "Tipo de inscripción"]
 
     mostrar_seccion_gestion(frame, "Inscripciones", "#7A3500",
-                            "#ffffff", "#C75C00", botones, headers, "registros")
+                            "#ffffff", "#C75C00", botones, headers, "Registro")
 
 
 def mostrar_usuarios(frame):
@@ -1311,10 +1310,10 @@ def mostrar_actividades(frame):
         mostrar_form_actividad(area, volver)
 
     def importar(area, volver):
-        ejecutar_importacion("actividades", volver)
+        ejecutar_importacion("Actividad", volver)
 
     def exportar(area, volver):
-        ejecutar_exportacion("actividades", "actividades.csv")
+        ejecutar_exportacion("Actividad", "actividad.csv")
 
     botones = [
         {"texto": "Nuevo tipo de actividad",
@@ -1341,15 +1340,28 @@ def mostrar_actividades(frame):
         limpiar_frame(area_contenido)
 
         try:
+            # Consulta corregida con JOIN para obtener datos relacionados
+            sql = """
+                SELECT
+                    a.id_actividad,
+                    ta.nombre as tipo_actividad,
+                    u.numero_unidad,
+                    g.id_grupo,
+                    m.nombre_materia as materia,
+                    a.ponderacion,
+                    a.detalles
+                FROM Actividad a
+                LEFT JOIN Tipos_actividades ta ON a.id_tipo = ta.id_tipo
+                LEFT JOIN Unidad u ON a.id_unidad = u.id_unidad
+                LEFT JOIN Grupo g ON u.id_materia = g.id_materia
+                LEFT JOIN Materia m ON u.id_materia = m.id_materia
+            """
+
             if grupo_seleccionado and grupo_seleccionado != "Todos":
-                registros = ejecutar_select(
-                    "SELECT id_actividad, tipo_actividad, unidad, id_grupo, materia, ponderacion, detalles FROM actividades WHERE id_grupo=%s ORDER BY id_actividad DESC",
-                    (grupo_seleccionado,)
-                )
+                sql += " WHERE g.id_grupo = %s"
+                registros = ejecutar_select(sql + " ORDER BY a.id_actividad DESC", (grupo_seleccionado,))
             else:
-                registros = ejecutar_select(
-                    "SELECT id_actividad, tipo_actividad, unidad, id_grupo, materia, ponderacion, detalles FROM actividades ORDER BY id_actividad DESC"
-                )
+                registros = ejecutar_select(sql + " ORDER BY a.id_actividad DESC")
         except Exception as e:
             print(f"Error cargando actividades: {e}")
             registros = []
@@ -1358,7 +1370,7 @@ def mostrar_actividades(frame):
             area_contenido,
             headers,
             registros,
-            "actividades",
+            "Actividad",
             color_tabla="#8fb1cb",
             actualizar_callback=actualizar_registro,
             eliminar_callback=eliminar_registro,
@@ -1384,11 +1396,11 @@ def mostrar_calificaciones_finales(frame):
         mostrar_form_registro_calificacion_final(area, volver)
 
     def importar(area, volver):
-        ejecutar_importacion("calificaciones_finales", volver)
+        ejecutar_importacion("Calificacion_final", volver)
 
     def exportar(area, volver):
-        ejecutar_exportacion("calificaciones_finales",
-                             "calificaciones_finales.csv")
+        ejecutar_exportacion("Calificacion_final",
+                             "calificacion_final.csv")
 
     botones = [
         {"texto": "Registrar calificación",
@@ -1408,7 +1420,7 @@ def mostrar_calificaciones_finales(frame):
         "#8fb1cb",
         botones,
         headers,
-        "calificaciones_finales",
+        "Calificacion_final",
         header_text_color="white"
     )
 
@@ -1686,17 +1698,17 @@ def mostrar_reportes(frame):
         año = filtro_año.get()
 
         # Construir consulta SQL dinámicamente
-        sql = """SELECT 
+        sql = """SELECT
             g.id_grupo,
-            g.clave_grupo,
+            g.id_grupo,
             m.nombre_materia,
             CONCAT(ma.nombre_maestro, ' ', ma.apellido_paterno, ' ', ma.apellido_materno) as maestro,
-            g.periodo, 
-            g.years, 
-            g.estado 
-        FROM grupo g
-        LEFT JOIN materia m ON g.id_materia = m.id_materia
-        LEFT JOIN maestro ma ON g.id_maestro = ma.id_maestro
+            g.periodo,
+            g.years,
+            g.estado
+        FROM Grupo g
+        LEFT JOIN Materia m ON g.id_materia = m.id_materia
+        LEFT JOIN Maestro ma ON g.id_maestro = ma.id_maestro
         WHERE 1=1"""
         params = []
 

@@ -646,7 +646,7 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
     unidad_field.configure(state="readonly")
 
     # Tipo de actividad - obtener de tabla Tipos_actividades
-    tipos_actividades = obtener_lista("tipos_actividades", "nombre")
+    tipos_actividades = obtener_lista("Tipos_actividades", "nombre")
     combo_tipo_actividad = crear_combo(cuerpo, 3, "Tipo de actividad", tipos_actividades)
 
     # Ponderación
@@ -1226,7 +1226,7 @@ def mostrar_form_registro_calificacion_actividad(frame_contenido, volver_a_lista
 
     # COMBOS PARA ALUMNO Y ACTIVIDAD
     alumnos = obtener_lista("Alumno", "numero_control")
-    actividades = obtener_lista("tipos_actividades", "nombre")
+    actividades = obtener_lista("Tipos_actividades", "nombre")
 
     combo_alumno = crear_combo(cuerpo, 0, "Alumno", alumnos)
     combo_actividad = crear_combo(cuerpo, 1, "Actividad", actividades)
