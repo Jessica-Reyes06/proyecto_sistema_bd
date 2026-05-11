@@ -483,17 +483,17 @@ def mostrar_dashboard(frame):
                  text_color="white").pack(anchor="w", padx=12, pady=(0, 10))
 
     # ── CARGA DE ÍCONOS ──────────────────────────────────────
-    icono_alumnos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/alumnos.png")),        size=(64, 64))
-    icono_maestros = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/maestros.png")),       size=(64, 64))
-    icono_materias = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/materias.png")),       size=(64, 64))
-    icono_grupos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/grupos.png")),         size=(64, 64))
-    icono_inscripciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/inscripciones.png")), size=(64, 64))
-    icono_admin = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/admin.png")),          size=(64, 64))
-    icono_carreras = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/carreras.png")),       size=(64, 64))
-    icono_calificaciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/calificaciones.png")), size=(64, 64))
-    icono_actividades = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/actividades.png")),    size=(64, 64))
-    icono_reportes = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/reportes.png")),       size=(64, 64))
-    icono_usuario = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/usuario.png")),       size=(64, 64))
+    icono_alumnos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/alumnos.png")),        size=(40, 40))
+    icono_maestros = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/maestros.png")),       size=(40, 40))
+    icono_materias = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/materias.png")),       size=(40, 40))
+    icono_grupos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/grupos.png")),         size=(40, 40))
+    icono_inscripciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/inscripciones.png")), size=(40, 40))
+    icono_admin = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/admin.png")),          size=(40, 40))
+    icono_carreras = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/carreras.png")),       size=(40, 40))
+    icono_calificaciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/calificaciones.png")), size=(40, 40))
+    icono_actividades = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/actividades.png")),    size=(40, 40))
+    icono_reportes = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/reportes.png")),       size=(40, 40))
+    icono_usuario = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/usuario.png")),       size=(40, 40))
 
 
     # ── ÁREA PRINCIPAL: izquierda + derecha ──────────────────
@@ -549,17 +549,9 @@ def mostrar_dashboard(frame):
     right_wrapper.grid_rowconfigure(0, weight=1)
     right_wrapper.grid_columnconfigure(0, weight=1)
 
-    # Panel derecho con ancho máximo limitado
-    # Calcular ancho máximo dinámico según el escalador
-    if escalador_global:
-        # 3 columnas * ~400px + padding y márgenes
-        ancho_max_panel = escalador_global.get_escalado_ancho(1600)
-    else:
-        ancho_max_panel = 1600
-
-    right_panel = CTkFrame(right_wrapper, fg_color="transparent", width=ancho_max_panel)
+    # Panel derecho - SIN grid_propagate para que se adapte al espacio
+    right_panel = CTkFrame(right_wrapper, fg_color="transparent")
     right_panel.grid(row=0, column=0, sticky="nsew")
-    right_panel.grid_propagate(False)  # Mantener ancho fijo máximo
 
     CTkLabel(right_panel, text="Catálogos del Sistema",
              font=("Arial", 20, "bold"), text_color="#000000").pack(anchor="w", pady=(0, 10))
@@ -575,13 +567,13 @@ def mostrar_dashboard(frame):
     grid_frame = CTkFrame(grid_container, fg_color="transparent")
     grid_frame.grid(row=0, column=0, sticky="nsew")
 
-    # Calcular minsize dinámico para columnas según el escalador
+    # Aumentar minsize de columnas para tarjetas más anchas
     if escalador_global:
-        minsize_col = escalador_global.get_escalado_ancho(380)
+        minsize_col = escalador_global.get_escalado_ancho(350)
         # Limitar minsize máximo
-        minsize_col = min(minsize_col, escalador_global.get_escalado_ancho(420))
+        minsize_col = min(minsize_col, escalador_global.get_escalado_ancho(400))
     else:
-        minsize_col = 380
+        minsize_col = 350
 
     for col in range(3):
         grid_frame.grid_columnconfigure(col, weight=1, minsize=minsize_col)
@@ -606,38 +598,25 @@ def mostrar_dashboard(frame):
         c = idx % 3
         grid_frame.grid_rowconfigure(r, weight=1)
 
-        # Calcular ancho dinámico de la tarjeta según el escalador
-        if escalador_global:
-            # Ancho base más amplio para acomodar texto largo
-            ancho_card = escalador_global.get_escalado_ancho(380)
-            # Limitar ancho máximo para tarjetas muy anchas
-            ancho_card = min(ancho_card, escalador_global.get_escalado_ancho(420))
-            # Wraplength para el subtítulo (un poco menos que el ancho)
-            wraplength_sub = ancho_card - 40  # 40px menos para márgenes
-        else:
-            # Valores por defecto sin escalador
-            ancho_card = 380
-            wraplength_sub = 340
-
-        # Card con ancho dinámico
+        # Crear tarjeta fluida - se adapta al espacio disponible
         card = CTkFrame(grid_frame, fg_color=color_c,
-                        corner_radius=12, cursor="hand2", width=ancho_card)
+                        corner_radius=12, cursor="hand2")
         card.grid(row=r, column=c, padx=8, pady=8, sticky="nsew")
-        card.grid_propagate(False)  # Mantener ancho fijo
         card.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
 
         lbl_icono = CTkLabel(card, text="", image=icono_c)
-        lbl_icono.pack(pady=(16, 4))
+        lbl_icono.pack(pady=(12, 2))  # Reducido padding: (16,4) -> (12,2)
         lbl_icono.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
 
         lbl_titulo = CTkLabel(card, text=titulo_c, font=(
-            "Arial", 15, "bold"), text_color="white", anchor="center")
+            "Arial", 15, "bold"), text_color="white", anchor="center",
+            justify="center")
         lbl_titulo.pack(pady=(0, 2))
         lbl_titulo.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
 
         lbl_sub = CTkLabel(card, text=subtitulo_c, font=(
             "Arial", 11), text_color="#cccccc", anchor="center",
-            justify="center", wraplength=wraplength_sub)
+            justify="center")
         lbl_sub.pack(pady=(0, 16))
         lbl_sub.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
 
@@ -1392,37 +1371,196 @@ def mostrar_actividades(frame):
 
 
 def mostrar_calificaciones_finales(frame):
-    def registrar(area, volver):
-        mostrar_form_registro_calificacion_final(area, volver)
+    """Muestra calificaciones finales con JOINs correctos y manejo de bonuses"""
+    from db_conexion import ejecutar_select
 
-    def importar(area, volver):
-        ejecutar_importacion("Calificacion_final", volver)
+    limpiar_frame(frame)
 
-    def exportar(area, volver):
-        ejecutar_exportacion("Calificacion_final",
-                             "calificacion_final.csv")
+    CTkButton(frame, text="←", width=80, command=lambda: mostrar_dashboard(
+        frame)).pack(anchor="w", padx=20, pady=10)
 
+    header = CTkFrame(frame, height=60, fg_color="#2b4d7a")
+    header.pack(fill="x")
+
+    CTkLabel(header, text="Gestión de Calificaciones Finales", text_color="white",
+             font=("Arial", 26, "bold")).pack(pady=15)
+
+    menu = CTkFrame(frame, fg_color="#ffffff")
+    menu.pack(fill="x", padx=20, pady=10)
+
+    for i in range(3):
+        menu.grid_columnconfigure(i, weight=1)
+
+    # Barra de búsqueda
+    barra_busqueda = CTkEntry(
+        frame,
+        corner_radius=20,
+        border_width=1,
+        border_color="#888888",
+        width=200,
+        height=35,
+        placeholder_text="Buscar por control o nombre...",
+        placeholder_text_color="#888888"
+    )
+    barra_busqueda.pack(fill="x", padx=20, pady=10)
+
+    # Botones del menú
     botones = [
-        {"texto": "Registrar calificación",
-            "color": "#2b4d7a", "comando": registrar},
-        {"texto": "Importar CSV", "color": "#2b4d7a", "comando": importar},
-        {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": exportar},
+        {"texto": "Registrar calificación", "color": "#2b4d7a", "comando": None},
+        {"texto": "Importar CSV", "color": "#2b4d7a", "comando": None},
+        {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": None},
     ]
 
-    headers = ["Numero de control", "Alumno", "Grupo",
-               "Materia", "Periodo", "Calificación Final", ]
+    for i, btn in enumerate(botones):
+        boton = crear_boton_menu_dinamico(menu, btn["texto"], btn["color"])
+        boton.grid(row=0, column=i, padx=10, pady=10)
 
-    mostrar_seccion_gestion(
-        frame,
-        "Gestión de Calificaciones Finales",
-        "#2b4d7a",
-        "#ffffff",
-        "#8fb1cb",
-        botones,
-        headers,
-        "Calificacion_final",
-        header_text_color="white"
+    # Área de contenido
+    area_contenido = CTkFrame(frame)
+    area_contenido.pack(fill="both", expand=True, padx=20, pady=10)
+
+    def cargar_datos_con_filtro():
+        """Carga calificaciones con JOINs y bonuses"""
+        limpiar_frame(area_contenido)
+
+        filtro = barra_busqueda.get().strip()
+
+        # Consulta SQL con JOINs y cálculo de bonuses
+        sql = """
+        SELECT
+            cf.id_final,
+            a.numero_control,
+            CONCAT(a.nombre_alumno, ' ', a.apellido_paterno, ' ', a.apellido_materno) as alumno,
+            g.id_grupo as grupo,
+            m.nombre_materia as materia,
+            CONCAT(g.periodo, ' ', g.years) as periodo,
+            cf.calificacion +
+            COALESCE((SELECT SUM(valor) FROM BonusMateria WHERE id_registro = r.id_registro), 0) +
+            COALESCE((SELECT SUM(bu.valor) FROM BonusUnidad bu WHERE bu.id_registro = r.id_registro), 0) as calificacion_final
+        FROM Calificacion_final cf
+        JOIN Registro r ON cf.id_registro = r.id_registro
+        JOIN Alumno a ON r.id_alumno = a.id_alumno
+        JOIN Grupo g ON r.id_grupo = g.id_grupo
+        JOIN Materia m ON g.id_materia = m.id_materia
+        WHERE 1=1
+        """
+
+        params = []
+        if filtro:
+            sql += " AND (a.numero_control ILIKE %s OR CONCAT(a.nombre_alumno, ' ', a.apellido_paterno, ' ', a.apellido_materno) ILIKE %s)"
+            params = [f'%{filtro}%', f'%{filtro}%']
+
+        sql += " ORDER BY a.numero_control ASC"
+
+        try:
+            resultados = ejecutar_select(sql, tuple(params) if params else None)
+
+            # Transformar al formato esperado
+            datos = []
+            for row in resultados:
+                datos.append((
+                    row[0],  # id_final (para editar/eliminar)
+                    row[1],  # numero_control
+                    row[2],  # alumno (nombre completo)
+                    row[3],  # grupo
+                    row[4],  # materia
+                    row[5],  # periodo
+                    f"{float(row[6]):.1f}"  # calificacion_final formateada
+                ))
+
+        except Exception as e:
+            print(f"Error cargando calificaciones: {e}")
+            datos = []
+
+        # Headers en ORDEN CORRECTO
+        headers = [
+            "Número de Control",
+            "Alumno",
+            "Grupo",
+            "Materia",
+            "Período",
+            "Calificación Final"
+        ]
+
+        # Crear tabla
+        crear_tabla_editable(
+            area_contenido,
+            headers,
+            datos,
+            "Calificacion_final",
+            color_tabla="#8fb1cb",
+            actualizar_callback=actualizar_calificacion_final_callback,
+            eliminar_callback=eliminar_calificacion_final_callback,
+            header_text_color="white",
+            ocultar_primer_campo=True,  # Ocultar id_final
+            callback_recargar_tabla=cargar_datos_con_filtro
+        )
+
+        if not datos:
+            CTkLabel(
+                area_contenido,
+                text="No hay calificaciones finales registradas",
+                font=("Arial", 15, "bold"),
+                text_color="#000000"
+            ).pack(pady=(10, 12))
+
+    # Conectar busqueda con recarga
+    barra_busqueda.bind("<KeyRelease>", lambda event: cargar_datos_con_filtro())
+
+    # Cargar datos iniciales
+    cargar_datos_con_filtro()
+
+
+def actualizar_calificacion_final_callback(tabla, id_final, nuevos_valores):
+    """Callback para actualizar calificación final"""
+    from db_conexion import ejecutar_update
+    from tkinter import messagebox
+
+    try:
+        sql = """
+        UPDATE Calificacion_final
+        SET calificacion = %s,
+            fecha_modificacion = CURRENT_TIMESTAMP
+        WHERE id_final = %s
+        """
+
+        # nuevos_valores es una lista sin el id, tomamos el último (calificación)
+        calificacion = nuevos_valores[-1] if nuevos_valores else 0
+
+        ejecutar_update(sql, (calificacion, id_final))
+        messagebox.showinfo("Éxito", "Calificación actualizada correctamente")
+        return True
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Error al actualizar: {str(e)}")
+        return False
+
+
+def eliminar_calificacion_final_callback(tabla, id_final, callback_recargar):
+    """Callback para eliminar calificación final"""
+    from db_conexion import ejecutar_delete
+    from tkinter import messagebox
+
+    confirmar = messagebox.askyesno(
+        "Confirmar eliminación",
+        f"¿Está seguro de eliminar la calificación con ID {id_final}?\n\nEsta acción no se puede deshacer."
     )
+
+    if not confirmar:
+        return
+
+    sql = "DELETE FROM Calificacion_final WHERE id_final = %s"
+
+    try:
+        exito = ejecutar_delete(sql, (id_final,))
+        if exito:
+            messagebox.showinfo("Éxito", "Calificación eliminada correctamente")
+            if callback_recargar:
+                callback_recargar()
+        else:
+            messagebox.showwarning("Advertencia", "No se encontró la calificación a eliminar")
+    except Exception as e:
+        messagebox.showerror("Error", f"Error al eliminar: {str(e)}")
 
 
 

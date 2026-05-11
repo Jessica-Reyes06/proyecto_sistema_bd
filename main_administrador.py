@@ -31,26 +31,11 @@ def iniciar_admin():
     ventana_principal = ctk.CTk()
     ventana_principal.title("Panel Administrador")
 
-    ventana_principal.withdraw()
-
-    def mostrar_max_admin():
-        ventana_principal.deiconify()
-        ventana_principal.state("zoomed")
-
-    ventana_principal.after(10, mostrar_max_admin)
+    # NO ocultar la ventana ni maximizar automáticamente
+    # Dejar que el usuario decida si maximizar
 
     # tamaño mínimo para evitar romper el layout
     ventana_principal.minsize(1100, 700)
-
-    # ===== INICIALIZAR ESCALADOR DINÁMICO =====
-    escalador = crear_escalador(ventana_principal)
-    info_res = escalador.get_info_resolucion()
-    print(f"🖥️  Resolución detectada: {info_res['screen_width']}x{info_res['screen_height']} ({info_res['categoria']})")
-    print(f"📏 Factor de escala: {info_res['scale_factor']:.2f}x")
-
-    # Compartir el escalador con funciones_admin.py
-    from funciones_admin import set_escalador
-    set_escalador(escalador)
 
     # ===== ESCALADO AUTOMÁTICO SEGÚN PANTALLA =====
     screen_w = ventana_principal.winfo_screenwidth()
@@ -62,6 +47,17 @@ def iniciar_admin():
     else:
         ctk.set_widget_scaling(1.0)
 
+    # ===== INICIALIZAR ESCALADOR DINÁMICO =====
+    # IMPORTANTE: Crear escalador DESPUÉS de que la ventana es visible
+    escalador = crear_escalador(ventana_principal)
+    info_res = escalador.get_info_resolucion()
+    print(f"🖥️  Resolución detectada: {info_res['screen_width']}x{info_res['screen_height']} ({info_res['categoria']})")
+    print(f"📏 Factor de escala: {info_res['scale_factor']:.2f}x")
+
+    # Compartir el escalador con funciones_admin.py
+    from funciones_admin import set_escalador
+    set_escalador(escalador)
+
     # ===== GRID PRINCIPAL =====
 
     ventana_principal.grid_columnconfigure(0, weight=0)  # sidebar fijo
@@ -69,9 +65,10 @@ def iniciar_admin():
     ventana_principal.grid_rowconfigure(0, weight=1)
 
     # ===== SIDEBAR =====
-    ancho_sidebar = escalador.get_escalado_ancho(280)
+    # Aumentar ancho base para acomodar botones más anchos (260px base + padding)
+    ancho_sidebar = escalador.get_escalado_ancho(320)
     # Limitar el ancho máximo del sidebar
-    ancho_sidebar = min(ancho_sidebar, escalador.get_escalado_ancho(350))
+    ancho_sidebar = min(ancho_sidebar, escalador.get_escalado_ancho(400))
 
     sidebar = ctk.CTkFrame(ventana_principal, width=ancho_sidebar, fg_color="#003152")
     sidebar.grid(row=0, column=0, sticky="ns")
@@ -123,17 +120,22 @@ def iniciar_admin():
     main_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
 
     # Crear botones dinámicos con el escalador
+    # Aumentar ancho base para acomodar textos largos
+    ancho_boton = escalador.get_escalado_ancho(260)
+    alto_boton = escalador.get_escalado_alto(40)
+    tamano_fuente = escalador.get_tamano_fuente(14)
+
     btn_inicio = ctk.CTkButton(
         frame_inicio,
         text="   Inicio",
         fg_color="#003152",
         hover_color="#1c669f",
         text_color="white",
-        width=escalador.get_escalado_ancho(200),
-        height=escalador.get_escalado_alto(40),
+        width=ancho_boton,
+        height=alto_boton,
         image=img_inicio,
         anchor="w",
-        font=("Arial", escalador.get_tamano_fuente(14)),
+        font=("Arial", tamano_fuente),
         command=lambda: mostrar_dashboard(main_frame)
     )
     btn_inicio.pack()
@@ -151,11 +153,11 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=escalador.get_escalado_ancho(200),
-        height=escalador.get_escalado_alto(40),
+        width=ancho_boton,
+        height=alto_boton,
         image=img_calendario,
         anchor="w",
-        font=("Arial", escalador.get_tamano_fuente(14)),
+        font=("Arial", tamano_fuente),
         command=lambda: mostrar_calendario_imagen(main_frame)
     )
     btn_cal.pack(fill="x")
@@ -172,11 +174,11 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=escalador.get_escalado_ancho(200),
-        height=escalador.get_escalado_alto(40),
+        width=ancho_boton,
+        height=alto_boton,
         image=img_pendientes,
         anchor="w",
-        font=("Arial", escalador.get_tamano_fuente(14)),
+        font=("Arial", tamano_fuente),
         command=lambda: mostrar_solicitudes(main_frame)
     )
     btn_pend.pack(fill="x")
@@ -193,10 +195,10 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=escalador.get_escalado_ancho(200),
-        height=escalador.get_escalado_alto(40),
+        width=ancho_boton,
+        height=alto_boton,
         anchor="w",
-        font=("Arial", escalador.get_tamano_fuente(14)),
+        font=("Arial", tamano_fuente),
         command=cambiar_modo,
         image=img_modo
     )
@@ -214,11 +216,11 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=escalador.get_escalado_ancho(200),
-        height=escalador.get_escalado_alto(40),
+        width=ancho_boton,
+        height=alto_boton,
         image=img_respaldo,
         anchor="w",
-        font=("Arial", escalador.get_tamano_fuente(14)),
+        font=("Arial", tamano_fuente),
         command=crear_respaldo_completo,
     )
     btn_respaldo.pack(fill="x")
@@ -235,11 +237,11 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=escalador.get_escalado_ancho(200),
-        height=escalador.get_escalado_alto(40),
+        width=ancho_boton,
+        height=alto_boton,
         image=img_respaldo,
         anchor="w",
-        font=("Arial", escalador.get_tamano_fuente(14)),
+        font=("Arial", tamano_fuente),
         command=restaurar_desde_respaldo,
     )
     btn_restaurar.pack(fill="x")
@@ -256,11 +258,11 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#962d22",
         text_color="white",
-        width=escalador.get_escalado_ancho(200),
-        height=escalador.get_escalado_alto(40),
+        width=ancho_boton,
+        height=alto_boton,
         image=img_cerrar_sesion,
         anchor="w",
-        font=("Arial", escalador.get_tamano_fuente(14)),
+        font=("Arial", tamano_fuente),
         command=ventana_principal.destroy
     )
     btn_cerrar.pack(fill="x")
