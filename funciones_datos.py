@@ -28,15 +28,15 @@ def obtener_materias_ordenadas():
 
 
 def obtener_grupos_ordenadas():
-    """Obtiene todos los registros de grupos con campos en orden específico:
-    id_grupo, nombre_maestro, nombre_materia, cupo_maximo, periodo, years, alumnos_inscritos, horario, estado
-    Reemplaza id_maestro por nombre_maestro e id_materia por nombre_materia mediante JOIN"""
     sql = """
-    SELECT g.id_grupo, m.nombre_maestro, mat.nombre_materia, g.cupo_maximo, g.periodo, g.years, g.alumnos_inscritos, g.horario, g.estado
+    SELECT g.clave_grupo, m.nombre_maestro, mat.nombre_materia, g.cupo_maximo, g.periodo, g.years, 
+           COUNT(r.id_registro) AS alumnos_inscritos, g.horario, g.estado
     FROM grupo g
     JOIN maestro m ON g.id_maestro = m.id_maestro
     JOIN materia mat ON g.id_materia = mat.id_materia
-    ORDER BY g.id_grupo ASC
+    LEFT JOIN registro r ON r.id_grupo = g.id_grupo
+    GROUP BY g.id_grupo, m.nombre_maestro, mat.nombre_materia
+    ORDER BY g.clave_grupo ASC
     """
     return ejecutar_select(sql)
 
@@ -72,6 +72,26 @@ def obtener_administradores_ordenados():
     SELECT matricula, nombre, apellido_paterno, apellido_materno
     FROM administrador
     ORDER BY matricula ASC
+    """
+    return ejecutar_select(sql)
+
+
+def obtener_registros_ordenados():
+    """Obtiene inscripciones en el orden visible requerido para la interfaz."""
+    sql = """
+    SELECT
+        r.id_registro,
+        CONCAT(a.nombre_alumno, ' ', a.apellido_paterno, ' ', a.apellido_materno) AS alumno,
+        a.numero_control,
+        g.clave_grupo,
+        m.nombre_materia,
+        r.estatus_materia,
+        r.tipo_registro
+    FROM registro r
+    LEFT JOIN alumno a ON r.id_alumno = a.id_alumno
+    LEFT JOIN grupo g ON r.id_grupo = g.id_grupo
+    LEFT JOIN materia m ON g.id_materia = m.id_materia
+    ORDER BY r.id_registro DESC
     """
     return ejecutar_select(sql)
 

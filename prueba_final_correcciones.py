@@ -55,7 +55,7 @@ try:
     alumnos_lista = obtener_lista("alumno", "numero_control")
     print(f"   ✅ Alumnos: {len(alumnos_lista)} elementos")
 
-    grupos_lista = obtener_lista("grupo", "id_grupo")
+    grupos_lista = obtener_lista("grupo", "clave_grupo")
     print(f"   ✅ Grupos: {len(grupos_lista)} elementos")
 
     tipos_actividades_lista = obtener_lista("Tipos_actividades", "nombre")

@@ -376,13 +376,20 @@ def mostrar_form_registro_alumno(frame_contenido,volver_a_lista=None):
             estado_label.configure(text="Primero genera número de control",text_color="red")
             return
 
+        from funciones_datos import obtener_id_carrera_por_nombre
+
+        id_carrera = obtener_id_carrera_por_nombre(entradas["Carrera"].get())
+        if id_carrera is None:
+            estado_label.configure(text="No se encontró la carrera seleccionada", text_color="red")
+            return
+
         datos = (
             valores_generados["numero"],
             entradas["Nombre"].get(),
             entradas["ApellidoPaterno"].get(),
             entradas["ApellidoMaterno"].get(),
             valores_generados["correo"],
-            entradas["Carrera"].get(),
+            id_carrera,
             entradas["Semestre"].get(),
             entradas["Estado"].get()
         )
@@ -390,13 +397,15 @@ def mostrar_form_registro_alumno(frame_contenido,volver_a_lista=None):
         sql = """
         INSERT INTO alumno
         (numero_control,nombre_alumno,apellido_paterno,apellido_materno,
-        correo_alumno,carrera,semestre,estatus_alumno)
+        correo_alumno,id_carrera,semestre,estatus_alumno)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
         """
 
-        ejecutar_insert(sql,datos)
-
-        estado_label.configure(text="Alumno guardado",text_color="green")
+        try:
+            ejecutar_insert(sql,datos)
+            estado_label.configure(text="Alumno guardado",text_color="green")
+        except Exception as e:
+            estado_label.configure(text=str(e), text_color="red")
 
     botones = customtkinter.CTkFrame(frame_contenido,fg_color="transparent")
     botones.pack(pady=20)
@@ -617,6 +626,8 @@ def mostrar_form_registro_tipo_actividad(frame_contenido, volver_a_lista=None):
     crear_formulario_generico(frame_contenido, "Registrar tipo de actividad", campos, sql, volver_a_lista)
 #
 #  ACTIVIDADES
+#
+#  ACTIVIDADES
 def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
 
     limpiar_frame(frame_contenido)
@@ -631,38 +642,35 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
     cuerpo = customtkinter.CTkFrame(frame_contenido)
     cuerpo.pack(padx=20, pady=10, fill="x")
 
-    # Obtener materias
+    # Materia
     materias = obtener_lista("materia", "nombre_materia")
     combo_materia = crear_combo(cuerpo, 0, "Materia", materias)
 
-    # Grupo será dinámico basado en materia
+    # Grupo dinámico
     combo_grupo = crear_combo(cuerpo, 1, "Grupo", ["Selecciona materia"])
 
-    # Unidad será readonly (se calcula de la materia)
+    # Unidad dinámica (combo)
     label_unidad = customtkinter.CTkLabel(cuerpo, text=formatear_etiqueta_campo("Unidad"), font=("Arial", 14))
     label_unidad.grid(row=2, column=0, padx=10, pady=5, sticky="w")
-    unidad_field = customtkinter.CTkEntry(cuerpo, width=260)
-    unidad_field.grid(row=2, column=1, padx=10, pady=5, sticky="w")
-    unidad_field.configure(state="readonly")
+    combo_unidad = customtkinter.CTkComboBox(cuerpo, width=260, values=["Selecciona materia"], state="readonly")
+    combo_unidad.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+    combo_unidad._unidad_map = {}
 
-    # Tipo de actividad - obtener de tabla Tipos_actividades
-    tipos_actividades = obtener_lista("Tipos_actividades", "nombre")
+    # Tipo de actividad
+    tipos_actividades = obtener_lista("tipos_actividades", "nombre")
     combo_tipo_actividad = crear_combo(cuerpo, 3, "Tipo de actividad", tipos_actividades)
 
-    # Ponderación
-    ponderacion_field = crear_campo(cuerpo, 4, "Ponderación")
-
     # Detalles
-    detalles_field = crear_campo(cuerpo, 5, "Detalles")
+    detalles_field = crear_campo(cuerpo, 4, "Detalles")
 
     estado_label = customtkinter.CTkLabel(frame_contenido, text="")
     estado_label.pack()
 
     def actualizar_grupo_y_unidad(materia_nombre):
-        # Obtener grupos de la materia seleccionada
+        # Grupos
         try:
             grupos_result = ejecutar_select(
-                "SELECT id_grupo FROM grupo WHERE id_materia = (SELECT id_materia FROM materia WHERE nombre_materia = %s)",
+                "SELECT clave_grupo FROM grupo WHERE id_materia = (SELECT id_materia FROM materia WHERE nombre_materia = %s)",
                 (materia_nombre,)
             )
             grupos = [str(g[0]) for g in grupos_result] if grupos_result else ["No hay grupos"]
@@ -670,60 +678,58 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
             combo_grupo.set(grupos[0])
         except Exception as e:
             print(f"Error obteniendo grupos: {e}")
-            combo_grupo.configure(values=["Error"])
-            combo_grupo.set("Error")
 
-        # Obtener unidades de la materia
+        # Unidades
         try:
             unidades_result = ejecutar_select(
-                "SELECT creditos FROM materia WHERE nombre_materia = %s",
+                "SELECT id_unidad, numero_unidad, tema_unidad FROM unidad WHERE id_materia = (SELECT id_materia FROM materia WHERE nombre_materia = %s) ORDER BY numero_unidad",
                 (materia_nombre,)
             )
-            unidades = str(unidades_result[0][0]) if unidades_result else "0"
-            unidad_field.configure(state="normal")
-            unidad_field.delete(0, "end")
-            unidad_field.insert(0, unidades)
-            unidad_field.configure(state="readonly")
+            if unidades_result:
+                combo_unidad._unidad_map = {f"Unidad {u[1]} - {u[2]}": u[0] for u in unidades_result}
+                combo_unidad.configure(values=list(combo_unidad._unidad_map.keys()))
+                combo_unidad.set(list(combo_unidad._unidad_map.keys())[0])
+            else:
+                combo_unidad._unidad_map = {}
+                combo_unidad.configure(values=["No hay unidades"])
+                combo_unidad.set("No hay unidades")
         except Exception as e:
             print(f"Error obteniendo unidades: {e}")
-            unidad_field.configure(state="normal")
-            unidad_field.delete(0, "end")
-            unidad_field.insert(0, "Error")
-            unidad_field.configure(state="readonly")
 
-    # Actualizar grupo y unidad cuando cambia la materia
     def on_materia_change(event=None):
-        materia = combo_materia.get()
-        actualizar_grupo_y_unidad(materia)
+        actualizar_grupo_y_unidad(combo_materia.get())
 
     combo_materia.bind("<<ComboboxChanged>>", on_materia_change)
 
-    # Inicializar con la primera materia
     if materias and materias[0] != "No hay datos":
         actualizar_grupo_y_unidad(materias[0])
 
     def guardar():
-        valores = (
-            combo_materia.get(),
-            combo_grupo.get(),
-            unidad_field.get(),
-            combo_tipo_actividad.get(),
-            ponderacion_field.get(),
-            detalles_field.get()
-        )
+        tipo_nombre   = combo_tipo_actividad.get()
+        unidad_texto  = combo_unidad.get()
+        detalles      = detalles_field.get()
 
-        if "" in valores or "No hay" in str(valores) or "Error" in str(valores):
+        if not all([tipo_nombre, unidad_texto, detalles]) or "No hay" in unidad_texto:
             estado_label.configure(text="Todos los campos deben llenarse correctamente", text_color="red")
             return
 
-        sql = """
-        INSERT INTO tipos_actividades
-        (id_grupo, id_tipo, unidades, ponderacion, detalles)
-        VALUES (%s, %s, %s, %s, %s)
-        """
+        tipo_result = ejecutar_select(
+            "SELECT id_tipo FROM tipos_actividades WHERE nombre = %s", (tipo_nombre,)
+        )
+        id_unidad = combo_unidad._unidad_map.get(unidad_texto)
 
+        if not tipo_result or not id_unidad:
+            estado_label.configure(text="Error obteniendo datos, intenta de nuevo", text_color="red")
+            return
+
+        id_tipo = tipo_result[0][0]
+
+        sql = """
+        INSERT INTO actividad (id_tipo, id_unidad, ponderacion, detalles)
+        VALUES (%s, %s, NULL, %s)
+        """
         try:
-            ejecutar_insert(sql, valores[1:6])
+            ejecutar_insert(sql, (id_tipo, id_unidad, detalles))
             estado_label.configure(text="Actividad registrada correctamente", text_color="green")
             if volver_a_lista:
                 volver_a_lista()
@@ -735,7 +741,6 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
 
     customtkinter.CTkButton(botones, text="Guardar", command=guardar).grid(row=0, column=0, padx=10)
     customtkinter.CTkButton(botones, text="Cancelar", command=lambda: volver_a_lista() if volver_a_lista else None).grid(row=0, column=1, padx=10)
-
 # MATERIAS
 
 def mostrar_form_registro_materia(frame_contenido, volver_a_lista=None):
@@ -998,38 +1003,39 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
     cuerpo = customtkinter.CTkFrame(frame_contenido)
     cuerpo.pack(padx=20,pady=10,fill="x")
 
-    alumnos = obtener_lista("alumno","numero_control")
-    grupos = obtener_lista("grupo","id_grupo")
+    alumnos = obtener_lista("alumno", "numero_control")
+    grupos = obtener_lista("grupo", "clave_grupo")
 
-    combo_alumno = crear_combo(cuerpo,0,"Alumno",alumnos)
-    combo_grupo = crear_combo(cuerpo,1,"Grupo",grupos)
-
-    fecha_registro = crear_campo(cuerpo,2,"Fecha registro")
-
-    combo_estatus = crear_combo(
-        cuerpo,
-        3,
-        "Estatus",
-        ["Cursando","Baja","Concluido"]
-    )
-
-    tipo_registro = crear_campo(cuerpo,4,"Tipo registro")
+    combo_alumno = crear_combo(cuerpo, 0, "Número de control", alumnos)
+    combo_grupo = crear_combo(cuerpo, 1, "Clave grupo", grupos)
+    combo_estatus = crear_combo(cuerpo, 2, "Estatus materia", ["Cursando", "Baja", "Concluido"])
+    tipo_registro = crear_campo(cuerpo, 3, "Tipo registro")
 
     estado_label = customtkinter.CTkLabel(frame_contenido,text="")
     estado_label.pack()
 
     def guardar():
 
-        alumno = combo_alumno.get()
-        grupo = combo_grupo.get()
+        numero_control = combo_alumno.get().strip()
+        clave_grupo = combo_grupo.get().strip()
 
-        # VALIDAR ESTADO ALUMNO
-        estado_alumno = ejecutar_select(
-            "SELECT estatus_alumno FROM alumno WHERE numero_control=%s",
-            (alumno,)
+        alumno_info = ejecutar_select(
+            "SELECT id_alumno, estatus_alumno FROM alumno WHERE numero_control=%s",
+            (numero_control,)
         )
 
-        if estado_alumno and estado_alumno[0][0] != "Activo":
+        if not alumno_info:
+            estado_label.configure(
+                text="No se encontró el alumno seleccionado",
+                text_color="red"
+            )
+            return
+
+        id_alumno = alumno_info[0][0]
+        estatus_alumno = alumno_info[0][1]
+
+        # VALIDAR ESTADO ALUMNO
+        if estatus_alumno != "Activo":
 
             estado_label.configure(
                 text="Solo alumnos activos pueden inscribirse",
@@ -1038,10 +1044,20 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
             return
 
         # VALIDAR ESTADO GRUPO
-        estado_grupo = ejecutar_select(
-            "SELECT estatus FROM grupo WHERE id_grupo=%s",
-            (grupo,)
+        grupo_info = ejecutar_select(
+            "SELECT id_grupo, estatus FROM grupo WHERE clave_grupo=%s OR CAST(id_grupo AS TEXT)=%s LIMIT 1",
+            (clave_grupo, clave_grupo)
         )
+
+        if not grupo_info:
+            estado_label.configure(
+                text="No se encontró el grupo seleccionado",
+                text_color="red"
+            )
+            return
+
+        id_grupo = grupo_info[0][0]
+        estado_grupo = grupo_info
 
         if estado_grupo and estado_grupo[0][0] in ["Cerrado","Cancelado"]:
 
@@ -1052,17 +1068,16 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
             return
 
         valores = (
-            alumno,
-            grupo,
-            fecha_registro.get(),
+            id_alumno,
+            id_grupo,
             combo_estatus.get(),
             tipo_registro.get()
         )
 
         sql = """
-        INSERT INTO registros
-        (numero_control,id_grupo,fecha_registro,estatus_materia,tipo_registro)
-        VALUES (%s,%s,%s,%s,%s)
+        INSERT INTO registro
+        (id_alumno,id_grupo,estatus_materia,tipo_registro)
+        VALUES (%s,%s,%s,%s)
         """
 
         try:
@@ -1157,7 +1172,7 @@ def mostrar_form_registro_calificacion_final(frame_contenido, volver_a_lista=Non
 
     # COMBOS PARA ALUMNO Y GRUPO
     alumnos = obtener_lista("Alumno", "numero_control")
-    grupos = obtener_lista("Grupo", "id_grupo")
+    grupos = obtener_lista("Grupo", "clave_grupo")
 
     combo_alumno = crear_combo(cuerpo, 0, "Alumno", alumnos)
     combo_grupo = crear_combo(cuerpo, 1, "Grupo", grupos)
