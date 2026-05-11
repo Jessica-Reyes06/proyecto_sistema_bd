@@ -1,19 +1,24 @@
 import os
-import mysql.connector
+import psycopg2
+from dotenv import load_dotenv
 
-# Leer contraseña desde variable de entorno
-conexion = mysql.connector.connect(
-    host="viaduct.proxy.rlwy.net",
-    port=56578,
-    user="root",
-    password="JcDUGyUdJGdIVdoZljhHhfDlnpwfLEgP",
-    database="db_escolar"
+# Cargar variables de entorno desde el archivo .env
+load_dotenv()
+
+# Conexión a PostgreSQL
+conexion = psycopg2.connect(
+    host=os.getenv("DB_HOST"),
+    port=os.getenv("DB_PORT"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    database=os.getenv("DB_NAME")
 )
 
-print("Conectado a MySQL - Base de datos: db_escolar")
+print(f"Conectado a PostgreSQL - Base de datos: {os.getenv('DB_NAME')}")
 
 
 def ejecutar_insert(sql, datos):
+    """Ejecuta una consulta INSERT con parámetros"""
     cursor = conexion.cursor()
     cursor.execute(sql, datos)
     conexion.commit()
@@ -21,7 +26,8 @@ def ejecutar_insert(sql, datos):
 
 
 def ejecutar_select(sql, params=None):
-    cursor = conexion.cursor()
+    """Ejecuta una consulta SELECT con parámetros"""
+    cursor = conexion.cursor()  # Sin RealDictCursor - devuelve tuplas como MySQL
     if params is None:
         cursor.execute(sql)
     else:

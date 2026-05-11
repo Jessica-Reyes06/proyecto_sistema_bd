@@ -6,6 +6,57 @@ from formularios_bd import *
 import os
 import sys
 
+# Variable global para el escalador (se inicializa en main_administrador.py)
+escalador_global = None
+
+
+def set_escalador(escalador):
+    """Establece el escalador global para usar en toda la aplicación"""
+    global escalador_global
+    escalador_global = escalador
+
+
+def get_escalador():
+    """Retorna el escalador global"""
+    return escalador_global
+
+
+def crear_boton_menu_dinamico(parent, texto, color, comando=None, ancho_base=180):
+    """
+    Crea un botón de menú con tamaño dinámico según la resolución
+    :param parent: Frame padre
+    :param texto: Texto del botón
+    :param color: Color de fondo
+    :param comando: Función callback (opcional)
+    :param ancho_base: Ancho base para cálculo (default 180)
+    :return: CTkButton configurado dinámicamente
+    """
+    if escalador_global:
+        # Usar el escalador global si está disponible
+        ancho = escalador_global.get_escalado_ancho(ancho_base)
+        alto = escalador_global.get_escalado_alto(35)
+        tamano_fuente = escalador_global.get_tamano_fuente(13)
+
+        # Limitar ancho máximo para botones muy anchos
+        ancho = min(ancho, escalador_global.get_escalado_ancho(250))
+    else:
+        # Valores por defecto si no hay escalador
+        ancho = ancho_base
+        alto = 35
+        tamano_fuente = 13
+
+    boton = CTkButton(
+        parent,
+        text=texto,
+        fg_color=color,
+        font=("Arial", tamano_fuente, "bold"),
+        width=ancho,
+        height=alto,
+        command=comando
+    )
+
+    return boton
+
 
 def ruta_recurso(ruta_relativa):
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(
@@ -216,10 +267,15 @@ def actualizar_registro(tabla, id_valor, nuevos_valores):
 
     # Construir UPDATE dinámico
     try:
-        # Obtener las columnas de la tabla
+        # Obtener las columnas de la tabla (PostgreSQL usa information_schema)
         cursor = conexion.cursor()
-        cursor.execute(f"DESCRIBE {tabla}")
-        columnas = [col[0] for col in cursor.fetchall()]
+        cursor.execute(f"""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = '{tabla}'
+            AND table_schema = 'public'
+        """)
+        columnas = [row[0] for row in cursor.fetchall()]
         cursor.close()
 
         # Excluir el ID de los valores a actualizar
@@ -419,8 +475,9 @@ def mostrar_dashboard(frame):
 
     for i, (label, valor, color) in enumerate(stats):
         stats_frame.grid_columnconfigure(i, weight=1)
-        card = CTkFrame(stats_frame, fg_color=color, corner_radius=10)
+        card = CTkFrame(stats_frame, fg_color=color, corner_radius=10, width=220)
         card.grid(row=0, column=i, padx=6, pady=4, sticky="ew")
+        card.grid_propagate(False)  # Mantener ancho fijo
         CTkLabel(card, text=label, font=("Arial", 13), text_color="white").pack(
             anchor="w", padx=12, pady=(10, 0))
         CTkLabel(card, text=valor, font=("Arial", 28, "bold"),
@@ -487,16 +544,48 @@ def mostrar_dashboard(frame):
                  anchor="w", justify="left", wraplength=190).pack(side="left", fill="x")
 
     # ── PANEL DERECHO: catálogos ─────────────────────────────
-    right_panel = CTkFrame(main_area, fg_color="transparent")
-    right_panel.grid(row=0, column=1, sticky="nsew")
+    # Contenedor wrapper para centrar y limitar ancho
+    right_wrapper = CTkFrame(main_area, fg_color="transparent")
+    right_wrapper.grid(row=0, column=1, sticky="nsew")
+    right_wrapper.grid_rowconfigure(0, weight=1)
+    right_wrapper.grid_columnconfigure(0, weight=1)
+
+    # Panel derecho con ancho máximo limitado
+    # Calcular ancho máximo dinámico según el escalador
+    if escalador_global:
+        # 3 columnas * ~400px + padding y márgenes
+        ancho_max_panel = escalador_global.get_escalado_ancho(1600)
+    else:
+        ancho_max_panel = 1600
+
+    right_panel = CTkFrame(right_wrapper, fg_color="transparent", width=ancho_max_panel)
+    right_panel.grid(row=0, column=0, sticky="nsew")
+    right_panel.grid_propagate(False)  # Mantener ancho fijo máximo
 
     CTkLabel(right_panel, text="Catálogos del Sistema",
              font=("Arial", 20, "bold"), text_color="#000000").pack(anchor="w", pady=(0, 10))
 
-    grid_frame = CTkFrame(right_panel, fg_color="transparent")
-    grid_frame.pack(fill="both", expand=True)
+    # Grid frame con ancho máximo limitado y centrado
+    grid_container = CTkFrame(right_panel, fg_color="transparent")
+    grid_container.pack(fill="both", expand=True)
+
+    # Centrar el grid_frame horizontalmente
+    grid_container.grid_rowconfigure(0, weight=1)
+    grid_container.grid_columnconfigure(0, weight=1)
+
+    grid_frame = CTkFrame(grid_container, fg_color="transparent")
+    grid_frame.grid(row=0, column=0, sticky="nsew")
+
+    # Calcular minsize dinámico para columnas según el escalador
+    if escalador_global:
+        minsize_col = escalador_global.get_escalado_ancho(380)
+        # Limitar minsize máximo
+        minsize_col = min(minsize_col, escalador_global.get_escalado_ancho(420))
+    else:
+        minsize_col = 380
+
     for col in range(3):
-        grid_frame.grid_columnconfigure(col, weight=1)
+        grid_frame.grid_columnconfigure(col, weight=1, minsize=minsize_col)
 
     catalogos = [
         ("Alumnos","Gestión de estudiantes", lambda: mostrar_alumnos(frame),                      "#510054", icono_alumnos),
@@ -518,9 +607,24 @@ def mostrar_dashboard(frame):
         c = idx % 3
         grid_frame.grid_rowconfigure(r, weight=1)
 
+        # Calcular ancho dinámico de la tarjeta según el escalador
+        if escalador_global:
+            # Ancho base más amplio para acomodar texto largo
+            ancho_card = escalador_global.get_escalado_ancho(380)
+            # Limitar ancho máximo para tarjetas muy anchas
+            ancho_card = min(ancho_card, escalador_global.get_escalado_ancho(420))
+            # Wraplength para el subtítulo (un poco menos que el ancho)
+            wraplength_sub = ancho_card - 40  # 40px menos para márgenes
+        else:
+            # Valores por defecto sin escalador
+            ancho_card = 380
+            wraplength_sub = 340
+
+        # Card con ancho dinámico
         card = CTkFrame(grid_frame, fg_color=color_c,
-                        corner_radius=12, cursor="hand2")
+                        corner_radius=12, cursor="hand2", width=ancho_card)
         card.grid(row=r, column=c, padx=8, pady=8, sticky="nsew")
+        card.grid_propagate(False)  # Mantener ancho fijo
         card.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
 
         lbl_icono = CTkLabel(card, text="", image=icono_c)
@@ -528,12 +632,13 @@ def mostrar_dashboard(frame):
         lbl_icono.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
 
         lbl_titulo = CTkLabel(card, text=titulo_c, font=(
-            "Arial", 15, "bold"), text_color="white")
+            "Arial", 15, "bold"), text_color="white", anchor="center")
         lbl_titulo.pack(pady=(0, 2))
         lbl_titulo.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
 
         lbl_sub = CTkLabel(card, text=subtitulo_c, font=(
-            "Arial", 11), text_color="#cccccc")
+            "Arial", 11), text_color="#cccccc", anchor="center",
+            justify="center", wraplength=wraplength_sub)
         lbl_sub.pack(pady=(0, 16))
         lbl_sub.bind("<Button-1>", lambda e, cmd=comando_c: cmd())
 
@@ -724,8 +829,21 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
         comando_base = btn.get("comando")
         cmd = (lambda cb=comando_base: cb(area_contenido,
                mostrar_tabla_base)) if comando_base else mostrar_tabla_base
-        CTkButton(menu, text=btn["texto"], fg_color=btn["color"], command=cmd).grid(
-            row=0, column=i, padx=10, pady=10)
+
+        # Usar botones dinámicos si el escalador está disponible
+        if escalador_global:
+            boton = crear_boton_menu_dinamico(
+                menu,
+                btn["texto"],
+                btn["color"],
+                cmd,
+                ancho_base=180
+            )
+        else:
+            # Botón estándar sin escalador
+            boton = CTkButton(menu, text=btn["texto"], fg_color=btn["color"], command=cmd)
+
+        boton.grid(row=0, column=i, padx=10, pady=10)
 
 
 def seleccionar_csv():
@@ -1119,11 +1237,11 @@ def mostrar_usuarios(frame):
                 COALESCE(a.numero_control, m.matricula, adm.matricula) AS usuario,
                 c.password,
                 r.nombre AS rol
-            FROM Cuentas c
-            JOIN Roles r ON c.id_rol = r.id_rol
-            LEFT JOIN Alumno a ON a.id_cuenta = c.id_cuenta
-            LEFT JOIN Maestro m ON m.id_cuenta = c.id_cuenta
-            LEFT JOIN Administrador adm ON adm.id_cuenta = c.id_cuenta
+            FROM cuentas c
+            JOIN roles r ON c.id_rol = r.id_rol
+            LEFT JOIN alumno a ON a.id_cuenta = c.id_cuenta
+            LEFT JOIN maestro m ON m.id_cuenta = c.id_cuenta
+            LEFT JOIN administrador adm ON adm.id_cuenta = c.id_cuenta
             """
             registros = ejecutar_select(sql)
         except Exception as e:
@@ -1576,9 +1694,9 @@ def mostrar_reportes(frame):
             g.periodo, 
             g.years, 
             g.estado 
-        FROM Grupo g
-        LEFT JOIN Materia m ON g.id_materia = m.id_materia
-        LEFT JOIN Maestro ma ON g.id_maestro = ma.id_maestro
+        FROM grupo g
+        LEFT JOIN materia m ON g.id_materia = m.id_materia
+        LEFT JOIN maestro ma ON g.id_maestro = ma.id_maestro
         WHERE 1=1"""
         params = []
 

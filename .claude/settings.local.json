@@ -3,7 +3,26 @@
     "allow": [
       "Bash(python:*)",
       "Bash(python3:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(ls -la /mnt/c/Users/marle/PycharmProjects/proyecto_sistema_bd/*.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" -m pip install psycopg2-binary python-dotenv)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" verificar_conexion_postgres.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" -m pip install mysql-connector-python)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" analizar_mysql.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" generar_migracion.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" -m pip install sqlalchemy)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" ejecutar_migracion.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" prueba_postgres.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" limpiar_postgres.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" actualizar_postgres.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" prueba_completa_postgres.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" analisis_completo_conexiones.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" prueba_final_correcciones.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" resumen_correcciones.py)",
+      "Bash(\"/mnt/c/Users/marle/AppData/Local/Programs/Python/Python314/python.exe\" prueba_rapida.py)"
     ]
   }
 }

@@ -57,7 +57,7 @@ def editar_carreras(frame_contenido, id_carrera, nombre_carrera, tipo_carrera, n
 
         try:
             sql = """
-            UPDATE Carreras 
+            UPDATE carreras 
             SET nombre_carrera=%s, tipo_carrera=%s, numero_semestres=%s, clave_carrera=%s 
             WHERE id_carrera=%s
             """
@@ -126,7 +126,7 @@ def editar_materias(frame_contenido, id_materia, clave, nombre_materia, horas_se
 
     # Combo de Carreras - Obtener nombres de carreras directamente
     try:
-        resultado = ejecutar_select("SELECT nombre_carrera FROM Carreras ORDER BY nombre_carrera ASC")
+        resultado = ejecutar_select("SELECT nombre_carrera FROM carreras ORDER BY nombre_carrera ASC")
         carreras_lista = [row[0] for row in resultado] if resultado else ["No hay carreras"]
         nombre_carrera_actual = obtener_nombre_carrera_por_id(id_carrera)
     except Exception as e:
@@ -168,7 +168,7 @@ def editar_materias(frame_contenido, id_materia, clave, nombre_materia, horas_se
 
         try:
             sql = """
-            UPDATE Materia 
+            UPDATE materia 
             SET clave=%s, nombre_materia=%s, horas_semana=%s, id_carrera=%s, unidades=%s
             WHERE id_materia=%s
             """
@@ -234,7 +234,7 @@ def editar_grupo(frame_contenido, id_grupo, nombre_maestro, nombre_materia, cupo
 
     # Combo de Maestros - Obtener nombres de maestros directamente
     try:
-        resultado = ejecutar_select("SELECT nombre_maestro FROM Maestro ORDER BY nombre_maestro ASC")
+        resultado = ejecutar_select("SELECT nombre_maestro FROM maestro ORDER BY nombre_maestro ASC")
         maestros_lista = [row[0] for row in resultado] if resultado else ["No hay maestros"]
     except Exception as e:
         print(f"Error cargando maestros: {e}")
@@ -245,7 +245,7 @@ def editar_grupo(frame_contenido, id_grupo, nombre_maestro, nombre_materia, cupo
 
     # Combo de Materias - Obtener nombres de materias directamente
     try:
-        resultado = ejecutar_select("SELECT nombre_materia FROM Materia ORDER BY nombre_materia ASC")
+        resultado = ejecutar_select("SELECT nombre_materia FROM materia ORDER BY nombre_materia ASC")
         materias_lista = [row[0] for row in resultado] if resultado else ["No hay materias"]
     except Exception as e:
         print(f"Error cargando materias: {e}")
@@ -319,7 +319,7 @@ def editar_grupo(frame_contenido, id_grupo, nombre_maestro, nombre_materia, cupo
 
         try:
             sql = """
-            UPDATE Grupo 
+            UPDATE grupo 
             SET id_maestro=%s, id_materia=%s, cupo_maximo=%s, periodo=%s, years=%s, alumnos_inscritos=%s, horario=%s, estado=%s
             WHERE id_grupo=%s
             """
