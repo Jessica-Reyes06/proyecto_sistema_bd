@@ -1295,7 +1295,7 @@ def mostrar_actividades(frame):
     CTkLabel(area_filtros, text="Filtrar por grupo", font=("Arial", 14, "bold"),
              text_color="#000000").grid(row=0, column=0, padx=(0, 10), pady=6, sticky="w")
 
-    grupos = ["Todos"] + obtener_lista("grupos", "id_grupo")
+    grupos = ["Todos"] + obtener_lista("grupo", "id_grupo")
     combo_grupo = CTkComboBox(
         area_filtros, values=grupos, width=220, state="readonly")
     combo_grupo.set(grupos[0])
