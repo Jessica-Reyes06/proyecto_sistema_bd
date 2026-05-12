@@ -431,15 +431,8 @@ def mostrar_form_registro_maestro(frame_contenido,volver_a_lista=None):
     entradas["apellido_materno"] = crear_campo(cuerpo,3,"Apellido Materno")
     entradas["correo"] = crear_campo(cuerpo,4,"Correo")
     entradas["estatus"] = crear_combo(cuerpo,5,"Estatus",["Activo", "Inactivo", "Licencia", "Jubilado"])
-    entradas["grado_estudios"] = crear_campo(cuerpo,6,"Grado de estudios")
     entradas["perfil_docente"] = crear_campo(cuerpo,7,"Perfil del docente")
-    entradas["carga_academica"] = crear_campo(cuerpo,8,"Carga académica")
-    entradas["tipo_contrato"] = crear_combo(
-        cuerpo,
-        9,
-        "Tipo de contrato",
-        ["Nombramiento de base", "Nombramiento por interinato", "Por jornada laboral"]
-    )
+    
     entradas["cedula_profesional"] = crear_campo(cuerpo,10,"Cédula profesional")
 
     entradas["matricula_maestro"].configure(state="readonly")
@@ -477,12 +470,10 @@ def mostrar_form_registro_maestro(frame_contenido,volver_a_lista=None):
             entradas["apellido_materno"].get(),
             valores_generados["correo"],
             entradas["estatus"].get(),
-            entradas["grado_estudios"].get(),
             entradas["perfil_docente"].get(),
-            entradas["carga_academica"].get(),
-            entradas["tipo_contrato"].get(),
             entradas["cedula_profesional"].get()
         )
+        
 
         if "" in valores:
             estado_label.configure(text="Todos los campos deben llenarse",text_color="red")
@@ -491,8 +482,8 @@ def mostrar_form_registro_maestro(frame_contenido,volver_a_lista=None):
         sql = """
         INSERT INTO maestro
         (matricula,nombre_maestro,apellido_paterno,apellido_materno,
-        correo,estatus,grado_estudios,perfil_docente,carga_academica,tipo_contrato,cedula_profesional)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        correo,estatus,perfil_docente,cedula_profesional)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
         """
 
         try:
@@ -624,9 +615,7 @@ def mostrar_form_registro_tipo_actividad(frame_contenido, volver_a_lista=None):
     """
 
     crear_formulario_generico(frame_contenido, "Registrar tipo de actividad", campos, sql, volver_a_lista)
-#
-#  ACTIVIDADES
-#
+
 #  ACTIVIDADES
 def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
 
@@ -744,10 +733,6 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
 # MATERIAS
 
 def mostrar_form_registro_materia(frame_contenido, volver_a_lista=None):
-    """
-    Formulario para registrar una nueva materia.
-    Campos: Clave, Nombre Materia, Carrera (por nombre), Horas a la semana, Unidades
-    """
     from db_conexion import ejecutar_select
     from funciones_datos import obtener_id_carrera_por_nombre
     
@@ -785,7 +770,6 @@ def mostrar_form_registro_materia(frame_contenido, volver_a_lista=None):
     entradas["Horas"] = crear_campo(cuerpo, 3, "Horas a la semana")
     
     # Campo Unidades
-    entradas["Unidades"] = crear_campo(cuerpo, 4, "Unidades")
 
     estado_label = customtkinter.CTkLabel(frame_contenido, text="")
     estado_label.pack()
@@ -796,10 +780,9 @@ def mostrar_form_registro_materia(frame_contenido, volver_a_lista=None):
         nombre_materia = entradas["Nombre Materia"].get()
         nombre_carrera = entradas["Carrera"].get()
         horas_semana = entradas["Horas"].get()
-        unidades = entradas["Unidades"].get()
 
         # Validar campos vacíos
-        if "" in [clave, nombre_materia, nombre_carrera, horas_semana, unidades]:
+        if "" in [clave, nombre_materia, nombre_carrera, horas_semana]:
             estado_label.configure(text="Todos los campos deben llenarse", text_color="red")
             return
 
@@ -813,10 +796,10 @@ def mostrar_form_registro_materia(frame_contenido, volver_a_lista=None):
         try:
             sql = """
             INSERT INTO materia
-            (clave, nombre_materia, horas_semana, id_carrera, unidades)
-            VALUES (%s, %s, %s, %s, %s)
+            (clave, nombre_materia, horas_semana, id_carrera)
+            VALUES (%s, %s, %s, %s)
             """
-            valores = (clave, nombre_materia, horas_semana, id_carrera, unidades)
+            valores = (clave, nombre_materia, horas_semana, id_carrera)
             ejecutar_insert(sql, valores)
             
             estado_label.configure(text="Materia registrada correctamente", text_color="green")
@@ -868,7 +851,7 @@ def mostrar_form_registro_grupo(frame_contenido,volver_a_lista=None):
     combo_maestro = crear_combo(cuerpo, 0, "Maestro", maestros)
     combo_materia = crear_combo(cuerpo, 1, "Materia", materias)
 
-    id_grupo = crear_campo(cuerpo, 2, "Grupo")
+    clave_grupo = crear_campo(cuerpo, 2, "Clave Grupo")
     cupo = crear_campo(cuerpo, 3, "Cupo máximo")
 
     periodos = ["Enero-Junio", "Agosto-Diciembre", "Verano"]
@@ -881,8 +864,6 @@ def mostrar_form_registro_grupo(frame_contenido,volver_a_lista=None):
     entrada_anio = customtkinter.CTkComboBox(cuerpo, values=anos, width=120, state="readonly")
     entrada_anio.set(anos[0])
     entrada_anio.grid(row=5, column=1, padx=10, pady=5, sticky="w")
-    entrada_inscritos = crear_campo(cuerpo, 6, "Inscritos")
-    entrada_horario = crear_campo(cuerpo, 7, "Horario")
 
     combo_estado = crear_combo(
         cuerpo,
@@ -939,21 +920,19 @@ def mostrar_form_registro_grupo(frame_contenido,volver_a_lista=None):
             return
 
         valores = (
-            id_grupo.get(),
+            clave_grupo.get(),
             id_maestro,
             id_materia,
             cupo.get(),
             entrada_periodo.get(),
             entrada_anio.get(),
-            entrada_inscritos.get(),
-            entrada_horario.get(),
             combo_estado.get()
         )
 
         sql = """
         INSERT INTO grupo
-        (id_grupo,id_maestro,id_materia,cupo_maximo,periodo,years,alumnos_inscritos,horario,estado)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        (clave_grupo,id_maestro,id_materia,cupo_maximo,periodo,years,estado)
+        VALUES (%s,%s,%s,%s,%s,%s,%s)
         """
 
         try:
@@ -1145,16 +1124,6 @@ def exportar_csv(tabla, ruta_destino):
             escritor.writerow(fila)
 
     cursor.close()
-
-def mostrar_form_registro_horario(frame_contenido, volver_a_lista=None):
-    campos = ["id_horario", "id_grupo", "dia", "hora_inicio", "hora_fin", "id_salon"]
-    sql = """
-    INSERT INTO horario
-    (id_horario, id_grupo, dia, hora_inicio, hora_fin, id_salon)
-    VALUES (%s, %s, %s, %s, %s, %s)
-    """
-    crear_formulario_generico(frame_contenido, "Registrar horario", campos, sql, volver_a_lista)
-
 
 def mostrar_form_registro_calificacion_final(frame_contenido, volver_a_lista=None):
     """Formulario para registrar calificación final"""

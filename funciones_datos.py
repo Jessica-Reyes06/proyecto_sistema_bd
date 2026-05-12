@@ -19,7 +19,7 @@ def obtener_materias_ordenadas():
     id_materia, clave, nombre_materia, horas_semana, nombre_carrera, unidades
     Reemplaza id_carrera por nombre_carrera mediante JOIN"""
     sql = """
-    SELECT m.id_materia, m.clave, m.nombre_materia, m.horas_semana, c.nombre_carrera, m.unidades
+    SELECT m.id_materia, m.clave, m.nombre_materia, m.horas_semana, c.nombre_carrera
     FROM materia m
     JOIN carreras c ON m.id_carrera = c.id_carrera
     ORDER BY m.id_materia ASC
@@ -29,8 +29,8 @@ def obtener_materias_ordenadas():
 
 def obtener_grupos_ordenadas():
     sql = """
-    SELECT g.clave_grupo, m.nombre_maestro, mat.nombre_materia, g.cupo_maximo, g.periodo, g.years, 
-           COUNT(r.id_registro) AS alumnos_inscritos, g.horario, g.estado
+        SELECT g.clave_grupo, m.nombre_maestro, mat.nombre_materia, g.cupo_maximo, g.periodo, g.years, 
+            COUNT(r.id_registro) AS alumnos_inscritos, g.estado
     FROM grupo g
     JOIN maestro m ON g.id_maestro = m.id_maestro
     JOIN materia mat ON g.id_materia = mat.id_materia
@@ -56,14 +56,13 @@ def obtener_alumnos_ordenados():
 
 def obtener_maestros_ordenados():
     """Obtiene todos los registros de maestros con campos en orden específico:
-    matricula, nombre_maestro, apellido_paterno, apellido_materno, correo, estatus, grado_estudios, perfil_docente"""
+    matricula, nombre_maestro, apellido_paterno, apellido_materno, correo, estatus, perfil_docente"""
     sql = """
-    SELECT matricula, nombre_maestro, apellido_paterno, apellido_materno, correo, estatus, grado_estudios, perfil_docente
+    SELECT matricula, nombre_maestro, apellido_paterno, apellido_materno, correo, estatus, perfil_docente
     FROM maestro
     ORDER BY matricula ASC
     """
     return ejecutar_select(sql)
-
 
 def obtener_administradores_ordenados():
     """Obtiene todos los registros de administradores con campos en orden específico:

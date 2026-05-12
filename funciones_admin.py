@@ -1063,7 +1063,7 @@ def mostrar_maestros(frame):
     ]
 
     headers = ["Matrícula", "Nombre", "Apellido Paterno", "Apellido Materno", "Correo",
-               "Estatus", "Grado de Estudios", "Perfil Docente"]
+               "Estatus", "Perfil Docente"]
 
     mostrar_seccion_gestion(frame, "Gestión de Maestros", "#004235",
                             "#ffffff", "#6F8A90", botones, headers, "Maestro")
@@ -1126,7 +1126,7 @@ def mostrar_materias(frame):
         {"texto": "Exportar CSV", "color": "#510113", "comando": exportar},
     ]
 
-    headers = ["Clave", "Nombre Materia", "Horas a la semana", "Carrera", "Unidades"]
+    headers = ["Clave", "Nombre Materia", "Horas a la semana", "Carrera"]
 
     mostrar_seccion_gestion(frame, "Gestión de Materias", "#761127", "#ffffff", "#9A0000", botones, headers, tabla_sql="Materia", header_text_color="white", ocultar_id=True)
 
@@ -1148,7 +1148,7 @@ def mostrar_grupos(frame):
     ]
 
     # Headers con ID de grupo como primera columna
-    headers = ["Grupo", "Maestro", "Materia", "Cupo máximo", "Período", "Año", "Inscritos", "Horario", "Estado"]
+    headers = ["Grupo", "Maestro", "Materia", "Cupo máximo", "Período", "Año", "Inscritos", "Estado"]
 
     mostrar_seccion_gestion(frame,"Gestión de Grupos","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"Grupo",header_text_color="white", ocultar_id=False)
 
