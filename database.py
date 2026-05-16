@@ -29,6 +29,7 @@ Base = declarative_base()
 # Sesion factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 def get_db():
     """Obtener una sesion de base de datos"""
     db = SessionLocal()
@@ -37,14 +38,16 @@ def get_db():
     finally:
         db.close()
 
+
 def init_db():
     """Inicializar la base de datos creando todas las tablas"""
-    from models import *  # Importar todos los modelos
+    import models  # Importar todos los modelos
     Base.metadata.create_all(bind=engine)
     print("[OK] Base de datos inicializada correctamente")
 
+
 def drop_db():
     """Eliminar todas las tablas (CUIDADO: borra todo)"""
-    from models import *  # Importar todos los modelos
+    import models  # Importar todos los modelos
     Base.metadata.drop_all(bind=engine)
     print("[OK] Todas las tablas han sido eliminadas")

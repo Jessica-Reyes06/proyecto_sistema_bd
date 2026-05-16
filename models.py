@@ -9,6 +9,7 @@ from database import Base
 
 # ================== TABLAS PRINCIPALES ==================
 
+
 class Rol(Base):
     __tablename__ = 'Roles'
 
@@ -30,7 +31,8 @@ class Cuenta(Base):
     rol = relationship("Rol", back_populates="cuentas")
     alumno = relationship("Alumno", back_populates="cuenta", uselist=False)
     maestro = relationship("Maestro", back_populates="cuenta", uselist=False)
-    administrador = relationship("Administrador", back_populates="cuenta", uselist=False)
+    administrador = relationship(
+        "Administrador", back_populates="cuenta", uselist=False)
     solicitudes = relationship("Solicitud", back_populates="cuenta")
 
 
@@ -133,7 +135,8 @@ class Unidad(Base):
     # Relaciones
     materia = relationship("Materia", back_populates="unidades")
     actividades = relationship("Actividad", back_populates="unidad")
-    calificaciones_unidad = relationship("CalificacionesUnidad", back_populates="unidad")
+    calificaciones_unidad = relationship(
+        "CalificacionesUnidad", back_populates="unidad")
     bonus_unidad = relationship("BonusUnidad", back_populates="unidad")
 
 
@@ -169,10 +172,12 @@ class Registro(Base):
     alumno = relationship("Alumno", back_populates="registros")
     grupo = relationship("Grupo", back_populates="registros")
     actividades = relationship("Actividad", back_populates="registro")
-    calificaciones_unidad = relationship("CalificacionesUnidad", back_populates="registro")
+    calificaciones_unidad = relationship(
+        "CalificacionesUnidad", back_populates="registro")
     bonus_materia = relationship("BonusMateria", back_populates="registro")
     bonus_unidad = relationship("BonusUnidad", back_populates="registro")
-    calificacion_final = relationship("CalificacionFinal", back_populates="registro")
+    calificacion_final = relationship(
+        "CalificacionFinal", back_populates="registro")
     resultados = relationship("Resultado", back_populates="registro")
 
 
@@ -181,6 +186,7 @@ class TipoActividad(Base):
 
     id_tipo = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100))
+    descripcion = Column(Text)
 
     # Relaciones
     actividades = relationship("Actividad", back_populates="tipo_actividad")
@@ -196,7 +202,8 @@ class Actividad(Base):
     detalles = Column(Text)
 
     # Relaciones
-    tipo_actividad = relationship("TipoActividad", back_populates="actividades")
+    tipo_actividad = relationship(
+        "TipoActividad", back_populates="actividades")
     unidad = relationship("Unidad", back_populates="actividades")
     registro = relationship("Registro", back_populates="actividades")
     resultados = relationship("Resultado", back_populates="actividad")
@@ -205,7 +212,8 @@ class Actividad(Base):
 class CalificacionesUnidad(Base):
     __tablename__ = 'Calificaciones_unidad'
 
-    id_calificacion_unidad = Column(Integer, primary_key=True, autoincrement=True)
+    id_calificacion_unidad = Column(
+        Integer, primary_key=True, autoincrement=True)
     id_registro = Column(Integer, ForeignKey('Registro.id_registro'))
     id_unidad = Column(Integer, ForeignKey('Unidad.id_unidad'))
     calificacion = Column(Numeric(5, 2))
@@ -278,7 +286,8 @@ class Solicitud(Base):
     id_cuenta = Column(Integer, ForeignKey('Cuentas.id_cuenta'))
     motivo = Column(Text)
     estado = Column(String(50))
-    id_administrador = Column(Integer, ForeignKey('Administrador.id_administrador'))
+    id_administrador = Column(Integer, ForeignKey(
+        'Administrador.id_administrador'))
 
     # Relaciones
     cuenta = relationship("Cuenta", back_populates="solicitudes")

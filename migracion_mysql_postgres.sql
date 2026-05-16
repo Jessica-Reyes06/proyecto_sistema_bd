@@ -159,7 +159,8 @@ CREATE TABLE "solicitudes" (
 DROP TABLE IF EXISTS "tipos_actividades" CASCADE;
 CREATE TABLE "tipos_actividades" (
     "id_tipo" SERIAL PRIMARY KEY,
-    "nombre" VARCHAR(100)
+    "nombre" VARCHAR(100),
+    "descripcion" TEXT
 );
 
 -- Tabla: Unidad

@@ -1,6 +1,6 @@
-#Funciones de recuperación y conversión 
+# Funciones de recuperación y conversión
 
-from db_conexion import ejecutar_select
+from db_conexion import ejecutar_select, conexion
 
 
 def obtener_carreras_ordenadas():
@@ -25,6 +25,68 @@ def obtener_materias_ordenadas():
     ORDER BY m.id_materia ASC
     """
     return ejecutar_select(sql)
+
+
+def obtener_columna_existente(tabla, candidatos):
+    """Devuelve la primera columna existente de una tabla entre varios candidatos."""
+    cursor = conexion.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = %s
+            """,
+            (tabla.lower(),)
+        )
+        columnas = {row[0] for row in cursor.fetchall()}
+    finally:
+        cursor.close()
+
+    for candidato in candidatos:
+        if candidato in columnas:
+            return candidato
+    return None
+
+
+def obtener_contadores_dashboard():
+    """Retorna un dict con los contadores para el dashboard.
+
+    Devuelve claves: alumnos, maestros, administradores, materias, grupos, inscripciones
+    Los valores se devuelven como strings para mantener compatibilidad con la UI.
+    """
+    sql = """
+    SELECT
+      (SELECT COUNT(*) FROM alumno) AS alumnos,
+      (SELECT COUNT(*) FROM maestro) AS maestros,
+      (SELECT COUNT(*) FROM administrador) AS administradores,
+      (SELECT COUNT(*) FROM materia) AS materias,
+      (SELECT COUNT(*) FROM grupo) AS grupos,
+      (SELECT COUNT(*) FROM registro) AS inscripciones
+    """
+    try:
+        resultado = ejecutar_select(sql)
+        if resultado and len(resultado) > 0:
+            row = resultado[0]
+            return {
+                "alumnos": str(row[0] or 0),
+                "maestros": str(row[1] or 0),
+                "administradores": str(row[2] or 0),
+                "materias": str(row[3] or 0),
+                "grupos": str(row[4] or 0),
+                "inscripciones": str(row[5] or 0),
+            }
+    except Exception as e:
+        print(f"Error obteniendo contadores dashboard: {e}")
+    # Fallbacks en caso de error
+    return {
+        "alumnos": "0",
+        "maestros": "0",
+        "administradores": "0",
+        "materias": "0",
+        "grupos": "0",
+        "inscripciones": "0",
+    }
 
 
 def obtener_grupos_ordenadas():
@@ -63,6 +125,7 @@ def obtener_maestros_ordenados():
     ORDER BY matricula ASC
     """
     return ejecutar_select(sql)
+
 
 def obtener_administradores_ordenados():
     """Obtiene todos los registros de administradores con campos en orden específico:

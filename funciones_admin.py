@@ -212,8 +212,10 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
             def hacer_editar(idx=fila_idx):
                 return lambda: editar_fila(idx)
 
-            btn_editar = CTkButton(cuerpo, text="Editar", fg_color="#715a72", command=hacer_editar(fila_idx), width=80)
-            btn_editar.grid(row=fila_idx, column=len(headers), padx=10, pady=8, sticky="ew")
+            btn_editar = CTkButton(
+                cuerpo, text="Editar", fg_color="#715a72", command=hacer_editar(fila_idx), width=80)
+            btn_editar.grid(row=fila_idx, column=len(
+                headers), padx=10, pady=8, sticky="ew")
             btn_editar_ref[fila_idx] = btn_editar
 
             # BOTÓN ELIMINAR
@@ -228,8 +230,10 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
                         except:
                             pass
                     return lambda: eliminar_callback(tabla_sql, id_registro, callback_eliminar)
-                btn_eliminar = CTkButton(cuerpo, text="Eliminar", fg_color="#962d22", command=hacer_eliminar(fila_idx), width=80)
-                btn_eliminar.grid(row=fila_idx, column=len(headers) + 1, padx=10, pady=8, sticky="ew")
+                btn_eliminar = CTkButton(
+                    cuerpo, text="Eliminar", fg_color="#962d22", command=hacer_eliminar(fila_idx), width=80)
+                btn_eliminar.grid(row=fila_idx, column=len(
+                    headers) + 1, padx=10, pady=8, sticky="ew")
                 btn_eliminar_ref[fila_idx] = btn_eliminar
 
     mostrar_filas()
@@ -463,18 +467,36 @@ def mostrar_dashboard(frame):
     stats_frame = CTkFrame(frame, fg_color="transparent")
     stats_frame.pack(fill="x", padx=24, pady=(6, 14))
 
-    stats = [
-        ("Alumnos",         "342", "#510054"),
-        ("Maestros",        "45",  "#004235"),
-        ("Administradores", "8",   "#1A3A8F"),
-        ("Materias",        "67",  "#2D3250"),
-        ("Grupos",          "24",  "#2D3250"),
-        ("Inscripciones",   "318", "#2D3250"),
-    ]
+    stats = []
+
+    # Obtener contadores dinámicamente desde la base de datos
+    try:
+        from funciones_datos import obtener_contadores_dashboard
+        cont = obtener_contadores_dashboard()
+        stats = [
+            ("Alumnos", cont.get("alumnos", "0"), "#510054"),
+            ("Maestros", cont.get("maestros", "0"), "#004235"),
+            ("Administradores", cont.get("administradores", "0"), "#1A3A8F"),
+            ("Materias", cont.get("materias", "0"), "#2D3250"),
+            ("Grupos", cont.get("grupos", "0"), "#2D3250"),
+            ("Inscripciones", cont.get("inscripciones", "0"), "#2D3250"),
+        ]
+    except Exception as e:
+        print(f"Error obteniendo contadores del dashboard: {e}")
+        # Fallbacks estáticos si ocurre un error
+        stats = [
+            ("Alumnos", "0", "#510054"),
+            ("Maestros", "0", "#004235"),
+            ("Administradores", "0", "#1A3A8F"),
+            ("Materias", "0", "#2D3250"),
+            ("Grupos", "0", "#2D3250"),
+            ("Inscripciones", "0", "#2D3250"),
+        ]
 
     for i, (label, valor, color) in enumerate(stats):
         stats_frame.grid_columnconfigure(i, weight=1)
-        card = CTkFrame(stats_frame, fg_color=color, corner_radius=10, width=220)
+        card = CTkFrame(stats_frame, fg_color=color,
+                        corner_radius=10, width=220)
         card.grid(row=0, column=i, padx=6, pady=4, sticky="ew")
         card.grid_propagate(False)  # Mantener ancho fijo
         CTkLabel(card, text=label, font=("Arial", 13), text_color="white").pack(
@@ -483,18 +505,28 @@ def mostrar_dashboard(frame):
                  text_color="white").pack(anchor="w", padx=12, pady=(0, 10))
 
     # ── CARGA DE ÍCONOS ──────────────────────────────────────
-    icono_alumnos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/alumnos.png")),        size=(40, 40))
-    icono_maestros = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/maestros.png")),       size=(40, 40))
-    icono_materias = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/materias.png")),       size=(40, 40))
-    icono_grupos = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/grupos.png")),         size=(40, 40))
-    icono_inscripciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/inscripciones.png")), size=(40, 40))
-    icono_admin = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/admin.png")),          size=(40, 40))
-    icono_carreras = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/carreras.png")),       size=(40, 40))
-    icono_calificaciones = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/calificaciones.png")), size=(40, 40))
-    icono_actividades = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/actividades.png")),    size=(40, 40))
-    icono_reportes = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/reportes.png")),       size=(40, 40))
-    icono_usuario = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/usuario.png")),       size=(40, 40))
-
+    icono_alumnos = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/iconos_admin/alumnos.png")),        size=(40, 40))
+    icono_maestros = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/iconos_admin/maestros.png")),       size=(40, 40))
+    icono_materias = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/iconos_admin/materias.png")),       size=(40, 40))
+    icono_grupos = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/iconos_admin/grupos.png")),         size=(40, 40))
+    icono_inscripciones = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/iconos_admin/inscripciones.png")), size=(40, 40))
+    icono_admin = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/iconos_admin/admin.png")),          size=(40, 40))
+    icono_carreras = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/iconos_admin/carreras.png")),       size=(40, 40))
+    icono_calificaciones = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/iconos_admin/calificaciones.png")), size=(40, 40))
+    icono_actividades = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/iconos_admin/actividades.png")),    size=(40, 40))
+    icono_reportes = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/iconos_admin/reportes.png")),       size=(40, 40))
+    icono_usuario = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/iconos_admin/usuario.png")),       size=(40, 40))
 
     # ── ÁREA PRINCIPAL: izquierda + derecha ──────────────────
     main_area = CTkFrame(frame, fg_color="transparent")
@@ -571,7 +603,8 @@ def mostrar_dashboard(frame):
     if escalador_global:
         minsize_col = escalador_global.get_escalado_ancho(350)
         # Limitar minsize máximo
-        minsize_col = min(minsize_col, escalador_global.get_escalado_ancho(400))
+        minsize_col = min(
+            minsize_col, escalador_global.get_escalado_ancho(400))
     else:
         minsize_col = 350
 
@@ -579,17 +612,28 @@ def mostrar_dashboard(frame):
         grid_frame.grid_columnconfigure(col, weight=1, minsize=minsize_col)
 
     catalogos = [
-        ("Alumnos","Gestión de estudiantes", lambda: mostrar_alumnos(frame),                      "#510054", icono_alumnos),
-        ("Maestros","Gestión de docentes", lambda: mostrar_maestros(frame),                     "#004235", icono_maestros),
-        ("Administradores","Gestión de administradores", lambda: mostrar_admin(frame),                        "#1A3A8F", icono_admin),
-        ("Materias","Catálogo de materias", lambda: mostrar_materias(frame),                     "#2D3250", icono_materias),
-        ("Grupos","Gestión de grupos", lambda: mostrar_grupos(frame),                       "#2D3250", icono_grupos),
-        ("Carreras","Catálogo de carreras", lambda: mostrar_carreras(frame),                     "#2D3250", icono_carreras),
-        ("Actividades","Gestión de actividades", lambda: mostrar_actividades(frame),                  "#2D3250", icono_actividades),
-        ("Inscripciones","Registro de inscripciones", lambda: mostrar_inscripciones(frame),                "#2D3250", icono_inscripciones),
-        ("Reportes","Generación de reportes", lambda: mostrar_reportes(frame),                     "#2D3250", icono_reportes),
-        ("Calificaciones","Gestión de calificaciones",lambda: mostrar_calificaciones_finales(frame),       "#2D3250", icono_calificaciones),
-        ("Usuarios","Gestión de las cuentas de usuarios", lambda: mostrar_usuarios(frame),                     "#2D3250", icono_usuario),
+        ("Alumnos", "Gestión de estudiantes", lambda: mostrar_alumnos(
+            frame),                      "#510054", icono_alumnos),
+        ("Maestros", "Gestión de docentes", lambda: mostrar_maestros(
+            frame),                     "#004235", icono_maestros),
+        ("Administradores", "Gestión de administradores", lambda: mostrar_admin(
+            frame),                        "#1A3A8F", icono_admin),
+        ("Materias", "Catálogo de materias", lambda: mostrar_materias(
+            frame),                     "#2D3250", icono_materias),
+        ("Grupos", "Gestión de grupos", lambda: mostrar_grupos(
+            frame),                       "#2D3250", icono_grupos),
+        ("Carreras", "Catálogo de carreras", lambda: mostrar_carreras(
+            frame),                     "#2D3250", icono_carreras),
+        ("Actividades", "Gestión de actividades", lambda: mostrar_actividades(
+            frame),                  "#2D3250", icono_actividades),
+        ("Inscripciones", "Registro de inscripciones", lambda: mostrar_inscripciones(
+            frame),                "#2D3250", icono_inscripciones),
+        ("Reportes", "Generación de reportes", lambda: mostrar_reportes(
+            frame),                     "#2D3250", icono_reportes),
+        ("Calificaciones", "Gestión de calificaciones", lambda: mostrar_calificaciones_finales(
+            frame),       "#2D3250", icono_calificaciones),
+        ("Usuarios", "Gestión de las cuentas de usuarios", lambda: mostrar_usuarios(
+            frame),                     "#2D3250", icono_usuario),
 
     ]
 
@@ -659,7 +703,7 @@ def mostrar_seccion_pendiente(frame, titulo):
     ).pack(pady=30)
 
 
-def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,botones,headers,tabla_sql=None,header_text_color=None,registros_precargados=None,ocultar_id=False):
+def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla, botones, headers, tabla_sql=None, header_text_color=None, registros_precargados=None, ocultar_id=False):
     limpiar_frame(frame)
 
     CTkButton(frame, text="←", width=80, command=lambda: mostrar_dashboard(
@@ -758,33 +802,39 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
         editar_cb = None
         if tabla_sql == "Carreras":
             from formularios_edicion import editar_carreras
+
             def editar_cb(fila, callback_recargar):
                 try:
                     # fila = (id_carrera, nombre_carrera, tipo_carrera, numero_semestres, clave_carrera)
                     # Pasar mostrar_tabla_base para que recargue toda la tabla
-                    editar_carreras(area_contenido, fila[0], fila[1], fila[2], fila[3], fila[4], mostrar_tabla_base)
+                    editar_carreras(
+                        area_contenido, fila[0], fila[1], fila[2], fila[3], fila[4], mostrar_tabla_base)
                 except Exception as e:
                     print(f"Error en edición de carrera: {e}")
         elif tabla_sql == "Materia":
             from formularios_edicion import editar_materias
             from funciones_datos import obtener_id_carrera_por_nombre
+
             def editar_cb(fila, callback_recargar):
                 try:
                     # fila = (id_materia, clave, nombre_materia, horas_semana, nombre_carrera, unidades)
                     # Necesito obtener id_carrera a partir del nombre de carrera
                     id_carrera = obtener_id_carrera_por_nombre(fila[4])
-                    editar_materias(area_contenido, fila[0], fila[1], fila[2], fila[3], id_carrera, fila[5], mostrar_tabla_base)
+                    editar_materias(
+                        area_contenido, fila[0], fila[1], fila[2], fila[3], id_carrera, fila[5], mostrar_tabla_base)
                 except Exception as e:
                     print(f"Error en edición de materia: {e}")
         elif tabla_sql == "Grupo":
             from formularios_edicion import editar_grupo
+
             def editar_cb(fila, callback_recargar):
                 try:
                     # fila = (id_grupo, nombre_maestro, nombre_materia, cupo_maximo, periodo, years, alumnos_inscritos, horario, estado)
-                    editar_grupo(area_contenido, fila[0], fila[1], fila[2], fila[3], fila[4], fila[5], fila[6], fila[7], fila[8], mostrar_tabla_base)
+                    editar_grupo(area_contenido, fila[0], fila[1], fila[2], fila[3],
+                                 fila[4], fila[5], fila[6], fila[7], fila[8], mostrar_tabla_base)
                 except Exception as e:
                     print(f"Error en edición de grupo: {e}")
-        
+
         crear_tabla_editable(
             area_contenido,
             headers,
@@ -798,7 +848,7 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
             editar_callback=editar_cb,
             callback_recargar_tabla=mostrar_tabla_base if tabla_sql else None
         )
-        
+
         # Mostrar mensaje si no hay registros
         if not registros:
             CTkLabel(
@@ -826,7 +876,8 @@ def mostrar_seccion_gestion(frame,titulo,color_header,color_menu,color_tabla,bot
             )
         else:
             # Botón estándar sin escalador
-            boton = CTkButton(menu, text=btn["texto"], fg_color=btn["color"], command=cmd)
+            boton = CTkButton(
+                menu, text=btn["texto"], fg_color=btn["color"], command=cmd)
 
         boton.grid(row=0, column=i, padx=10, pady=10)
 
@@ -1091,13 +1142,14 @@ def mostrar_admin(frame):
 
 
 def mostrar_carreras(frame):
-    def registrar(area,volver):
-        mostrar_form_registro_carrera(area,volver)
-    def importar(area,volver):
-        ejecutar_importacion("Carreras",volver)
+    def registrar(area, volver):
+        mostrar_form_registro_carrera(area, volver)
 
-    def exportar(area,volver):
-        ejecutar_exportacion("Carreras","Carreras.csv")
+    def importar(area, volver):
+        ejecutar_importacion("Carreras", volver)
+
+    def exportar(area, volver):
+        ejecutar_exportacion("Carreras", "Carreras.csv")
 
     botones = [
         {"texto": "Registrar Carrera nueva",
@@ -1128,18 +1180,20 @@ def mostrar_materias(frame):
 
     headers = ["Clave", "Nombre Materia", "Horas a la semana", "Carrera"]
 
-    mostrar_seccion_gestion(frame, "Gestión de Materias", "#761127", "#ffffff", "#9A0000", botones, headers, tabla_sql="Materia", header_text_color="white", ocultar_id=True)
+    mostrar_seccion_gestion(frame, "Gestión de Materias", "#761127", "#ffffff", "#9A0000",
+                            botones, headers, tabla_sql="Materia", header_text_color="white", ocultar_id=True)
+
 
 def mostrar_grupos(frame):
 
     def registrar(area, volver):
         mostrar_form_registro_grupo(area, volver)
 
-    def importar(area,volver):
-        ejecutar_importacion("Grupo",volver)
+    def importar(area, volver):
+        ejecutar_importacion("Grupo", volver)
 
-    def exportar(area,volver):
-        ejecutar_exportacion("Grupo","Grupo.csv")
+    def exportar(area, volver):
+        ejecutar_exportacion("Grupo", "Grupo.csv")
 
     botones = [
         {"texto": "Crear grupo", "color": "#184c73", "comando": registrar},
@@ -1148,9 +1202,12 @@ def mostrar_grupos(frame):
     ]
 
     # Headers con ID de grupo como primera columna
-    headers = ["Grupo", "Maestro", "Materia", "Cupo máximo", "Período", "Año", "Inscritos", "Estado"]
+    headers = ["Grupo", "Maestro", "Materia", "Cupo máximo",
+               "Período", "Año", "Inscritos", "Estado"]
 
-    mostrar_seccion_gestion(frame,"Gestión de Grupos","#1f6aa5","#ffffff","#8fb1cb",botones,headers,"Grupo",header_text_color="white", ocultar_id=False)
+    mostrar_seccion_gestion(frame, "Gestión de Grupos", "#1f6aa5", "#ffffff", "#8fb1cb",
+                            botones, headers, "Grupo", header_text_color="white", ocultar_id=False)
+
 
 def mostrar_inscripciones(frame):
 
@@ -1178,7 +1235,7 @@ def mostrar_inscripciones(frame):
 
 def mostrar_usuarios(frame):
     """Mostrar tabla de usuarios con datos de Cuentas, Roles y alumnos/maestros/administradores"""
-   
+
     def importar(area, volver):
         ejecutar_importacion("Cuentas", volver)
 
@@ -1191,6 +1248,8 @@ def mostrar_usuarios(frame):
     ]
 
     headers = ["Usuario", "Contraseña", "Rol"]
+    # Mapa temporal para preservar contraseñas reales mientras mostramos asteriscos
+    __pw_map = {}
 
     limpiar_frame(frame)
 
@@ -1233,13 +1292,48 @@ def mostrar_usuarios(frame):
             print(f"Error cargando usuarios: {e}")
             registros = []
 
+        # Construir registros a mostrar: enmascarar la contraseña
+        registros_mostrados = []
+        __pw_map.clear()
+        for r in registros:
+            # r expected: (id_cuenta, usuario, password, rol)
+            id_cuenta = r[0] if len(r) > 0 else None
+            pw = r[2] if len(r) > 2 and r[2] is not None else ""
+            __pw_map[id_cuenta] = pw
+            masked = "*" * len(pw) if pw else ""
+            nueva = list(r)
+            if len(nueva) > 2:
+                nueva[2] = masked
+            registros_mostrados.append(tuple(nueva))
+
+        def actualizar_cuenta(tabla, id_valor, nuevos_valores):
+            """Wrapper para actualizar cuentas que preserva la contraseña si el usuario no la cambió.
+
+            `nuevos_valores` corresponde al orden de `headers`.
+            """
+            try:
+                # índice 1 en nuevos_valores es la contraseña (headers: Usuario, Contraseña, Rol)
+                if len(nuevos_valores) > 1:
+                    pw_in = nuevos_valores[1]
+                    original = __pw_map.get(id_valor)
+                    # Si el campo contiene sólo asteriscos y tiene la misma longitud que la original,
+                    # asumimos que el usuario no cambió la contraseña y la preservamos.
+                    if original is not None and pw_in and set(pw_in) == {"*"} and len(pw_in) == len(original):
+                        nuevos_valores[1] = original
+
+                return actualizar_registro(tabla, id_valor, nuevos_valores)
+            except Exception as e:
+                messagebox.showerror(
+                    "Error", f"Error al actualizar cuenta: {str(e)}")
+                return False
+
         crear_tabla_editable(
             area_contenido,
             headers,
-            registros,
+            registros_mostrados,
             "Cuentas",
             color_tabla="#6d8fa3",
-            actualizar_callback=actualizar_registro,
+            actualizar_callback=actualizar_cuenta,
             eliminar_callback=eliminar_registro,
             header_text_color="white",
             ocultar_primer_campo=True
@@ -1253,7 +1347,8 @@ def mostrar_usuarios(frame):
 
     for i, btn in enumerate(botones):
         comando_base = btn.get("comando")
-        cmd = (lambda cb=comando_base: cb(area_contenido, mostrar_tabla_usuarios)) if comando_base else mostrar_tabla_usuarios
+        cmd = (lambda cb=comando_base: cb(area_contenido, mostrar_tabla_usuarios)
+               ) if comando_base else mostrar_tabla_usuarios
         CTkButton(menu, text=btn["texto"], fg_color=btn["color"], command=cmd).grid(
             row=0, column=i, padx=10, pady=10)
 
@@ -1304,8 +1399,7 @@ def mostrar_actividades(frame):
     botones = [
         {"texto": "Nuevo tipo de actividad",
             "color": "#1f6aa5", "comando": abrir_nuevo_tipo},
-        {"texto": "Registrar Actividad", "color": "#1f6aa5",
-            "comando": registrar_actividad},
+        # Se eliminó la opción de "Registrar Actividad" para permitir sólo dar de alta tipos de actividad
         {"texto": "Importar CSV", "color": "#1f6aa5", "comando": importar},
         {"texto": "Exportar CSV", "color": "#1f6aa5", "comando": exportar},
     ]
@@ -1319,15 +1413,23 @@ def mostrar_actividades(frame):
                 area_contenido, mostrar_tabla_actividades))
         ).grid(row=0, column=i, padx=10, pady=10)
 
-    headers = ["Tipo de Actividad", "Unidad",
+    headers = ["Actividad", "Unidad",
                "Grupo", "Materia", "Ponderacion", "Detalles"]
 
     def cargar_tabla(grupo_seleccionado=None):
         limpiar_frame(area_contenido)
 
         try:
+            from funciones_datos import obtener_columna_existente
+
+            columna_unidad_materia = obtener_columna_existente(
+                "unidad", ["id_materia", "idmateria", "materia_id"])
+            if not columna_unidad_materia:
+                raise ValueError(
+                    "No se encontró una columna de relación entre unidad y materia")
+
             # Consulta corregida con JOIN para obtener datos relacionados
-            sql = """
+            sql = f"""
                 SELECT
                     a.id_actividad,
                     ta.nombre as tipo_actividad,
@@ -1336,18 +1438,20 @@ def mostrar_actividades(frame):
                     m.nombre_materia as materia,
                     a.ponderacion,
                     a.detalles
-                FROM Actividad a
-                LEFT JOIN Tipos_actividades ta ON a.id_tipo = ta.id_tipo
-                LEFT JOIN Unidad u ON a.id_unidad = u.id_unidad
-                LEFT JOIN Grupo g ON u.id_materia = g.id_materia
-                LEFT JOIN Materia m ON u.id_materia = m.id_materia
+                FROM actividad a
+                LEFT JOIN tipos_actividades ta ON a.id_tipo = ta.id_tipo
+                LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
+                LEFT JOIN materia m ON u.{columna_unidad_materia} = m.id_materia
+                LEFT JOIN grupo g ON g.id_materia = m.id_materia
             """
 
             if grupo_seleccionado and grupo_seleccionado != "Todos":
                 sql += " WHERE g.clave_grupo = %s"
-                registros = ejecutar_select(sql + " ORDER BY a.id_actividad DESC", (grupo_seleccionado,))
+                registros = ejecutar_select(
+                    sql + " ORDER BY a.id_actividad DESC", (grupo_seleccionado,))
             else:
-                registros = ejecutar_select(sql + " ORDER BY a.id_actividad DESC")
+                registros = ejecutar_select(
+                    sql + " ORDER BY a.id_actividad DESC")
         except Exception as e:
             print(f"Error cargando actividades: {e}")
             registros = []
@@ -1460,7 +1564,8 @@ def mostrar_calificaciones_finales(frame):
         sql += " ORDER BY a.numero_control ASC"
 
         try:
-            resultados = ejecutar_select(sql, tuple(params) if params else None)
+            resultados = ejecutar_select(
+                sql, tuple(params) if params else None)
 
             # Transformar al formato esperado
             datos = []
@@ -1512,7 +1617,8 @@ def mostrar_calificaciones_finales(frame):
             ).pack(pady=(10, 12))
 
     # Conectar busqueda con recarga
-    barra_busqueda.bind("<KeyRelease>", lambda event: cargar_datos_con_filtro())
+    barra_busqueda.bind(
+        "<KeyRelease>", lambda event: cargar_datos_con_filtro())
 
     # Cargar datos iniciales
     cargar_datos_con_filtro()
@@ -1561,16 +1667,15 @@ def eliminar_calificacion_final_callback(tabla, id_final, callback_recargar):
     try:
         exito = ejecutar_delete(sql, (id_final,))
         if exito:
-            messagebox.showinfo("Éxito", "Calificación eliminada correctamente")
+            messagebox.showinfo(
+                "Éxito", "Calificación eliminada correctamente")
             if callback_recargar:
                 callback_recargar()
         else:
-            messagebox.showwarning("Advertencia", "No se encontró la calificación a eliminar")
+            messagebox.showwarning(
+                "Advertencia", "No se encontró la calificación a eliminar")
     except Exception as e:
         messagebox.showerror("Error", f"Error al eliminar: {str(e)}")
-
-
-
 
 
 def mostrar_solicitudes(frame, datos=None):
@@ -1671,7 +1776,8 @@ def mostrar_reporte_grupal(frame, clave_grupo):
     limpiar_frame(frame)
 
     # ── BOTÓN REGRESAR ───────────────────────────────────────
-    CTkButton(frame, text="←", width=80, command=lambda: mostrar_reportes(frame)).pack(anchor="w", padx=20, pady=10)
+    CTkButton(frame, text="←", width=80, command=lambda: mostrar_reportes(
+        frame)).pack(anchor="w", padx=20, pady=10)
 
     # ── HEADER ───────────────────────────────────────────────
     header = CTkFrame(frame, height=60, fg_color="#154b74")
@@ -1743,9 +1849,9 @@ def mostrar_reporte_grupal(frame, clave_grupo):
 
     # ── CALCULAR ESTADÍSTICAS ────────────────────────────────
     finales = [f["final"] for f in filas if f["final"] is not None]
-    cal_max    = max(finales) if finales else 0
-    cal_min    = min(finales) if finales else 0
-    aprobados  = sum(1 for c in finales if c >= 60)
+    cal_max = max(finales) if finales else 0
+    cal_min = min(finales) if finales else 0
+    aprobados = sum(1 for c in finales if c >= 60)
     reprobados = sum(1 for c in finales if c < 60)
 
     # ── CONTADORES ───────────────────────────────────────────
@@ -1763,17 +1869,20 @@ def mostrar_reporte_grupal(frame, clave_grupo):
         stats_frame.grid_columnconfigure(i, weight=1)
         card = CTkFrame(stats_frame, fg_color=color, corner_radius=10)
         card.grid(row=0, column=i, padx=8, pady=6, sticky="ew")
-        CTkLabel(card, text=label, font=("Arial", 13), text_color="white").pack(anchor="w", padx=12, pady=(10, 0))
-        CTkLabel(card, text=valor, font=("Arial", 28, "bold"), text_color="white").pack(anchor="w", padx=12, pady=(0, 10))
+        CTkLabel(card, text=label, font=("Arial", 13), text_color="white").pack(
+            anchor="w", padx=12, pady=(10, 0))
+        CTkLabel(card, text=valor, font=("Arial", 28, "bold"),
+                 text_color="white").pack(anchor="w", padx=12, pady=(0, 10))
 
     # ── TABLA DE CALIFICACIONES ──────────────────────────────
     area_contenido = CTkScrollableFrame(frame, fg_color="transparent")
     area_contenido.pack(fill="both", expand=True, padx=20, pady=10)
 
     # Encabezados dinámicos
-    headers = ["Nombre completo"] + [f"Unidad {u[1]}" for u in unidades] + ["Cal. Final"]
+    headers = ["Nombre completo"] + \
+        [f"Unidad {u[1]}" for u in unidades] + ["Cal. Final"]
     ANCHO_NOMBRE = 220
-    ANCHO_COL    = 100
+    ANCHO_COL = 100
 
     encabezado = CTkFrame(area_contenido, fg_color="#154b74")
     encabezado.pack(fill="x")
@@ -1781,30 +1890,31 @@ def mostrar_reporte_grupal(frame, clave_grupo):
     encabezado.grid_columnconfigure(0, minsize=ANCHO_NOMBRE)
     CTkLabel(encabezado, text="Nombre completo", text_color="white",
              font=("Arial", 13, "bold"), width=ANCHO_NOMBRE, anchor="w").grid(
-             row=0, column=0, padx=10, pady=8, sticky="w")
+        row=0, column=0, padx=10, pady=8, sticky="w")
 
     for i, u in enumerate(unidades):
         encabezado.grid_columnconfigure(i + 1, minsize=ANCHO_COL)
         CTkLabel(encabezado, text=f"Unidad {u[1]}", text_color="white",
                  font=("Arial", 13, "bold"), width=ANCHO_COL, anchor="center").grid(
-                 row=0, column=i + 1, padx=10, pady=8)
+            row=0, column=i + 1, padx=10, pady=8)
 
     col_final = len(unidades) + 1
     encabezado.grid_columnconfigure(col_final, minsize=ANCHO_COL)
     CTkLabel(encabezado, text="Cal. Final", text_color="white",
              font=("Arial", 13, "bold"), width=ANCHO_COL, anchor="center").grid(
-             row=0, column=col_final, padx=10, pady=8)
+        row=0, column=col_final, padx=10, pady=8)
 
     # Filas de alumnos
     for fila_idx, fila in enumerate(filas):
         color_fila = "#f5f5f5" if fila_idx % 2 == 0 else "#ffffff"
-        fila_frame = CTkFrame(area_contenido, fg_color=color_fila, corner_radius=0)
+        fila_frame = CTkFrame(
+            area_contenido, fg_color=color_fila, corner_radius=0)
         fila_frame.pack(fill="x")
 
         fila_frame.grid_columnconfigure(0, minsize=ANCHO_NOMBRE)
         CTkLabel(fila_frame, text=fila["nombre"], font=("Arial", 13),
                  text_color="#000000", width=ANCHO_NOMBRE, anchor="w").grid(
-                 row=0, column=0, padx=10, pady=8, sticky="w")
+            row=0, column=0, padx=10, pady=8, sticky="w")
 
         for i, u in enumerate(unidades):
             cal = fila["unidades"].get(u[0], "-")
@@ -1812,14 +1922,15 @@ def mostrar_reporte_grupal(frame, clave_grupo):
             fila_frame.grid_columnconfigure(i + 1, minsize=ANCHO_COL)
             CTkLabel(fila_frame, text=texto, font=("Arial", 13),
                      text_color="#000000", width=ANCHO_COL, anchor="center").grid(
-                     row=0, column=i + 1, padx=10, pady=8)
+                row=0, column=i + 1, padx=10, pady=8)
 
         final_texto = f"{fila['final']:.1f}" if fila["final"] is not None else "-"
         color_final = "#1E8449" if fila["final"] and fila["final"] >= 60 else "#922B21"
         fila_frame.grid_columnconfigure(col_final, minsize=ANCHO_COL)
         CTkLabel(fila_frame, text=final_texto, font=("Arial", 13, "bold"),
                  text_color=color_final, width=ANCHO_COL, anchor="center").grid(
-                 row=0, column=col_final, padx=10, pady=8)
+            row=0, column=col_final, padx=10, pady=8)
+
 
 def crear_tabla_reportes(contenedor, registros, frame_principal):
     """Función interna para crear tabla. Recibe frame_principal por referencia.
@@ -1861,7 +1972,8 @@ def crear_tabla_reportes(contenedor, registros, frame_principal):
 
         # Ejecutar mostrar_reporte_grupal con el frame principal
         if registros and idx < len(registros):
-            clave_grupo = registros[idx][0]  # Primer elemento es la clave_grupo
+            # Primer elemento es la clave_grupo
+            clave_grupo = registros[idx][0]
             mostrar_reporte_grupal(frame_principal, clave_grupo)
 
     def on_enter(idx):

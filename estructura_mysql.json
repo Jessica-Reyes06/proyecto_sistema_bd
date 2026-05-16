@@ -996,6 +996,14 @@
         "",
         null,
         ""
+      ],
+      [
+        "descripcion",
+        "text",
+        "YES",
+        "",
+        null,
+        ""
       ]
     ],
     "foreign_keys": [],
