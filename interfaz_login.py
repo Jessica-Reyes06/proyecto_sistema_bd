@@ -1,5 +1,6 @@
 import os
 import sys  
+import importlib
 
 from customtkinter import *
 from funciones_login import mostrar_ocultar, generar_mensaje_login
@@ -40,6 +41,19 @@ boton_contra.pack(pady=(20, 5))
 boton_contra.configure(command=lambda: mostrar_ocultar(entry_contra, boton_contra))
 
 
+def abrir_interfaz_maestro(usuario):
+    try:
+        modulo = importlib.import_module("codigo_maestros.Inicio_maestros")
+    except Exception:
+        modulo = importlib.import_module("Inicio_maestros")
+
+    iniciar_maestro = getattr(modulo, "iniciar_maestro", None)
+    if iniciar_maestro is None:
+        raise ImportError("No se encontró iniciar_maestro en Inicio_maestros")
+
+    iniciar_maestro(usuario)
+
+
 def on_login():
     usuario = entry_usuario.get()
     contrasena = entry_contra.get()
@@ -53,19 +67,30 @@ def on_login():
     )
 
     if mensaje["exitoso"] is True:
-        # Cerrar ventana de login
-        ventana_login.destroy()
-
+        rol = (mensaje["rol"] or "").strip().lower()
         # Abrir la plataforma según el rol
-        if mensaje["rol"] == "administrador":
+        if rol == "administrador":
+            ventana_login.destroy()
             from main_administrador import iniciar_admin
             iniciar_admin()
-        elif mensaje["rol"] == "alumno":
-             pass #from Inicio_Alumnos import iniciar_alumno
-             pass #iniciar_alumno(mensaje["usuario"])
-        elif mensaje["rol"] == "maestro":
-            #from Inicio_maestros import iniciar_maestro
-            pass #iniciar_maestro(mensaje["usuario"])
+        elif rol == "alumno":
+            pass
+        elif rol == "maestro":
+            try:
+                ventana_login.destroy()
+                abrir_interfaz_maestro(mensaje["usuario"])
+            except Exception as ex:
+                label_mensaje.configure(
+                    text=f"Error al abrir la interfaz de maestro: {ex}",
+                    fg_color=("#FCE1E1", "#8A1F1F"),
+                    text_color=("#B00020", "#FFB3B3"),
+                )
+        else:
+            label_mensaje.configure(
+                text=f"Rol no reconocido: {mensaje['rol']}",
+                fg_color=("#FCE1E1", "#8A1F1F"),
+                text_color=("#B00020", "#FFB3B3"),
+            )
     
 
 boton_login = CTkButton(frame, text="Iniciar sesión", command=on_login, fg_color="#314560")
