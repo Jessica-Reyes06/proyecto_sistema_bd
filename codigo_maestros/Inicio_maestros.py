@@ -708,7 +708,11 @@ def informacion_general_grupo(frame, id_grupo):
             M.id_materia,
             M.nombre_materia,
             M.horas_semana,
-            G.cupo_maximo
+            G.cupo_maximo,
+            G.alumnos_inscritos,
+            G.periodo,
+            G.years,
+            G.estado
         FROM grupo G
         JOIN materia M ON G.id_materia = M.id_materia
         WHERE G.id_grupo = %s
@@ -717,14 +721,17 @@ def informacion_general_grupo(frame, id_grupo):
     resultado = ejecutar_select(consulta, (id_grupo_sql,))
 
     if resultado:
-        grupo, id_materia, nombre_materia, horas_semana, cupo = resultado[0]
+        grupo, id_materia, nombre_materia, horas_semana, cupo, alumnos_inscritos, periodo, years, estado = resultado[0]
         CTkLabel(frame_info, text=f"Grupo: {grupo}", text_color="black",
                  font=("Arial Rounded MT Bold", 20)).pack(anchor="w", padx=10, pady=(8, 2))
-        CTkLabel(frame_info, text=f"Materia: {id_materia} - {nombre_materia}", text_color="black",
+        CTkLabel(frame_info, text=f"Materia: {nombre_materia}", text_color="black",
                  font=("Arial Rounded MT Bold", 15)).pack(anchor="w", padx=10, pady=2)
         CTkLabel(frame_info,
-                 text=f"Horas/semana: {horas_semana}    Cupo: {cupo}",
-                 text_color="black", font=("Arial Rounded MT Bold", 13)).pack(anchor="w", padx=10, pady=(2, 8))
+                 text=f"Alumnos inscritos: {alumnos_inscritos}    Periodo: {periodo}",
+                 text_color="black", font=("Arial Rounded MT Bold", 13)).pack(anchor="w", padx=10, pady=(2, 4))
+        CTkLabel(frame_info,
+                 text=f"Año: {years}    Estado del grupo: {estado}",
+                 text_color="black", font=("Arial Rounded MT Bold", 13)).pack(anchor="w", padx=10, pady=(0, 8))
     else:
         CTkLabel(frame_info, text="No se encontró información general del grupo.",
                  text_color="#B00020", font=("Arial Rounded MT Bold", 14)).pack(anchor="w", padx=10, pady=10)
@@ -1070,7 +1077,7 @@ def mis_grupos(frame):
         r, c = i // 5, i % 5
         f = CTkFrame(cont, fg_color="white")
         f.grid(row=r, column=c, padx=8, pady=8)
-        CTkButton(f, text=f"Grupo {id_grupo}", image=folder, compound="bottom",
+        CTkButton(f, text=f"{id_grupo}", image=folder, compound="bottom",
                   width=170, height=150, fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
                   font=BUTTON_FONT,
                   command=lambda g=id_grupo: ver_grupo(frame, g)).grid(row=0, column=0, padx=8, pady=5)
