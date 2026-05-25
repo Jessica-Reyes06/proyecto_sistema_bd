@@ -208,8 +208,7 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
                 l.grid(row=fila_idx, column=col_idx,
                        padx=10, pady=8, sticky="nsew")
                 row_widgets.append(l)
-
-            def hacer_editar(idx=fila_idx):
+ hacer_editar(idx=fila_idx):
                 return lambda: editar_fila(idx)
 
             btn_editar = CTkButton(cuerpo, text="Editar", fg_color="#715a72", command=hacer_editar(fila_idx), width=80)
@@ -613,22 +612,13 @@ def mostrar_calendario_imagen(frame):
     header = CTkFrame(frame, height=60, fg_color="#154b74")
     header.pack(fill="x", pady=10)
 
-    CTkLabel(header, text="Calendario", text_color="white",
-             font=("Arial", 26, "bold")).pack(pady=15)
 
     cuerpo = CTkFrame(frame, fg_color="#ffffff")
     cuerpo.pack(fill="both", expand=True, padx=20, pady=10)
 
-    imagen_cal = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/iconos_admin/calendario.png")), size=(600, 800))
-
-    CTkLabel(cuerpo, text="", image=imagen_cal).pack(expand=True)
-
-
 def mostrar_seccion_pendiente(frame, titulo):
     limpiar_frame(frame)
-
-    header = CTkFrame(frame, height=60, fg_color="#154b74")
+ CTkFrame(frame, height=60, fg_color="#154b74")
     header.pack(fill="x", pady=10)
 
     CTkLabel(header, text=titulo, text_color="white",
@@ -1427,8 +1417,7 @@ def mostrar_calificaciones_finales(frame):
             m.nombre_materia as materia,
             CONCAT(g.periodo, ' ', g.years) as periodo,
             cf.calificacion +
-            COALESCE((SELECT SUM(valor) FROM BonusMateria WHERE id_registro = r.id_registro), 0) +
-            COALESCE((SELECT SUM(bu.valor) FROM BonusUnidad bu WHERE bu.id_registro = r.id_registro), 0) as calificacion_final
+            COALESCE((SELECT SUM(valor) FROM Bonus WHERE id_registro = r.id_registro), 0) as calificacion_final
         FROM Calificacion_final cf
         JOIN Registro r ON cf.id_registro = r.id_registro
         JOIN Alumno a ON r.id_alumno = a.id_alumno

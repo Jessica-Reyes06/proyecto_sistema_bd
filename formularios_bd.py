@@ -216,7 +216,6 @@ def generar_matricula_administrador_unica():
             return matricula
 
 # CAMPOS
-
 def crear_campo(frame,fila,texto):
     label = customtkinter.CTkLabel(frame,text=formatear_etiqueta_campo(texto),font=("Arial",14))
     label.grid(row=fila,column=0,padx=10,pady=5,sticky="w")
