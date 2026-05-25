@@ -61,12 +61,12 @@ def obtener_datos_maestro(matricula):
 
 def obtener_grupos_maestro(matricula):
     sql = """
-        SELECT G.id_grupo, G.id_materia, M.nombre_materia
+        SELECT G.clave_grupo, G.id_grupo, G.id_materia, M.nombre_materia
         FROM grupo G
         JOIN materia M ON G.id_materia = M.id_materia
         JOIN maestro MA ON G.id_maestro = MA.id_maestro
         WHERE MA.matricula = %s
-        ORDER BY G.id_grupo
+        ORDER BY G.clave_grupo
     """
     return ejecutar_select(sql, (matricula,))
 
@@ -512,6 +512,11 @@ def calcular_calificaciones_unidad_alumno(id_registro, id_grupo):
 
 
 def crear_tabla_participantes_con_calificaciones(parent, id_grupo):
+    # Obtener clave_grupo
+    sql_clave = "SELECT clave_grupo FROM grupo WHERE id_grupo = %s LIMIT 1"
+    resultado_clave = ejecutar_select(sql_clave, (id_grupo,))
+    clave_grupo = resultado_clave[0][0] if resultado_clave else id_grupo
+
     participantes_sql = """
         SELECT R.id_registro, A.nombre_alumno, A.apellido_paterno, A.apellido_materno
         FROM registro R
@@ -544,7 +549,7 @@ def crear_tabla_participantes_con_calificaciones(parent, id_grupo):
     cuerpo.pack(fill="both", expand=True)
 
     if not participantes:
-        CTkLabel(cuerpo, text=f"No hay alumnos inscritos en el grupo {id_grupo}.",
+        CTkLabel(cuerpo, text=f"No hay alumnos inscritos en el grupo {clave_grupo}.",
                  text_color="#444444", font=("Arial", 13)).pack(pady=20)
         return
 
@@ -604,12 +609,12 @@ def agregar_unidad_general(frame):
     lista.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
     seleccion_grupos = {}
-    for id_grupo, _, nombre_materia in grupos:
+    for clave_grupo, id_grupo, _, nombre_materia in grupos:
         fila = CTkFrame(lista, fg_color="white")
         fila.pack(fill="x", padx=4, pady=4)
         var = BooleanVar(value=False)
         seleccion_grupos[id_grupo] = var
-        CTkCheckBox(fila, text=f"Grupo {id_grupo} - {nombre_materia}", variable=var,
+        CTkCheckBox(fila, text=f"Grupo {clave_grupo} - {nombre_materia}", variable=var,
                     ).pack(anchor="w", padx=10, pady=8)
 
     estado = CTkLabel(form, text="", text_color="gray")
@@ -704,7 +709,7 @@ def informacion_general_grupo(frame, id_grupo):
 
     consulta = """
         SELECT
-            G.id_grupo,
+            G.clave_grupo,
             M.id_materia,
             M.nombre_materia,
             M.horas_semana,
@@ -721,8 +726,8 @@ def informacion_general_grupo(frame, id_grupo):
     resultado = ejecutar_select(consulta, (id_grupo_sql,))
 
     if resultado:
-        grupo, id_materia, nombre_materia, horas_semana, cupo, alumnos_inscritos, periodo, years, estado = resultado[0]
-        CTkLabel(frame_info, text=f"Grupo: {grupo}", text_color="black",
+        clave_grupo, id_materia, nombre_materia, horas_semana, cupo, alumnos_inscritos, periodo, years, estado = resultado[0]
+        CTkLabel(frame_info, text=f"Grupo: {clave_grupo}", text_color="black",
                  font=("Arial Rounded MT Bold", 20)).pack(anchor="w", padx=10, pady=(8, 2))
         CTkLabel(frame_info, text=f"Materia: {nombre_materia}", text_color="black",
                  font=("Arial Rounded MT Bold", 15)).pack(anchor="w", padx=10, pady=2)
@@ -756,7 +761,12 @@ def ver_grupo(frame, id_grupo):
     header = CTkFrame(frame, fg_color="white")
     header.pack(fill="x", padx=10, pady=(10, 4))
 
-    CTkLabel(header, text=f"Grupo {id_grupo}", text_color="black", anchor="w",
+    # Obtener clave_grupo
+    sql_clave = "SELECT clave_grupo FROM grupo WHERE id_grupo = %s LIMIT 1"
+    resultado_clave = ejecutar_select(sql_clave, (id_grupo,))
+    clave_grupo = resultado_clave[0][0] if resultado_clave else id_grupo
+
+    CTkLabel(header, text=f"Grupo {clave_grupo}", text_color="black", anchor="w",
              font=("Arial Rounded MT Bold", 30)).pack(side="left")
     CTkButton(header, text="Refrescar todo", fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
               font=("Arial Rounded MT Bold", 14), width=150,
@@ -809,7 +819,13 @@ def ver_grupo(frame, id_grupo):
 
 def pendientes(frame, id_grupo):
     limpiar_frame(frame)
-    CTkLabel(frame, text=f"Actividades - Grupo {id_grupo}", text_color="black", anchor="w",
+    
+    # Obtener clave_grupo
+    sql_clave = "SELECT clave_grupo FROM grupo WHERE id_grupo = %s LIMIT 1"
+    resultado_clave = ejecutar_select(sql_clave, (id_grupo,))
+    clave_grupo = resultado_clave[0][0] if resultado_clave else id_grupo
+    
+    CTkLabel(frame, text=f"Actividades - Grupo {clave_grupo}", text_color="black", anchor="w",
              font=("Arial Rounded MT Bold", 30)).pack(fill="x", padx=10, pady=10)
     CTkLabel(frame, text="Por revisar = entregadas por alumno y aún sin calificación.",
              text_color="gray", font=("Arial", 13)).pack(anchor="w", padx=12, pady=(0, 6))
@@ -1073,11 +1089,11 @@ def mis_grupos(frame):
         return
 
     folder = crear_icono("carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png", (90, 90))
-    for i, (id_grupo, _, materia) in enumerate(grupos):
+    for i, (clave_grupo, id_grupo, _, materia) in enumerate(grupos):
         r, c = i // 5, i % 5
         f = CTkFrame(cont, fg_color="white")
         f.grid(row=r, column=c, padx=8, pady=8)
-        CTkButton(f, text=f"{id_grupo}", image=folder, compound="bottom",
+        CTkButton(f, text=f"{clave_grupo}", image=folder, compound="bottom",
                   width=170, height=150, fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
                   font=BUTTON_FONT,
                   command=lambda g=id_grupo: ver_grupo(frame, g)).grid(row=0, column=0, padx=8, pady=5)
