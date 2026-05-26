@@ -32,8 +32,9 @@ def cambiar_estado_unidad(id_unidad, nuevo_estado):
 
 def obtener_actividades_por_unidad(id_unidad):
     sql = """
-        SELECT a.id_actividad, a.detalles, a.ponderacion
+        SELECT a.id_actividad, ta.nombre AS tipo_actividad, a.detalles, a.ponderacion
         FROM actividad a
+        LEFT JOIN tipos_actividades ta ON a.id_tipo = ta.id_tipo
         WHERE a.id_unidad = %s
         ORDER BY a.id_actividad
     """
@@ -222,7 +223,7 @@ def vista_actividades(frame, id_grupo, nombre_materia=""):
             continue
 
         col = 0
-        for id_actividad, detalles, ponderacion in actividades:
+        for id_actividad, tipo_actividad, detalles, ponderacion in actividades:
             tarjetas_frame.grid_columnconfigure(col, weight=1)
 
             card = CTkFrame(tarjetas_frame, fg_color=COLOR_AZUL_CLARO,
@@ -234,10 +235,15 @@ def vista_actividades(frame, id_grupo, nombre_materia=""):
             top = CTkFrame(card, fg_color="transparent")
             top.pack(fill="x", padx=12, pady=(12, 4))
 
-            CTkLabel(top, text=detalles or f"Actividad {id_actividad}",
+            CTkLabel(top, text=tipo_actividad or f"Actividad {id_actividad}",
                      font=("Arial Rounded MT Bold", 14), text_color="#1E3A5F",
                      wraplength=180, justify="left").pack(side="left", anchor="w")
             CTkLabel(top, text="›", font=("Arial", 20), text_color=COLOR_AZUL).pack(side="right")
+
+            if detalles:
+                CTkLabel(card, text=detalles,
+                         font=("Arial", 11), text_color="#475569",
+                         wraplength=180, justify="left").pack(anchor="w", padx=12, pady=(0, 6))
 
             badge_frame = CTkFrame(card, fg_color="transparent")
             badge_frame.pack(anchor="w", padx=12, pady=(0, 12))
@@ -250,9 +256,9 @@ def vista_actividades(frame, id_grupo, nombre_materia=""):
                      font=("Arial", 13), text_color="#374151").pack(side="left")
 
             # Click en toda la tarjeta
-            def abrir(ia=id_actividad, det=detalles, pond=ponderacion,
+            def abrir(ia=id_actividad, tipo=tipo_actividad, det=detalles, pond=ponderacion,
                       nu=numero_unidad, tu=tema_unidad):
-                vista_calificacion(frame, id_grupo, ia, det, pond, nu, tu, nombre_materia)
+                vista_calificacion(frame, id_grupo, ia, tipo, det, pond, nu, tu, nombre_materia)
 
             card.bind("<Button-1>", lambda e, fn=abrir: fn())
             for child in card.winfo_children():
@@ -263,7 +269,7 @@ def vista_actividades(frame, id_grupo, nombre_materia=""):
             col += 1
 
 
-def vista_calificacion(frame, id_grupo, id_actividad, detalles, ponderacion,
+def vista_calificacion(frame, id_grupo, id_actividad, tipo_actividad, detalles, ponderacion,
                        numero_unidad, tema_unidad, nombre_materia=""):
     """
     Vista de calificación: muestra la lista de alumnos con campos para ingresar calificaciones.
@@ -289,8 +295,14 @@ def vista_calificacion(frame, id_grupo, id_actividad, detalles, ponderacion,
     CTkLabel(breadcrumb, text=f"Unidad {numero_unidad}: {tema_unidad}",
              font=("Arial", 14), text_color=COLOR_AZUL).pack(side="left")
     CTkLabel(breadcrumb, text="  ›  ", font=("Arial", 14), text_color="#9CA3AF").pack(side="left")
-    CTkLabel(breadcrumb, text=detalles or f"Actividad {id_actividad}",
-             font=("Arial", 14, "bold"), text_color=COLOR_AZUL).pack(side="left")
+    detalle_frame = CTkFrame(breadcrumb, fg_color="transparent")
+    detalle_frame.pack(side="left")
+    CTkLabel(detalle_frame, text=tipo_actividad or f"Actividad {id_actividad}",
+             font=("Arial", 15, "bold"), text_color=COLOR_AZUL).pack(anchor="w")
+    if detalles:
+        CTkLabel(detalle_frame, text=detalles,
+                 font=("Arial", 11), text_color="#6B7280",
+                 wraplength=520, justify="left").pack(anchor="w")
 
     # Badge ponderación
     badge_frame = CTkFrame(header, fg_color=COLOR_AZUL_CLARO, corner_radius=10)
