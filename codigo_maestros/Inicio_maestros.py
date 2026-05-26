@@ -1,3 +1,10 @@
+from codigo_alumnos import funciones_Alumnos as funciones_alumnos
+from db_conexion import ejecutar_select, ejecutar_insert
+import importlib
+import datetime
+from tkcalendar import Calendar
+from PIL import Image
+from customtkinter import *
 import os
 import sys
 
@@ -5,13 +12,6 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from customtkinter import *
-from PIL import Image
-from tkcalendar import Calendar
-import datetime
-import importlib
-from db_conexion import ejecutar_select, ejecutar_insert
-from codigo_alumnos import funciones_Alumnos as funciones_alumnos
 
 ventana = None
 frame_contenido = None
@@ -534,7 +534,8 @@ def crear_tabla_participantes_con_calificaciones(parent, id_grupo):
     tabla.pack(fill="both", expand=True)
 
     encabezados = ["Nombre", "A. Paterno", "A. Materno"]
-    encabezados.extend([etiquetas_unidad.get(uid, f"U{uid}") for uid in ids_unidad])
+    encabezados.extend([etiquetas_unidad.get(
+        uid, f"U{uid}") for uid in ids_unidad])
     encabezados.append("Final")
 
     header = CTkFrame(tabla, fg_color="#1f6aa5")
@@ -555,7 +556,8 @@ def crear_tabla_participantes_con_calificaciones(parent, id_grupo):
 
     for fila_idx, (id_registro, nombre, ap_pat, ap_mat) in enumerate(participantes):
         datos_base = [nombre, ap_pat, ap_mat]
-        califs_unidad = calcular_calificaciones_unidad_alumno(id_registro, id_grupo)
+        califs_unidad = calcular_calificaciones_unidad_alumno(
+            id_registro, id_grupo)
 
         valores_unidad = []
         for uid in ids_unidad:
@@ -567,7 +569,8 @@ def crear_tabla_participantes_con_calificaciones(parent, id_grupo):
             valores_unidad.append(f"{valor_u:.2f}")
 
         _, final_unidades = obtener_resumen_alumno(id_registro, id_grupo)
-        bonus_materia = obtener_bonus_materia(id_registro, id_grupo) if id_materia_grupo else 0.0
+        bonus_materia = obtener_bonus_materia(
+            id_registro, id_grupo) if id_materia_grupo else 0.0
         final_real = min(100.0, final_unidades + bonus_materia)
         final_txt = f"{final_real:.2f}"
 
@@ -629,10 +632,12 @@ def agregar_unidad_general(frame):
         ]
 
         if not numero or not tema:
-            estado.configure(text="Número de unidad y tema son obligatorios.", text_color="#B00020")
+            estado.configure(
+                text="Número de unidad y tema son obligatorios.", text_color="#B00020")
             return
         if not grupos_seleccionados:
-            estado.configure(text="Selecciona al menos un grupo.", text_color="#B00020")
+            estado.configure(
+                text="Selecciona al menos un grupo.", text_color="#B00020")
             return
 
         sql = """
@@ -642,9 +647,11 @@ def agregar_unidad_general(frame):
         try:
             for id_grupo in grupos_seleccionados:
                 ejecutar_insert(sql, (numero, tema, descripcion, id_grupo))
-            estado.configure(text="Unidad agregada correctamente.", text_color="#1B5E20")
+            estado.configure(
+                text="Unidad agregada correctamente.", text_color="#1B5E20")
         except Exception as ex:
-            estado.configure(text=f"Error al agregar unidad: {ex}", text_color="#B00020")
+            estado.configure(
+                text=f"Error al agregar unidad: {ex}", text_color="#B00020")
 
     CTkButton(form, text="Guardar unidad", fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
               font=BUTTON_FONT, command=guardar_unidad_general).pack(anchor="e", padx=10, pady=(0, 10))
@@ -663,7 +670,8 @@ def menu_opciones(frame_menu):
     frame_user = CTkFrame(frame_menu, fg_color=COLOR_SIDE)
     frame_user.pack(pady=(5, 10), padx=20)
 
-    avatar = crear_icono("carpeta_iconos/iconos_alumnos/avatar.png", (100, 100))
+    avatar = crear_icono(
+        "carpeta_iconos/iconos_alumnos/avatar.png", (100, 100))
     CTkLabel(frame_user, text="", image=avatar).pack(pady=10)
 
     CTkLabel(frame_user, text=nombre_maestro or "Maestro", text_color="black",
@@ -726,7 +734,8 @@ def informacion_general_grupo(frame, id_grupo):
     resultado = ejecutar_select(consulta, (id_grupo_sql,))
 
     if resultado:
-        clave_grupo, id_materia, nombre_materia, horas_semana, cupo, alumnos_inscritos, periodo, years, estado = resultado[0]
+        clave_grupo, id_materia, nombre_materia, horas_semana, cupo, alumnos_inscritos, periodo, years, estado = resultado[
+            0]
         CTkLabel(frame_info, text=f"Grupo: {clave_grupo}", text_color="black",
                  font=("Arial Rounded MT Bold", 20)).pack(anchor="w", padx=10, pady=(8, 2))
         CTkLabel(frame_info, text=f"Materia: {nombre_materia}", text_color="black",
@@ -753,7 +762,8 @@ def informacion_general_grupo(frame, id_grupo):
     frame_participantes = CTkFrame(contenedor, fg_color="white", height=280)
     frame_participantes.pack(fill="x", padx=5, pady=(0, 8))
     frame_participantes.pack_propagate(False)
-    crear_tabla_participantes_con_calificaciones(frame_participantes, id_grupo_sql)
+    crear_tabla_participantes_con_calificaciones(
+        frame_participantes, id_grupo_sql)
 
 
 def ver_grupo(frame, id_grupo):
@@ -792,15 +802,18 @@ def ver_grupo(frame, id_grupo):
     tabview.add("Bonus unidad")
     tabview.add("Bonus materia")
 
-    frame_info_general = CTkFrame(tabview.tab("Informacion general"), fg_color="#F2FBFD")
+    frame_info_general = CTkFrame(tabview.tab(
+        "Informacion general"), fg_color="#F2FBFD")
     frame_info_general.pack(fill="both", expand=True)
     informacion_general_grupo(frame_info_general, id_grupo)
 
-    frame_asignar = CTkFrame(tabview.tab("Asignar actividad"), fg_color="#F2FBFD")
+    frame_asignar = CTkFrame(tabview.tab(
+        "Asignar actividad"), fg_color="#F2FBFD")
     frame_asignar.pack(fill="both", expand=True)
     asignar_actividad(frame_asignar, id_grupo)
 
-    frame_eliminar = CTkFrame(tabview.tab("Eliminar actividad"), fg_color="#F2FBFD")
+    frame_eliminar = CTkFrame(tabview.tab(
+        "Eliminar actividad"), fg_color="#F2FBFD")
     frame_eliminar.pack(fill="both", expand=True)
     eliminar_actividades(frame_eliminar, id_grupo)
 
@@ -819,12 +832,12 @@ def ver_grupo(frame, id_grupo):
 
 def pendientes(frame, id_grupo):
     limpiar_frame(frame)
-    
+
     # Obtener clave_grupo
     sql_clave = "SELECT clave_grupo FROM grupo WHERE id_grupo = %s LIMIT 1"
     resultado_clave = ejecutar_select(sql_clave, (id_grupo,))
     clave_grupo = resultado_clave[0][0] if resultado_clave else id_grupo
-    
+
     CTkLabel(frame, text=f"Actividades - Grupo {clave_grupo}", text_color="black", anchor="w",
              font=("Arial Rounded MT Bold", 30)).pack(fill="x", padx=10, pady=10)
     CTkLabel(frame, text="Por revisar = entregadas por alumno y aún sin calificación.",
@@ -837,7 +850,8 @@ def pendientes(frame, id_grupo):
                  text_color="gray", font=("Arial", 14)).pack(pady=20)
         return
 
-    detalles_frame = CTkFrame(frame, fg_color="white", border_width=2, border_color="#0E7490")
+    detalles_frame = CTkFrame(frame, fg_color="white",
+                              border_width=2, border_color="#0E7490")
     detalles_frame.pack(fill="x", padx=10, pady=10, ipady=10)
 
     estado_detalle = {"seleccion": None, "visible": False}
@@ -875,15 +889,18 @@ def pendientes(frame, id_grupo):
         limpiar_frame(detalles_frame)
 
         alumnos = obtener_alumnos_actividad(id_grupo, id_actividad)
-        alumno_data = next((a for a in alumnos if a[1] == numero_control), None)
+        alumno_data = next(
+            (a for a in alumnos if a[1] == numero_control), None)
         if not alumno_data:
             return
 
-        actividad_data = next((a for a in actividades if a[0] == id_actividad), None)
+        actividad_data = next(
+            (a for a in actividades if a[0] == id_actividad), None)
         if not actividad_data:
             return
 
-        promedio_base, promedio_final = obtener_resumen_alumno(id_registro, id_grupo)
+        promedio_base, promedio_final = obtener_resumen_alumno(
+            id_registro, id_grupo)
 
         frame_info = CTkFrame(detalles_frame, fg_color="#F5F5F5")
         frame_info.pack(fill="x", padx=10, pady=10)
@@ -944,7 +961,8 @@ def pendientes(frame, id_grupo):
         def enviar_calificacion():
             calif = a_numero(e_calif.get())
             if calif is None:
-                estado.configure(text="Calificación inválida.", text_color="#B00020")
+                estado.configure(text="Calificación inválida.",
+                                 text_color="#B00020")
                 return
             try:
                 if alumno_data[5] is None:
@@ -952,7 +970,8 @@ def pendientes(frame, id_grupo):
                         INSERT INTO resultado (id_registro, id_actividad, calificacion, fecha_registro, observaciones)
                         VALUES (%s, %s, %s, NOW(), %s)
                     """
-                    ejecutar_insert(sql_insert, (id_registro, id_actividad, calif, e_obs.get().strip()))
+                    ejecutar_insert(
+                        sql_insert, (id_registro, id_actividad, calif, e_obs.get().strip()))
                 else:
                     sql_update = """
                         UPDATE resultado
@@ -961,9 +980,11 @@ def pendientes(frame, id_grupo):
                             fecha_modificacion = NOW()
                         WHERE id_resultado = %s
                     """
-                    ejecutar_insert(sql_update, (calif, e_obs.get().strip(), alumno_data[5]))
+                    ejecutar_insert(
+                        sql_update, (calif, e_obs.get().strip(), alumno_data[5]))
 
-                base_nuevo, final_nuevo = obtener_resumen_alumno(id_registro, id_grupo)
+                base_nuevo, final_nuevo = obtener_resumen_alumno(
+                    id_registro, id_grupo)
                 estado.configure(
                     text=f"Resultado actualizado. Promedio final: {final_nuevo:.2f}",
                     text_color="#1B5E20",
@@ -974,11 +995,13 @@ def pendientes(frame, id_grupo):
         CTkButton(frame_entrada, text="Enviar", fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
                   font=BUTTON_FONT, command=enviar_calificacion).pack(anchor="e", padx=10, pady=10)
 
-    pending_scroll = CTkScrollableFrame(tabview.tab("Por revisar"), fg_color="#F2FBFD")
+    pending_scroll = CTkScrollableFrame(
+        tabview.tab("Por revisar"), fg_color="#F2FBFD")
     pending_scroll.pack(fill="both", expand=True, padx=5, pady=5)
 
     for id_actividad, id_unidad, detalles, ponderacion in actividades:
-        frame_act = CTkFrame(pending_scroll, fg_color="white", border_width=1, border_color="#E0E0E0")
+        frame_act = CTkFrame(pending_scroll, fg_color="white",
+                             border_width=1, border_color="#E0E0E0")
         frame_act.pack(fill="x", padx=5, pady=5)
 
         CTkLabel(frame_act, text=f"Actividad {id_actividad} - U{id_unidad}", text_color="black",
@@ -989,23 +1012,27 @@ def pendientes(frame, id_grupo):
         for id_reg, num_ctrl, nombre, ape_p, ape_m, id_res, calif, obs, estado_al in alumnos:
             if estado_al == "Por revisar":
                 hay_pendientes = True
+
                 def make_callback(ia, ir, nc, n, ap, am):
                     return lambda: render_detalle_alumno(ia, ir, nc, n, ap, am, editable=True)
                 CTkButton(frame_act, text=f"  {num_ctrl} - {nombre} {ape_p}", anchor="w",
                           fg_color="#FFF3E0", text_color="black", hover_color="#FFE0B2",
                           font=BUTTON_FONT, height=28,
-                          command=make_callback(id_actividad, id_reg, num_ctrl, nombre, ape_p, ape_m)
+                          command=make_callback(
+                              id_actividad, id_reg, num_ctrl, nombre, ape_p, ape_m)
                           ).pack(fill="x", padx=8, pady=2)
 
         if not hay_pendientes:
             CTkLabel(frame_act, text="  Sin actividades por revisar",
                      text_color="gray", font=("Arial", 9)).pack(anchor="w", padx=10, pady=4)
 
-    entregadas_scroll = CTkScrollableFrame(tabview.tab("Revisadas"), fg_color="#F2FBFD")
+    entregadas_scroll = CTkScrollableFrame(
+        tabview.tab("Revisadas"), fg_color="#F2FBFD")
     entregadas_scroll.pack(fill="both", expand=True, padx=5, pady=5)
 
     for id_actividad, id_unidad, detalles, ponderacion in actividades:
-        frame_act = CTkFrame(entregadas_scroll, fg_color="white", border_width=1, border_color="#E0E0E0")
+        frame_act = CTkFrame(entregadas_scroll, fg_color="white",
+                             border_width=1, border_color="#E0E0E0")
         frame_act.pack(fill="x", padx=5, pady=5)
 
         CTkLabel(frame_act, text=f"Actividad {id_actividad} - U{id_unidad}", text_color="black",
@@ -1016,12 +1043,14 @@ def pendientes(frame, id_grupo):
         for id_reg, num_ctrl, nombre, ape_p, ape_m, id_res, calif, obs, estado_al in alumnos:
             if estado_al == "Revisada":
                 hay_entregadas = True
+
                 def make_callback_entregada(ia, ir, nc, n, ap, am):
                     return lambda: render_detalle_alumno(ia, ir, nc, n, ap, am, editable=True)
                 CTkButton(frame_act, text=f"  {num_ctrl} - {nombre} {ape_p}", anchor="w",
                           fg_color="#E8F5E9", text_color="black", hover_color="#C8E6C9",
                           font=BUTTON_FONT, height=28,
-                          command=make_callback_entregada(id_actividad, id_reg, num_ctrl, nombre, ape_p, ape_m)
+                          command=make_callback_entregada(
+                              id_actividad, id_reg, num_ctrl, nombre, ape_p, ape_m)
                           ).pack(fill="x", padx=8, pady=2)
 
         if not hay_entregadas:
@@ -1049,7 +1078,8 @@ def eliminar_actividades(frame, id_grupo):
         return
 
     for id_actividad, id_unidad, detalles, ponderacion in actividades:
-        card = CTkFrame(contenedor, fg_color="white", border_width=1, border_color="#E0E0E0")
+        card = CTkFrame(contenedor, fg_color="white",
+                        border_width=1, border_color="#E0E0E0")
         card.pack(fill="x", padx=5, pady=6)
 
         CTkLabel(card, text=f"{id_actividad} - Unidad {id_unidad}", text_color="black",
@@ -1062,10 +1092,12 @@ def eliminar_actividades(frame, id_grupo):
         def eliminar_actual(ia=id_actividad):
             try:
                 eliminar_actividad_por_id(id_grupo, ia)
-                estado.configure(text=f"Actividad eliminada: {ia}", text_color="#1B5E20")
+                estado.configure(
+                    text=f"Actividad eliminada: {ia}", text_color="#1B5E20")
                 eliminar_actividades(frame, id_grupo)
             except Exception as ex:
-                estado.configure(text=f"No se pudo eliminar la actividad {ia}: {ex}", text_color="#B00020")
+                estado.configure(
+                    text=f"No se pudo eliminar la actividad {ia}: {ex}", text_color="#B00020")
 
         CTkButton(card, text="Eliminar", fg_color="#B00020", hover_color="#8E0000",
                   font=("Arial Rounded MT Bold", 13), width=120,
@@ -1079,7 +1111,8 @@ def mis_grupos(frame):
     CTkLabel(frame, text="Gestiona tus grupos asignados", text_color="gray",
              font=("Arial", 16)).pack(anchor="w", padx=12)
 
-    cont = CTkScrollableFrame(frame, fg_color="#F2FBFD", width=1200, height=700)
+    cont = CTkScrollableFrame(
+        frame, fg_color="#F2FBFD", width=1200, height=700)
     cont.pack(padx=10, pady=10, anchor="w")
     grupos = obtener_grupos_maestro(matricula_maestro)
 
@@ -1088,7 +1121,8 @@ def mis_grupos(frame):
                  font=("Arial Rounded MT Bold", 18)).grid(row=0, column=0, padx=10, pady=10, sticky="w")
         return
 
-    folder = crear_icono("carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png", (90, 90))
+    folder = crear_icono(
+        "carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png", (90, 90))
     for i, (clave_grupo, id_grupo, _, materia) in enumerate(grupos):
         r, c = i // 5, i % 5
         f = CTkFrame(cont, fg_color="white")
@@ -1127,7 +1161,8 @@ def asignar_actividad(frame, id_grupo_seleccionado=None):
     e_desc = CTkEntry(form, placeholder_text="Detalles de la actividad")
     e_valor = CTkEntry(form, placeholder_text="Ponderación % (ej. 20)")
 
-    unidades_grupo = obtener_unidades_grupo(id_grupo_seleccionado) if id_grupo_seleccionado else []
+    unidades_grupo = obtener_unidades_grupo(
+        id_grupo_seleccionado) if id_grupo_seleccionado else []
     if unidades_grupo:
         opciones_unidad = [f"{id_unidad} - Unidad {numero_unidad}: {tema_unidad}"
                            for id_unidad, numero_unidad, tema_unidad in unidades_grupo]
@@ -1136,7 +1171,22 @@ def asignar_actividad(frame, id_grupo_seleccionado=None):
     else:
         e_unidad = CTkEntry(form, placeholder_text="Id unidad (obligatorio)")
 
-    for w in (e_grupo, e_desc, e_valor, e_unidad):
+    # Tipos de actividad (combo)
+    try:
+        tipos_filas = ejecutar_select(
+            "SELECT nombre FROM tipos_actividades ORDER BY nombre")
+        tipos_nombres = [t[0] for t in tipos_filas] if tipos_filas else []
+    except Exception:
+        tipos_nombres = []
+
+    if tipos_nombres:
+        e_tipo = CTkComboBox(form, values=tipos_nombres, state="readonly")
+        e_tipo.set(tipos_nombres[0])
+    else:
+        e_tipo = CTkEntry(
+            form, placeholder_text="Tipo de actividad (obligatorio)")
+
+    for w in (e_grupo, e_desc, e_valor, e_unidad, e_tipo):
         w.pack(fill="x", padx=10, pady=6)
 
     if id_grupo_seleccionado is not None:
@@ -1168,6 +1218,14 @@ def asignar_actividad(frame, id_grupo_seleccionado=None):
             return None
         return valor.split(" - ", 1)[0].strip()
 
+    def id_tipo_actual():
+        # devuelve el nombre seleccionado o el texto del entry
+        try:
+            nombre = e_tipo.get().strip()
+        except Exception:
+            return None
+        return nombre if nombre else None
+
     def actualizar_ponderacion_ui(*_):
         id_grupo_val = id_grupo_actual()
         id_unidad_val = id_unidad_actual()
@@ -1180,7 +1238,8 @@ def asignar_actividad(frame, id_grupo_seleccionado=None):
         valor_nuevo = a_numero(e_valor.get()) or 0.0
         suma_nueva = suma_actual + valor_nuevo
 
-        lbl_suma_actual.configure(text=f"Suma de ponderaciones actual: {suma_actual:.2f}%")
+        lbl_suma_actual.configure(
+            text=f"Suma de ponderaciones actual: {suma_actual:.2f}%")
         if suma_nueva > 100:
             lbl_suma_nueva.configure(
                 text=f"Suma con nueva actividad: {suma_nueva:.2f}% (excede 100%)",
@@ -1207,12 +1266,19 @@ def asignar_actividad(frame, id_grupo_seleccionado=None):
         grupo_val = id_grupo_actual()
         valor_nuevo = a_numero(e_valor.get())
         detalles_val = e_desc.get().strip()
+        tipo_nombre = id_tipo_actual()
 
         if not unidad_val:
-            estado.configure(text="Debes seleccionar una unidad válida.", text_color="#B00020")
+            estado.configure(
+                text="Debes seleccionar una unidad válida.", text_color="#B00020")
+            return
+        if not tipo_nombre:
+            estado.configure(
+                text="Debes seleccionar un tipo de actividad.", text_color="#B00020")
             return
         if valor_nuevo is None or valor_nuevo <= 0:
-            estado.configure(text="Debes capturar una ponderación válida mayor a 0.", text_color="#B00020")
+            estado.configure(
+                text="Debes capturar una ponderación válida mayor a 0.", text_color="#B00020")
             return
 
         suma_actual = obtener_suma_ponderaciones(grupo_val, unidad_val)
@@ -1223,18 +1289,31 @@ def asignar_actividad(frame, id_grupo_seleccionado=None):
                 text_color="#B00020")
             return
 
-        sql = """
-            INSERT INTO actividad (id_unidad, id_tipo, ponderacion, detalles)
-            VALUES (%s, %s, %s, %s)
-        """
+        # Resolver id_tipo desde el nombre seleccionado
         try:
-            ejecutar_insert(sql, (unidad_val, None, valor_nuevo, detalles_val))
+            tipo_result = ejecutar_select(
+                "SELECT id_tipo FROM tipos_actividades WHERE nombre = %s", (
+                    tipo_nombre,)
+            ) if tipo_nombre else None
+            if not tipo_result:
+                estado.configure(
+                    text="Tipo de actividad no válido.", text_color="#B00020")
+                return
+            id_tipo_val = tipo_result[0][0]
+
+            sql = """
+                INSERT INTO actividad (id_unidad, id_tipo, ponderacion, detalles)
+                VALUES (%s, %s, %s, %s)
+            """
+            ejecutar_insert(sql, (unidad_val, id_tipo_val,
+                            valor_nuevo, detalles_val))
             estado.configure(
                 text=f"Actividad asignada correctamente. Total de unidad: {suma_nueva:.2f}%.",
                 text_color="#1B5E20")
             actualizar_ponderacion_ui()
         except Exception as ex:
-            estado.configure(text=f"Error al asignar actividad: {ex}", text_color="#B00020")
+            estado.configure(
+                text=f"Error al asignar actividad: {ex}", text_color="#B00020")
 
     actualizar_ponderacion_ui()
 
@@ -1261,12 +1340,14 @@ def iniciar_maestro(matricula):
     ventana.withdraw()
     ventana.after(0, mostrar_maximizada)
 
-    frame_menu = CTkFrame(ventana, width=300, corner_radius=0, fg_color=COLOR_SIDE)
+    frame_menu = CTkFrame(ventana, width=300,
+                          corner_radius=0, fg_color=COLOR_SIDE)
     frame_menu.pack(side="left", fill="y")
     frame_menu.pack_propagate(False)
 
     frame_contenido = CTkFrame(ventana, fg_color="white")
-    frame_contenido.pack(side="left", fill="both", expand=True, padx=20, pady=10)
+    frame_contenido.pack(side="left", fill="both",
+                         expand=True, padx=20, pady=10)
 
     menu_opciones(frame_menu)
     mis_grupos(frame_contenido)
