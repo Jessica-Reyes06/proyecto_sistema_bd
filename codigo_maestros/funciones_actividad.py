@@ -15,7 +15,7 @@ def obtener_unidades_con_actividades(id_grupo):
     sql = """
         SELECT DISTINCT u.id_unidad, u.numero_unidad, u.tema_unidad, u.estado
         FROM unidad u
-        JOIN actividad a ON a.id_unidad = u.id_unidad
+        LEFT JOIN actividad a ON a.id_unidad = u.id_unidad
         WHERE u.id_grupo = %s
         ORDER BY u.numero_unidad
     """
