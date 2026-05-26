@@ -1,80 +1,133 @@
 import os
-import mysql.connector
+from dotenv import load_dotenv
 
-# Leer contraseña desde variable de entorno
-conexion = mysql.connector.connect(
-    host="mainline.proxy.rlwy.net",
-    port=33989,
-    user="root",
-    password="eCjzlyNIPozVeLnSIFfMVLiaeAJRURPE",
-    database="db_escolar"
-)
+# Cargar variables de entorno desde el archivo .env
+load_dotenv()
 
-print("Conectado a MySQL - Base de datos: db_escolar")
+# Intentar importar psycopg2 pero no fallar en el import: fallaremos sólo al pedir conexión
+try:
+    import psycopg2
+    from psycopg2 import OperationalError
+except Exception:
+    psycopg2 = None
+    OperationalError = Exception
+
+_conexion = None
 
 
-def crear_tablas_nuevas():
-    cursor = conexion.cursor()
+def get_conexion():
+    """Devuelve una conexión a PostgreSQL (creada la primera vez que se solicita).
 
-    try:
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS actividades (
-                id_actividad INT AUTO_INCREMENT PRIMARY KEY,
-                tipo_actividad VARCHAR(150) NOT NULL,
-                unidad VARCHAR(50) NOT NULL,
-                id_grupo VARCHAR(50) NOT NULL,
-                materia VARCHAR(150) NOT NULL,
-                ponderacion VARCHAR(50) NOT NULL,
-                detalles TEXT NOT NULL
+    Si `psycopg2` no está instalado, levanta `ImportError` con instrucciones.
+    Si falla la conexión, propaga la excepción original para que el llamador la maneje.
+    """
+    global _conexion
+    if psycopg2 is None:
+        raise ImportError(
+            "La librería 'psycopg2' no está instalada. Instálala con: python -m pip install psycopg2-binary")
+
+    if _conexion is None:
+        try:
+            _conexion = psycopg2.connect(
+                host=os.getenv("DB_HOST"),
+                port=os.getenv("DB_PORT"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
+                database=os.getenv("DB_NAME")
             )
-            """
-        )
-        conexion.commit()
-        print("Tabla 'actividades' verificada")
-    except Exception as e:
-        print(f"No se pudo verificar la tabla 'actividades': {e}")
+            print(
+                f"Conectado a PostgreSQL - Base de datos: {os.getenv('DB_NAME')}")
+        except OperationalError:
+            # Propagar para que el llamador pueda manejar (y evitar crash al importar)
+            raise
+    return _conexion
+
+
+class _ProxyConexion:
+    """Proxy ligero que obtiene la conexión real al primer uso.
+
+    Permite mantener compatibilidad con módulos que hacen
+    `from db_conexion import conexion` y usan `.cursor()` directamente.
+    """
+
+    def __getattr__(self, name):
+        real = get_conexion()
+        return getattr(real, name)
+
+    def cursor(self, *args, **kwargs):
+        return get_conexion().cursor(*args, **kwargs)
+
+    def close(self):
+        if _conexion is not None:
+            try:
+                _conexion.close()
+            finally:
+                pass
+
+
+# Instancia proxy exportada para compatibilidad con código existente
+conexion = _ProxyConexion()
+
+
+def ejecutar_insert(sql, datos):
+    """Ejecuta una consulta INSERT con parámetros"""
+    conn = get_conexion()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(sql, datos)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         cursor.close()
 
 
-crear_tablas_nuevas()
-
-
-def ejecutar_insert(sql, datos):
-    cursor = conexion.cursor()
-    cursor.execute(sql, datos)
-    conexion.commit()
-    cursor.close()
-
-
 def ejecutar_select(sql, params=None):
-    cursor = conexion.cursor()
-    if params is None:
-        cursor.execute(sql)
-    else:
-        cursor.execute(sql, params)
-    resultado = cursor.fetchall()
-    cursor.close()
-    return resultado
+    """Ejecuta una consulta SELECT con parámetros"""
+    conn = get_conexion()
+    cursor = conn.cursor()
+    try:
+        if params is None:
+            cursor.execute(sql)
+        else:
+            cursor.execute(sql, params)
+        return cursor.fetchall()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cursor.close()
 
 
 def ejecutar_update(sql, valores):
     """Ejecuta una consulta UPDATE con parámetros"""
-    cursor = conexion.cursor()
-    cursor.execute(sql, valores)
-    conexion.commit()
-    cursor.close()
+    conn = get_conexion()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(sql, valores)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cursor.close()
 
 
 def ejecutar_delete(sql, valores):
     """Ejecuta una consulta DELETE con parámetros"""
-    cursor = conexion.cursor()
-    cursor.execute(sql, valores)
-    conexion.commit()
-    filas_afectadas = cursor.rowcount
-    cursor.close()
-    return filas_afectadas > 0
+    conn = get_conexion()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(sql, valores)
+        conn.commit()
+        filas_afectadas = cursor.rowcount
+        return filas_afectadas > 0
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cursor.close()
 
 
 def ejecutar_select_todo(tabla):

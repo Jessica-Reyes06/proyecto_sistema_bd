@@ -21,10 +21,10 @@ def verificar_tablas():
 
         # Tablas esperadas
         tablas_esperadas = [
-            "alumnos", "maestros", "administradores", "usuarios",
-            "carreras", "materias", "grupos", "registros",
-            "tipos_actividades", "actividades", "salones",
-            "calificaciones_finales", "calificaciones_actividades", "horario"
+            "Alumno", "Maestro", "Administrador",
+            "Carreras", "Materia", "Grupo", "Registro",
+            "Tipos_actividades", "Actividad",
+            "Calificacion_final"
         ]
 
         for tabla in tablas_esperadas:

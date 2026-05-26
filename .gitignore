@@ -1,2 +1,11 @@
 __pycache__/
 *.pyc
+
+# Credenciales y variables de entorno
+.env
+.env.local
+
+# Base de datos
+*.db
+*.sqlite
+*.sqlite3

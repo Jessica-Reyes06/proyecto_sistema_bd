@@ -4,8 +4,10 @@ import customtkinter as ctk
 from PIL import Image
 from funciones_login import cambiar_modo
 from funciones_admin import *
+from escalado_dinamico import crear_escalador
 
 ventana_principal = None
+escalador = None
 
 def ruta_recurso(ruta_relativa):
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
@@ -19,7 +21,7 @@ def crear_icono(ruta, size=(20, 20)):
     )
 
 def iniciar_admin():
-    global ventana_principal
+    global ventana_principal, escalador
 
     # ===== CONFIGURACIÓN =====
 
@@ -29,19 +31,13 @@ def iniciar_admin():
     ventana_principal = ctk.CTk()
     ventana_principal.title("Panel Administrador")
 
-    ventana_principal.withdraw()
-
-    def mostrar_max_admin():
-        ventana_principal.deiconify()
-        ventana_principal.state("zoomed")
-
-    ventana_principal.after(10, mostrar_max_admin)
+    # NO ocultar la ventana ni maximizar automáticamente
+    # Dejar que el usuario decida si maximizar
 
     # tamaño mínimo para evitar romper el layout
     ventana_principal.minsize(1100, 700)
 
     # ===== ESCALADO AUTOMÁTICO SEGÚN PANTALLA =====
-
     screen_w = ventana_principal.winfo_screenwidth()
 
     if screen_w >= 1900:
@@ -51,6 +47,17 @@ def iniciar_admin():
     else:
         ctk.set_widget_scaling(1.0)
 
+    # ===== INICIALIZAR ESCALADOR DINÁMICO =====
+    # IMPORTANTE: Crear escalador DESPUÉS de que la ventana es visible
+    escalador = crear_escalador(ventana_principal)
+    info_res = escalador.get_info_resolucion()
+    print(f"🖥️  Resolución detectada: {info_res['screen_width']}x{info_res['screen_height']} ({info_res['categoria']})")
+    print(f"📏 Factor de escala: {info_res['scale_factor']:.2f}x")
+
+    # Compartir el escalador con funciones_admin.py
+    from funciones_admin import set_escalador
+    set_escalador(escalador)
+
     # ===== GRID PRINCIPAL =====
 
     ventana_principal.grid_columnconfigure(0, weight=0)  # sidebar fijo
@@ -58,8 +65,12 @@ def iniciar_admin():
     ventana_principal.grid_rowconfigure(0, weight=1)
 
     # ===== SIDEBAR =====
+    # Aumentar ancho base para acomodar botones más anchos (260px base + padding)
+    ancho_sidebar = escalador.get_escalado_ancho(320)
+    # Limitar el ancho máximo del sidebar
+    ancho_sidebar = min(ancho_sidebar, escalador.get_escalado_ancho(400))
 
-    sidebar = ctk.CTkFrame(ventana_principal, width=280, fg_color="#003152")
+    sidebar = ctk.CTkFrame(ventana_principal, width=ancho_sidebar, fg_color="#003152")
     sidebar.grid(row=0, column=0, sticky="ns")
 
     logo_img = ctk.CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/general/logo.jpeg")), size=(180, 60))
@@ -88,12 +99,17 @@ def iniciar_admin():
     ).pack(pady=10)
 
     # Iconos para los botones del sidebar (como en Inicio_Alumnos)
-    img_inicio = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/hogar.png"), (24, 24))
-    img_cerrar_sesion = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/salida.png"), (24, 24))
-    img_modo = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/modo.png"), (24, 24))
-    img_calendario = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/calendario.png"), (24, 24))
-    img_pendientes = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/lista.png"), (24, 24))
-    img_respaldo = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png"), (24, 24))
+    # Tamaños de iconos dinámicos según la resolución
+    tamano_icono = escalador.get_escalado_ancho(24)
+    # Limitar el tamaño máximo de los iconos
+    tamano_icono = min(tamano_icono, 32)
+
+    img_inicio = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/hogar.png"), (tamano_icono, tamano_icono))
+    img_cerrar_sesion = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/salida.png"), (tamano_icono, tamano_icono))
+    img_modo = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/modo.png"), (tamano_icono, tamano_icono))
+    img_calendario = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/calendario.png"), (tamano_icono, tamano_icono))
+    img_pendientes = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/lista.png"), (tamano_icono, tamano_icono))
+    img_respaldo = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png"), (tamano_icono, tamano_icono))
 
     # Frame clickeable para "Inicio"
     frame_inicio = ctk.CTkFrame(sidebar, fg_color="transparent")
@@ -103,16 +119,23 @@ def iniciar_admin():
     main_frame = ctk.CTkFrame(ventana_principal, fg_color="transparent")
     main_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
 
+    # Crear botones dinámicos con el escalador
+    # Aumentar ancho base para acomodar textos largos
+    ancho_boton = escalador.get_escalado_ancho(260)
+    alto_boton = escalador.get_escalado_alto(40)
+    tamano_fuente = escalador.get_tamano_fuente(14)
+
     btn_inicio = ctk.CTkButton(
         frame_inicio,
         text="   Inicio",
         fg_color="#003152",
         hover_color="#1c669f",
         text_color="white",
-        width=200,
-        height=40,
+        width=ancho_boton,
+        height=alto_boton,
         image=img_inicio,
         anchor="w",
+        font=("Arial", tamano_fuente),
         command=lambda: mostrar_dashboard(main_frame)
     )
     btn_inicio.pack()
@@ -130,10 +153,11 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=200,
-        height=40,
+        width=ancho_boton,
+        height=alto_boton,
         image=img_calendario,
         anchor="w",
+        font=("Arial", tamano_fuente),
         command=lambda: mostrar_calendario_imagen(main_frame)
     )
     btn_cal.pack(fill="x")
@@ -150,10 +174,11 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=200,
-        height=40,
+        width=ancho_boton,
+        height=alto_boton,
         image=img_pendientes,
         anchor="w",
+        font=("Arial", tamano_fuente),
         command=lambda: mostrar_solicitudes(main_frame)
     )
     btn_pend.pack(fill="x")
@@ -170,9 +195,10 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=200,
-        height=40,
+        width=ancho_boton,
+        height=alto_boton,
         anchor="w",
+        font=("Arial", tamano_fuente),
         command=cambiar_modo,
         image=img_modo
     )
@@ -190,10 +216,11 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=200,
-        height=40,
+        width=ancho_boton,
+        height=alto_boton,
         image=img_respaldo,
         anchor="w",
+        font=("Arial", tamano_fuente),
         command=crear_respaldo_completo,
     )
     btn_respaldo.pack(fill="x")
@@ -210,10 +237,11 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#1c669f",
         text_color="white",
-        width=200,
-        height=40,
+        width=ancho_boton,
+        height=alto_boton,
         image=img_respaldo,
         anchor="w",
+        font=("Arial", tamano_fuente),
         command=restaurar_desde_respaldo,
     )
     btn_restaurar.pack(fill="x")
@@ -230,10 +258,11 @@ def iniciar_admin():
         fg_color="transparent",
         hover_color="#962d22",
         text_color="white",
-        width=200,
-        height=40,
+        width=ancho_boton,
+        height=alto_boton,
         image=img_cerrar_sesion,
         anchor="w",
+        font=("Arial", tamano_fuente),
         command=ventana_principal.destroy
     )
     btn_cerrar.pack(fill="x")

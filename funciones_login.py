@@ -9,14 +9,54 @@ def cambiar_modo():
         customtkinter.set_appearance_mode("light")
 
 def buscar_usuario(usuario):
-    cursor = conexion.cursor()
-    
-    query = "SELECT usuario, contrasena, rol FROM usuarios WHERE usuario = %s"
-    cursor.execute(query, (usuario,))
-    resultado = cursor.fetchone() 
-    cursor.close()  
-    return resultado
 
+    cursor = conexion.cursor()
+    try:
+        # 1) Intentar maestro por matrícula
+        query = """
+            SELECT m.matricula AS usuario, c.password AS contrasena, r.nombre AS rol
+            FROM maestro m
+            JOIN cuentas c ON m.id_cuenta = c.id_cuenta
+            JOIN roles r ON c.id_rol = r.id_rol
+            WHERE m.matricula = %s
+            LIMIT 1
+        """
+        cursor.execute(query, (usuario,))
+        resultado = cursor.fetchone()
+        if resultado:
+            return resultado
+
+        # 2) Intentar alumno por numero_control
+        query = """
+            SELECT a.numero_control AS usuario, c.password AS contrasena, r.nombre AS rol
+            FROM alumno a
+            JOIN cuentas c ON a.id_cuenta = c.id_cuenta
+            JOIN roles r ON c.id_rol = r.id_rol
+            WHERE a.numero_control = %s
+            LIMIT 1
+        """
+        cursor.execute(query, (usuario,))
+        resultado = cursor.fetchone()
+        if resultado:
+            return resultado
+
+        # 3) Intentar administrador por matrícula
+        query = """
+            SELECT ad.matricula AS usuario, c.password AS contrasena, r.nombre AS rol
+            FROM administrador ad
+            JOIN cuentas c ON ad.id_cuenta = c.id_cuenta
+            JOIN roles r ON c.id_rol = r.id_rol
+            WHERE ad.matricula = %s
+            LIMIT 1
+        """
+        cursor.execute(query, (usuario,))
+        resultado = cursor.fetchone()
+        return resultado
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
 
 def validar_contrasena(contrasena_ingresada, contrasena_guardada):
     return contrasena_ingresada == contrasena_guardada
