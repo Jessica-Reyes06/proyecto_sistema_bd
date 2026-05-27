@@ -752,13 +752,6 @@ def informacion_general_grupo(frame, id_grupo):
         CTkLabel(frame_info, text="No se encontró información general del grupo.",
                  text_color="#B00020", font=("Arial Rounded MT Bold", 14)).pack(anchor="w", padx=10, pady=10)
 
-    CTkLabel(contenedor, text="Horario del grupo", text_color="black",
-             font=("Arial Rounded MT Bold", 18)).pack(anchor="w", padx=8, pady=(10, 4))
-    frame_horario = CTkFrame(contenedor, fg_color="white", height=240)
-    frame_horario.pack(fill="x", padx=5, pady=(0, 8))
-    frame_horario.pack_propagate(False)
-    funciones_alumnos.tabla_horario_materia(frame_horario, id_grupo_sql)
-
     CTkLabel(contenedor, text="Participantes inscritos", text_color="black",
              font=("Arial Rounded MT Bold", 18)).pack(anchor="w", padx=8, pady=(8, 4))
     frame_participantes = CTkFrame(contenedor, fg_color="white", height=280)
@@ -805,7 +798,8 @@ def ver_grupo(frame, id_grupo):
     tabview.add("Bonus materia")
 
     # Frames de cada pestaña
-    frame_info_general = CTkFrame(tabview.tab("Informacion general"), fg_color="#F2FBFD")
+    frame_info_general = CTkFrame(tabview.tab(
+        "Informacion general"), fg_color="#F2FBFD")
     frame_info_general.pack(fill="both", expand=True)
 
     frame_asignar = CTkFrame(tabview.tab(
