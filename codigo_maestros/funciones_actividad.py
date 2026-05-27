@@ -749,11 +749,7 @@ def vista_bonus(frame, id_grupo):
     CTkLabel(header, text="Asigna puntos bonus por unidad o por semestre a tus alumnos",
              font=("Arial", 13), text_color="#6B7280").pack(anchor="w", padx=4, pady=(2, 12))
 
-    alumnos = obtener_alumnos_grupo_bonus(id_grupo)
-    if not alumnos:
-        CTkLabel(frame, text="No hay alumnos inscritos en este grupo.",
-                 font=("Arial", 14), text_color="gray").pack(pady=40)
-        return
+    # No fetch here; obtain the list when rendering filas to ensure fresh data
 
     # Tabla
     tabla = CTkFrame(frame, fg_color="white", corner_radius=12,
@@ -779,6 +775,12 @@ def vista_bonus(frame, id_grupo):
     def render_filas():
         for w in scroll.winfo_children():
             w.destroy()
+
+        alumnos = obtener_alumnos_grupo_bonus(id_grupo)
+        if not alumnos:
+            CTkLabel(scroll, text="No hay alumnos inscritos en este grupo.",
+                     font=("Arial", 14), text_color="gray").pack(pady=20)
+            return
 
         for idx, (id_registro, numero_control, nombre, ap_pat, ap_mat) in enumerate(alumnos):
             nombre_completo = f"{nombre} {ap_pat} {ap_mat or ''}".strip()
