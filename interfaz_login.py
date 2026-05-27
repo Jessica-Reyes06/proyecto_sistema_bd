@@ -7,7 +7,6 @@ from customtkinter import *
 from funciones_login import mostrar_ocultar, generar_mensaje_login
 from PIL import Image
 
-
 def ruta_recurso(ruta_relativa):
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(
         os.path.abspath(__file__)))

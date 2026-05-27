@@ -1122,6 +1122,14 @@ def ver_grupo(frame, id_grupo):
 
     CTkLabel(header, text=f"Grupo {clave_grupo}", text_color="black", anchor="w",
              font=("Arial Rounded MT Bold", 30)).pack(side="left")
+    # Mostrar un indicador con id_grupo y número de alumnos para depuración rápida
+    try:
+        from codigo_maestros.funciones_actividad import obtener_alumnos_grupo_bonus
+        num_alumnos = len(obtener_alumnos_grupo_bonus(id_grupo))
+        CTkLabel(header, text=f"Grupo: {id_grupo} — Alumnos: {num_alumnos}",
+                 text_color="#374151", font=("Arial", 12)).pack(side="left", padx=(12, 0))
+    except Exception as _ex:
+        print(f"DEBUG: no se pudo obtener conteo alumnos para grupo {id_grupo}: {_ex}")
     CTkButton(header, text="Refrescar todo", fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
               font=("Arial Rounded MT Bold", 14), width=150,
               command=lambda: ver_grupo(frame, id_grupo),
@@ -1143,30 +1151,23 @@ def ver_grupo(frame, id_grupo):
     tabview.add("Asignar actividad")
     tabview.add("Eliminar actividad")
     tabview.add("Actividades")
-    tabview.add("Bonus unidad")
-    tabview.add("Bonus materia")
+    tabview.add("Bonus")
 
     # Frames de cada pestaña
-    frame_info_general = CTkFrame(tabview.tab(
-        "Informacion general"), fg_color="#F2FBFD")
+    frame_info_general = CTkFrame(tabview.tab("Informacion general"), fg_color="#F2FBFD")
     frame_info_general.pack(fill="both", expand=True)
 
-    frame_asignar = CTkFrame(tabview.tab(
-        "Asignar actividad"), fg_color="#F2FBFD")
+    frame_asignar = CTkFrame(tabview.tab("Asignar actividad"), fg_color="#F2FBFD")
     frame_asignar.pack(fill="both", expand=True)
 
-    frame_eliminar = CTkFrame(tabview.tab(
-        "Eliminar actividad"), fg_color="#F2FBFD")
+    frame_eliminar = CTkFrame(tabview.tab("Eliminar actividad"), fg_color="#F2FBFD")
     frame_eliminar.pack(fill="both", expand=True)
 
     frame_pend = CTkFrame(tabview.tab("Actividades"), fg_color="#F2FBFD")
     frame_pend.pack(fill="both", expand=True)
 
-    frame_bonus_u = CTkFrame(tabview.tab("Bonus unidad"), fg_color="#F2FBFD")
-    frame_bonus_u.pack(fill="both", expand=True)
-
-    frame_bonus_m = CTkFrame(tabview.tab("Bonus materia"), fg_color="#F2FBFD")
-    frame_bonus_m.pack(fill="both", expand=True)
+    frame_bonus = CTkFrame(tabview.tab("Bonus"), fg_color="#F2FBFD")
+    frame_bonus.pack(fill="both", expand=True)
 
     # Renderizar la primera pestaña inmediatamente
     informacion_general_grupo(frame_info_general, id_grupo)
@@ -1176,6 +1177,7 @@ def ver_grupo(frame, id_grupo):
 
     def on_tab_change():
         tab = tabview.get()
+        print(f"DEBUG: on_tab_change tab={tab} id_grupo={id_grupo}")
         if tab in cargadas:
             return
         cargadas.add(tab)
@@ -1185,10 +1187,9 @@ def ver_grupo(frame, id_grupo):
             eliminar_actividades(frame_eliminar, id_grupo)
         elif tab == "Actividades":
             pendientes(frame_pend, id_grupo)
-        elif tab == "Bonus unidad":
-            bonus_unidad_view(frame_bonus_u, id_grupo)
-        elif tab == "Bonus materia":
-            bonus_materia_view(frame_bonus_m, id_grupo)
+        elif tab == "Bonus":
+            from codigo_maestros.funciones_actividad import vista_bonus
+            vista_bonus(frame_bonus, id_grupo)
 
     tabview.configure(command=on_tab_change)
 
