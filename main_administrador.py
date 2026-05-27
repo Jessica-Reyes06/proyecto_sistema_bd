@@ -2,15 +2,16 @@ import os
 import sys
 import customtkinter as ctk
 from PIL import Image
-from funciones_login import cambiar_modo
 from funciones_admin import *
 from escalado_dinamico import crear_escalador
 
 ventana_principal = None
 escalador = None
 
+
 def ruta_recurso(ruta_relativa):
-    base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    base_path = getattr(sys, "_MEIPASS", os.path.dirname(
+        os.path.abspath(__file__)))
     return os.path.join(base_path, ruta_relativa)
 
 
@@ -19,6 +20,7 @@ def crear_icono(ruta, size=(20, 20)):
         light_image=Image.open(ruta_recurso(ruta)),
         size=size
     )
+
 
 def iniciar_admin():
     global ventana_principal, escalador
@@ -51,7 +53,8 @@ def iniciar_admin():
     # IMPORTANTE: Crear escalador DESPUÉS de que la ventana es visible
     escalador = crear_escalador(ventana_principal)
     info_res = escalador.get_info_resolucion()
-    print(f"🖥️  Resolución detectada: {info_res['screen_width']}x{info_res['screen_height']} ({info_res['categoria']})")
+    print(
+        f"🖥️  Resolución detectada: {info_res['screen_width']}x{info_res['screen_height']} ({info_res['categoria']})")
     print(f"📏 Factor de escala: {info_res['scale_factor']:.2f}x")
 
     # Compartir el escalador con funciones_admin.py
@@ -70,19 +73,34 @@ def iniciar_admin():
     # Limitar el ancho máximo del sidebar
     ancho_sidebar = min(ancho_sidebar, escalador.get_escalado_ancho(400))
 
-    sidebar = ctk.CTkFrame(ventana_principal, width=ancho_sidebar, fg_color="#003152")
+    sidebar = ctk.CTkFrame(
+        ventana_principal, width=ancho_sidebar, fg_color="#003152")
     sidebar.grid(row=0, column=0, sticky="ns")
 
-    logo_img = ctk.CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/general/logo.jpeg")), size=(180, 60))
-    ctk.CTkLabel(
+    logo_img = ctk.CTkImage(
+        light_image=Image.open(ruta_recurso(
+            "carpeta_iconos/general/logo.jpeg")),
+        size=(220, 78)
+    )
+    frame_logo = ctk.CTkFrame(
         sidebar,
+        fg_color="white",
+        corner_radius=0,
+        width=ancho_sidebar,
+        height=96
+    )
+    frame_logo.pack(pady=(0, 6), padx=0, fill="x")
+    frame_logo.pack_propagate(False)
+    ctk.CTkLabel(
+        frame_logo,
         text="",
         image=logo_img
-    ).pack(pady=(20, 5))
+    ).pack(expand=True)
 
     # Avatar en la parte superior del panel izquierdo
     avatar_image = ctk.CTkImage(
-        light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_admin/usuario.png")),
+        light_image=Image.open(ruta_recurso(
+            "carpeta_iconos/iconos_admin/usuario.png")),
         size=(100, 100)
     )
     ctk.CTkLabel(
@@ -104,12 +122,16 @@ def iniciar_admin():
     # Limitar el tamaño máximo de los iconos
     tamano_icono = min(tamano_icono, 32)
 
-    img_inicio = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/hogar.png"), (tamano_icono, tamano_icono))
-    img_cerrar_sesion = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/salida.png"), (tamano_icono, tamano_icono))
-    img_modo = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/modo.png"), (tamano_icono, tamano_icono))
-    img_calendario = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/calendario.png"), (tamano_icono, tamano_icono))
-    img_pendientes = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/lista.png"), (tamano_icono, tamano_icono))
-    img_respaldo = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png"), (tamano_icono, tamano_icono))
+    img_inicio = crear_icono(ruta_recurso(
+        "carpeta_iconos/iconos_alumnos/hogar.png"), (tamano_icono, tamano_icono))
+    img_cerrar_sesion = crear_icono(ruta_recurso(
+        "carpeta_iconos/iconos_alumnos/salida.png"), (tamano_icono, tamano_icono))
+    img_calendario = crear_icono(ruta_recurso(
+        "carpeta_iconos/iconos_alumnos/calendario.png"), (tamano_icono, tamano_icono))
+    img_pendientes = crear_icono(ruta_recurso(
+        "carpeta_iconos/iconos_alumnos/lista.png"), (tamano_icono, tamano_icono))
+    img_respaldo = crear_icono(ruta_recurso(
+        "carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png"), (tamano_icono, tamano_icono))
 
     # Frame clickeable para "Inicio"
     frame_inicio = ctk.CTkFrame(sidebar, fg_color="transparent")
@@ -141,7 +163,8 @@ def iniciar_admin():
     btn_inicio.pack()
 
     # Hacer que todo el frame también sea clickeable
-    frame_inicio.bind("<Button-1>", lambda event: mostrar_dashboard(main_frame))
+    frame_inicio.bind(
+        "<Button-1>", lambda event: mostrar_dashboard(main_frame))
 
     # Botón "Calendario"
     frame_cal = ctk.CTkFrame(sidebar, fg_color="transparent")
@@ -162,7 +185,8 @@ def iniciar_admin():
     )
     btn_cal.pack(fill="x")
 
-    frame_cal.bind("<Button-1>", lambda event: mostrar_calendario_imagen(main_frame))
+    frame_cal.bind(
+        "<Button-1>", lambda event: mostrar_calendario_imagen(main_frame))
 
     # Botón "Solicitudes"
     frame_pend = ctk.CTkFrame(sidebar, fg_color="transparent")
@@ -183,28 +207,8 @@ def iniciar_admin():
     )
     btn_pend.pack(fill="x")
 
-    frame_pend.bind("<Button-1>", lambda event: mostrar_solicitudes(main_frame))
-
-    # Frame clickeable para cambiar modo oscuro/claro
-    frame_modo = ctk.CTkFrame(sidebar, fg_color="transparent")
-    frame_modo.pack(pady=5, padx=20, fill="x")
-
-    btn_modo = ctk.CTkButton(
-        frame_modo,
-        text="   Cambiar modo",
-        fg_color="transparent",
-        hover_color="#1c669f",
-        text_color="white",
-        width=ancho_boton,
-        height=alto_boton,
-        anchor="w",
-        font=("Arial", tamano_fuente),
-        command=cambiar_modo,
-        image=img_modo
-    )
-    btn_modo.pack(fill="x")
-
-    frame_modo.bind("<Button-1>", lambda event: cambiar_modo())
+    frame_pend.bind(
+        "<Button-1>", lambda event: mostrar_solicitudes(main_frame))
 
     # Botón "Crear respaldo"
     frame_respaldo = ctk.CTkFrame(sidebar, fg_color="transparent")
@@ -246,7 +250,8 @@ def iniciar_admin():
     )
     btn_restaurar.pack(fill="x")
 
-    frame_restaurar.bind("<Button-1>", lambda event: restaurar_desde_respaldo())
+    frame_restaurar.bind(
+        "<Button-1>", lambda event: restaurar_desde_respaldo())
 
     # "Cerrar sesión"
     frame_cerrar = ctk.CTkFrame(sidebar, fg_color="transparent")
@@ -273,6 +278,7 @@ def iniciar_admin():
     mostrar_dashboard(main_frame)
 
     ventana_principal.mainloop()
+
 
 if __name__ == "__main__":
     iniciar_admin()
