@@ -1,3 +1,10 @@
+import os
+import sys
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
 from codigo_alumnos import funciones_Alumnos as funciones_alumnos
 from db_conexion import ejecutar_select, ejecutar_insert
 import importlib
@@ -5,12 +12,6 @@ import datetime
 from tkcalendar import Calendar
 from PIL import Image
 from customtkinter import *
-import os
-import sys
-
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
 
 
 ventana = None
@@ -293,8 +294,9 @@ def bonus_unidad_view(frame, id_grupo):
 
     opciones_alumno = [
         f"{r} - {nc} - {n} {ap} {am}" for r, nc, n, ap, am in alumnos]
-    opciones_unidad = [
-        f"{id_u} - U{num}: {tema}" for id_u, num, tema in unidades]
+    # mantener lista de ids por índice y mostrar al usuario solo el número/tema
+    unidad_ids = [str(id_u).strip() for id_u, num, tema in unidades]
+    opciones_unidad = [f"Unidad {num}: {tema}" for id_u, num, tema in unidades]
 
     cb_alumno = CTkComboBox(form, values=opciones_alumno, state="readonly")
     cb_unidad = CTkComboBox(form, values=opciones_unidad, state="readonly")
@@ -315,7 +317,17 @@ def bonus_unidad_view(frame, id_grupo):
             return
 
         id_registro = cb_alumno.get().split(" - ", 1)[0].strip()
-        id_unidad = cb_unidad.get().split(" - ", 1)[0].strip()
+        # Obtener id_unidad por índice desde el mapeo interno; soportar formato antiguo si aparece
+        selected_unidad = cb_unidad.get()
+        id_unidad = None
+        try:
+            idx = opciones_unidad.index(selected_unidad)
+            id_unidad = unidad_ids[idx]
+        except Exception:
+            try:
+                id_unidad = cb_unidad.get().split(" - ", 1)[0].strip()
+            except Exception:
+                id_unidad = None
         _, final_antes = obtener_resumen_alumno(id_registro, id_grupo)
 
         max_bonus_permitido = max(0.0, round(100.0 - final_antes, 2))
@@ -464,9 +476,9 @@ def obtener_etiquetas_unidad(ids_unidad):
         id_txt = str(id_u).strip()
         num_txt = str(numero_u).strip()
         if conteo_numero.get(num_txt, 0) > 1:
-            etiquetas[id_txt] = f"U{num_txt} ({id_txt})"
+            etiquetas[id_txt] = f"Unidad {num_txt} ({id_txt})"
         else:
-            etiquetas[id_txt] = f"U{num_txt}"
+            etiquetas[id_txt] = f"Unidad {num_txt}"
     return etiquetas
 
 
@@ -971,7 +983,7 @@ def eliminar_actividades(frame, id_grupo):
                         border_width=1, border_color="#E0E0E0")
         card.pack(fill="x", padx=5, pady=6)
 
-        CTkLabel(card, text=f"{id_actividad} - Unidad {id_unidad}", text_color="black",
+        CTkLabel(card, text=f"Actividad {id_actividad} - Unidad {id_unidad}", text_color="black",
                  font=("Arial Rounded MT Bold", 14)).pack(anchor="w", padx=10, pady=(8, 2))
         CTkLabel(card, text=f"Ponderación: {ponderacion}%",
                  text_color="#444444", font=("Arial", 12)).pack(anchor="w", padx=10, pady=2)
@@ -1087,8 +1099,11 @@ def asignar_actividad(frame, id_grupo_seleccionado=None):
 
     unidades_grupo = obtener_unidades_grupo(
         id_grupo_seleccionado) if id_grupo_seleccionado else []
+    unidad_ids = None
     if unidades_grupo:
-        opciones_unidad = [f"{id_unidad} - Unidad {numero_unidad}: {tema_unidad}"
+        unidad_ids = [str(id_unidad).strip()
+                      for id_unidad, numero_unidad, tema_unidad in unidades_grupo]
+        opciones_unidad = [f"Unidad {numero_unidad}: {tema_unidad}"
                            for id_unidad, numero_unidad, tema_unidad in unidades_grupo]
         e_unidad = CTkComboBox(form, values=opciones_unidad,
                                state="readonly", font=("Arial", 15), height=42)
@@ -1151,6 +1166,12 @@ def asignar_actividad(frame, id_grupo_seleccionado=None):
         valor = e_unidad.get().strip()
         if not valor:
             return None
+        if isinstance(e_unidad, CTkComboBox) and unidad_ids is not None:
+            try:
+                idx = opciones_unidad.index(valor)
+                return unidad_ids[idx]
+            except Exception:
+                pass
         return valor.split(" - ", 1)[0].strip()
 
     def id_tipo_actual():
@@ -1290,4 +1311,4 @@ def iniciar_maestro(matricula):
 
 
 if __name__ == "__main__":
-    iniciar_maestro("")
+    iniciar_maestro("M001")
