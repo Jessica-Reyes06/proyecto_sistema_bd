@@ -1,3 +1,8 @@
+import datetime
+from tkinter import filedialog
+import importlib
+from db_conexion import ejecutar_select, ejecutar_insert
+from customtkinter import CTkFrame, CTkLabel, CTkScrollableFrame
 import os
 import sys
 
@@ -5,18 +10,12 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from customtkinter import CTkFrame, CTkLabel, CTkScrollableFrame
-from db_conexion import ejecutar_select, ejecutar_insert
-import importlib
-from tkinter import filedialog
-import datetime
-
 
 def obtener_id_materia(nombre_materia):
     """Obtiene el id_materia a partir del nombre de la materia."""
     consulta = """
         SELECT id_materia
-        FROM materias
+        FROM materia
         WHERE nombre_materia = %s
         LIMIT 1
     """
@@ -31,8 +30,8 @@ def crear_tabla_participantes(parent, id_grupo):
             A.nombre_alumno,
             A.apellido_paterno,
             A.apellido_materno
-        FROM registros R
-        JOIN alumnos A ON R.numero_control = A.numero_control
+        FROM registro R
+        JOIN alumno A ON R.id_alumno = A.id_alumno
         WHERE R.id_grupo = %s
         ORDER BY A.apellido_paterno, A.apellido_materno, A.nombre_alumno
     """
@@ -89,32 +88,50 @@ def crear_tabla_participantes(parent, id_grupo):
 
     return tabla
 
-def tabla_horario_materia(parent, id_grupo):
-    consulta = """
-        SELECT
-            H.dia,
-            H.hora_inicio,
-            H.hora_fin,
-            H.id_salon
-        FROM horario H
-        WHERE H.id_grupo = %s
-        ORDER BY
-            CASE TRIM(UPPER(H.dia))
-                WHEN 'L' THEN 1
-                WHEN 'M' THEN 2
-                WHEN 'X' THEN 3
-                WHEN 'J' THEN 4
-                WHEN 'V' THEN 5
-                ELSE 99
-            END,
-            H.hora_inicio
-    """
 
+def tabla_horario_materia(parent, id_grupo):
+    def _crear_filas_desde_texto(texto_horario):
+        texto = str(texto_horario).strip()
+        if not texto:
+            return []
+
+        horario_mostrar = texto
+        hora_inicio = texto
+        hora_fin = ""
+        salon = ""
+
+        # Formatos soportados: "8:00-10:00", "8:00 - 10:00", "Lun 8:00-10:00 A-203".
+        if "-" in texto:
+            partes = [parte.strip() for parte in texto.split("-", 1)]
+            if partes[0]:
+                hora_inicio = partes[0]
+            if len(partes) > 1 and partes[1]:
+                resto = partes[1].strip()
+                if " " in resto:
+                    posible_hora_fin, posible_salon = resto.split(" ", 1)
+                    hora_fin = posible_hora_fin.strip()
+                    salon = posible_salon.strip()
+                else:
+                    hora_fin = resto
+        elif " " in texto:
+            partes = texto.split()
+            if len(partes) >= 2:
+                hora_inicio = partes[0]
+                hora_fin = partes[1]
+                if len(partes) > 2:
+                    salon = " ".join(partes[2:])
+
+        return [("N/A", hora_inicio, hora_fin, salon or horario_mostrar)]
+
+    filas_horario = []
     error_consulta = None
+
     try:
-        filas_horario = ejecutar_select(consulta, (id_grupo,))
+        grupo_h = ejecutar_select(
+            "SELECT horario FROM grupo WHERE id_grupo = %s", (id_grupo,))
+        if grupo_h and grupo_h[0] and grupo_h[0][0]:
+            filas_horario = _crear_filas_desde_texto(grupo_h[0][0])
     except Exception as error:
-        filas_horario = []
         error_consulta = str(error)
 
     tabla = CTkFrame(parent)
@@ -147,7 +164,7 @@ def tabla_horario_materia(parent, id_grupo):
     if error_consulta is not None:
         CTkLabel(
             cuerpo,
-            text="No se pudo consultar el horario. Verifica que exista la tabla horario.",
+            text="No se pudo leer el horario del grupo.",
             text_color="#b00020",
             font=("Arial", 13)
         ).pack(pady=(20, 6))
@@ -184,11 +201,14 @@ def tabla_horario_materia(parent, id_grupo):
 
     return tabla
 
-#funcion para seleccionar archivo y mostrar su nombre en una etiqueta
+# funcion para seleccionar archivo y mostrar su nombre en una etiqueta
+
+
 def seleccionar_archivo(label_archivo):
     ruta = filedialog.askopenfilename(
         title="Seleccionar archivo",
-        filetypes=[("Todos los archivos", "*.*"), ("PDF", "*.pdf"), ("Word", "*.docx")]
+        filetypes=[("Todos los archivos", "*.*"),
+                   ("PDF", "*.pdf"), ("Word", "*.docx")]
     )
     if ruta:
         label_archivo.configure(text=f"Archivo: {os.path.basename(ruta)}")
@@ -223,9 +243,10 @@ def entregar_actividad(numero_control, id_actividad, ruta_archivo):
     try:
         fila_registro = ejecutar_select(
             """
-            SELECT id_registro
-            FROM registros
-            WHERE TRIM(numero_control) = TRIM(%s) AND TRIM(id_grupo) = TRIM(%s)
+            SELECT R.id_registro
+            FROM registro R
+            JOIN alumno A ON R.id_alumno = A.id_alumno
+            WHERE TRIM(A.numero_control) = TRIM(%s) AND TRIM(R.id_grupo) = TRIM(%s)
             LIMIT 1
             """,
             (numero_control, id_grupo_actividad),
@@ -273,26 +294,30 @@ def entregar_actividad(numero_control, id_actividad, ruta_archivo):
                     f"UPDATE {tabla_resultado} SET fecha_registro = %s, {col_calificacion} = %s "
                     "WHERE id_registro = %s AND id_actividad = %s"
                 )
-                ejecutar_insert(sql_update, (fecha_entrega, 0, id_registro, id_actividad))
+                ejecutar_insert(sql_update, (fecha_entrega,
+                                0, id_registro, id_actividad))
             else:
                 sql_update = (
                     f"UPDATE {tabla_resultado} SET fecha_registro = %s "
                     "WHERE id_registro = %s AND id_actividad = %s"
                 )
-                ejecutar_insert(sql_update, (fecha_entrega, id_registro, id_actividad))
+                ejecutar_insert(sql_update, (fecha_entrega,
+                                id_registro, id_actividad))
         else:
             if col_calificacion:
                 sql_insert = (
                     f"INSERT INTO {tabla_resultado} (id_registro, id_actividad, fecha_registro, {col_calificacion}) "
                     "VALUES (%s, %s, %s, %s)"
                 )
-                ejecutar_insert(sql_insert, (id_registro, id_actividad, fecha_entrega, 0))
+                ejecutar_insert(
+                    sql_insert, (id_registro, id_actividad, fecha_entrega, 0))
             else:
                 sql_insert = (
                     f"INSERT INTO {tabla_resultado} (id_registro, id_actividad, fecha_registro) "
                     "VALUES (%s, %s, %s)"
                 )
-                ejecutar_insert(sql_insert, (id_registro, id_actividad, fecha_entrega))
+                ejecutar_insert(
+                    sql_insert, (id_registro, id_actividad, fecha_entrega))
     except Exception as error:
         return False, f"No se pudo guardar la entrega: {error}"
 
@@ -343,7 +368,8 @@ def obtener_info_unidades(id_materia_valor, id_registro_valor):
 
     consulta_unidad = f"SELECT {', '.join(campos)} FROM Unidad{where_sql}"
     try:
-        filas = ejecutar_select(consulta_unidad, params) if params else ejecutar_select(consulta_unidad)
+        filas = ejecutar_select(
+            consulta_unidad, params) if params else ejecutar_select(consulta_unidad)
     except Exception:
         filas = []
 
@@ -351,11 +377,14 @@ def obtener_info_unidades(id_materia_valor, id_registro_valor):
         idx = 0
         id_unidad_fila = str(fila[idx]).strip()
         idx += 1
-        numero_unidad = str(fila[idx]).strip() if col_numero else id_unidad_fila
+        numero_unidad = str(fila[idx]).strip(
+        ) if col_numero else id_unidad_fila
         if col_numero:
             idx += 1
-        tema_unidad = str(fila[idx]).strip() if col_tema and fila[idx] not in (None, "") else "Sin tema"
-        registro_unidad = {"numero": numero_unidad, "tema": tema_unidad, "bonus_unidad": 0.0}
+        tema_unidad = str(fila[idx]).strip() if col_tema and fila[idx] not in (
+            None, "") else "Sin tema"
+        registro_unidad = {"numero": numero_unidad,
+                           "tema": tema_unidad, "bonus_unidad": 0.0}
         info[id_unidad_fila] = registro_unidad
         if numero_unidad and numero_unidad != id_unidad_fila:
             info[numero_unidad] = registro_unidad
@@ -375,7 +404,8 @@ def obtener_info_unidades(id_materia_valor, id_registro_valor):
             for id_unidad_bonus, bonus_val in bonus_rows or []:
                 clave = str(id_unidad_bonus).strip()
                 if clave not in info:
-                    info[clave] = {"numero": clave, "tema": "Sin tema", "bonus_unidad": 0.0}
+                    info[clave] = {"numero": clave,
+                                   "tema": "Sin tema", "bonus_unidad": 0.0}
                 bonus_num = a_numero(bonus_val) or 0.0
                 info[clave]["bonus_unidad"] = bonus_num
 
@@ -403,4 +433,3 @@ def obtener_bonus_final(id_materia_valor, id_registro_valor):
     if not fila or not fila[0]:
         return 0.0
     return a_numero(fila[0][0]) or 0.0
-

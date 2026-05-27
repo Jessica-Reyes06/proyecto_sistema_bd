@@ -76,9 +76,10 @@ def ejecutar_insert(sql, datos):
     try:
         cursor.execute(sql, datos)
         conn.commit()
-    except Exception:
+    except Exception as e:
         conn.rollback()
-        raise
+        raise Exception(
+            f"Error ejecutar_insert: {e}\nSQL: {sql}\nParams: {datos}") from e
     finally:
         cursor.close()
 
@@ -93,9 +94,10 @@ def ejecutar_select(sql, params=None):
         else:
             cursor.execute(sql, params)
         return cursor.fetchall()
-    except Exception:
+    except Exception as e:
         conn.rollback()
-        raise
+        raise Exception(
+            f"Error ejecutar_select: {e}\nSQL: {sql}\nParams: {params}") from e
     finally:
         cursor.close()
 
@@ -107,9 +109,10 @@ def ejecutar_update(sql, valores):
     try:
         cursor.execute(sql, valores)
         conn.commit()
-    except Exception:
+    except Exception as e:
         conn.rollback()
-        raise
+        raise Exception(
+            f"Error ejecutar_update: {e}\nSQL: {sql}\nParams: {valores}") from e
     finally:
         cursor.close()
 
@@ -123,9 +126,10 @@ def ejecutar_delete(sql, valores):
         conn.commit()
         filas_afectadas = cursor.rowcount
         return filas_afectadas > 0
-    except Exception:
+    except Exception as e:
         conn.rollback()
-        raise
+        raise Exception(
+            f"Error ejecutar_delete: {e}\nSQL: {sql}\nParams: {valores}") from e
     finally:
         cursor.close()
 
