@@ -1,7 +1,7 @@
 from tkinter import messagebox
 from customtkinter import *
 from PIL import Image
-from config_principal import calendario, limpiar_frame
+from config_principal import bitacora_cambios, limpiar_frame
 from formularios_bd import *
 import os
 import sys
@@ -250,6 +250,7 @@ def actualizar_registro(tabla, id_valor, nuevos_valores):
     """Callback para actualizar un registro"""
     from db_conexion import ejecutar_update, conexion
     from tkinter import messagebox
+    from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
 
     # Determinar el campo ID según la tabla
     campos_id = {
@@ -291,6 +292,12 @@ def actualizar_registro(tabla, id_valor, nuevos_valores):
         sql = f"UPDATE {tabla} SET {set_clause} WHERE {campo_id}=%s"
 
         ejecutar_update(sql, tuple(nuevos_valores) + (id_valor,))
+        
+        # Registrar en auditoría
+        nombre_admin = obtener_admin_actual()
+        id_tabla= obtener_id_recien_insertado(tabla, campo_id)
+        registrar_auditoria(nombre_admin, tabla.lower(), "UPDATE", id_tabla)
+
         messagebox.showinfo("Éxito", "Registro actualizado correctamente")
         return True
 
@@ -361,6 +368,7 @@ def eliminar_registro(tabla, id_valor, callback_recargar):
     """
     from db_conexion import ejecutar_delete
     from tkinter import messagebox
+    from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
 
     campos_id = {
         "Alumno": "numero_control",
@@ -378,6 +386,7 @@ def eliminar_registro(tabla, id_valor, callback_recargar):
     }
 
     campo_id = campos_id.get(tabla, "id")
+    
 
     # VERIFICAR DEPENDENCIAS
     dependencias = verificar_dependencias(tabla, campo_id, id_valor)
@@ -413,6 +422,11 @@ def eliminar_registro(tabla, id_valor, callback_recargar):
             exito = ejecutar_delete(sql, (id_valor,))
 
             if exito:
+                # Registrar en auditoría
+                nombre_admin = obtener_admin_actual()
+                id_tabla= obtener_id_recien_insertado(tabla, campo_id)
+                registrar_auditoria(nombre_admin, tabla, "DELETE",id_tabla)
+                
                 messagebox.showinfo(
                     "Éxito",
                     f"Registro y {len(dependencias)} tipo(s) de dependencia(s) eliminados correctamente"
@@ -441,6 +455,10 @@ def eliminar_registro(tabla, id_valor, callback_recargar):
     try:
         exito = ejecutar_delete(sql, (id_valor,))
         if exito:
+            # Registrar en auditoría
+            nombre_admin = obtener_admin_actual()
+            registrar_auditoria(nombre_admin, tabla.lower(), "DELETE", id_valor)
+            
             messagebox.showinfo("Éxito", "Registro eliminado correctamente")
             if callback_recargar:
                 callback_recargar()
@@ -541,38 +559,7 @@ def mostrar_dashboard(frame):
     left_panel.grid(row=0, column=0, sticky="nw", padx=(0, 16), pady=(100, 0))
     left_panel.grid_propagate(False)
 
-    calendario(left_panel)
-
-    eventos_frame = CTkFrame(left_panel, fg_color="#f0f4f8", corner_radius=10)
-    eventos_frame.pack(fill="both", expand=True, padx=10, pady=(8, 10))
-
-    CTkLabel(eventos_frame, text="🗓  Eventos",
-             font=("Arial", 15, "bold"), text_color="#000000").pack(anchor="w", padx=10, pady=(8, 4))
-
-    scroll_eventos = CTkScrollableFrame(eventos_frame, fg_color="transparent")
-    scroll_eventos.pack(fill="both", expand=True, padx=4, pady=(0, 6))
-
-    eventos = [
-        "7 al 16 de enero: Actividades intersemestrales",
-        "12 al 16 de enero: Curso de inducción de nuevo ingreso",
-        "19 y 20 de enero: Inscripciones",
-        "21 al 23 de enero: Reinscripciones",
-        "26 de enero: Inicio de clases",
-        "30 de marzo al 10 de abril: Periodo vacacional",
-        "29 de mayo: Fin de clases",
-        "1 al 3 de junio: Evaluación sumativa de complementación",
-        "4 y 5 de junio: Entrega de calificaciones a servicios escolares",
-        "8 de julio al 3 de agosto: Actividades intersemestrales",
-        "6 al 31 de julio: Periodo vacacional",
-    ]
-
-    for ev in eventos:
-        fila = CTkFrame(scroll_eventos, fg_color="transparent")
-        fila.pack(fill="x", pady=3)
-        CTkLabel(fila, text="●", text_color="#1A6B3C", font=(
-            "Arial", 10)).pack(side="left", padx=(4, 6))
-        CTkLabel(fila, text=ev, font=("Arial", 12), text_color="#000000",
-                 anchor="w", justify="left", wraplength=190).pack(side="left", fill="x")
+    bitacora_cambios(left_panel)
 
     # ── PANEL DERECHO: catálogos ─────────────────────────────
     # Contenedor wrapper para centrar y limitar ancho
@@ -703,7 +690,7 @@ def mostrar_seccion_pendiente(frame, titulo):
     ).pack(pady=30)
 
 
-def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla, botones, headers, tabla_sql=None, header_text_color=None, registros_precargados=None, ocultar_id=False):
+def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla, botones, headers, tabla_sql=None, header_text_color=None, registros_precargados=None, ocultar_id=False, consulta_personalizada=None, columnas_busqueda=None):
     limpiar_frame(frame)
 
     CTkButton(frame, text="←", width=80, command=lambda: mostrar_dashboard(
@@ -858,7 +845,88 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
                 text_color="#000000"
             ).pack(pady=(10, 12))
 
-    mostrar_tabla_base()
+    def cargar_datos_con_filtro():
+        """Carga datos con filtro personalizado usando consulta SQL"""
+        limpiar_frame(area_contenido)
+        
+        filtro = barra_busqueda.get().strip()
+        sql = consulta_personalizada
+        
+        params = []
+        if filtro and columnas_busqueda:
+            # Construir WHERE clause con ILIKE para cada columna
+            where_clauses = [f"{col} ILIKE %s" for col in columnas_busqueda]
+            sql += " WHERE " + " OR ".join(where_clauses)
+            params = [f'%{filtro}%'] * len(columnas_busqueda)
+        
+        try:
+            from db_conexion import ejecutar_select
+            registros = ejecutar_select(sql, tuple(params) if params else None)
+        except Exception as e:
+            print(f"Error al cargar datos con filtro: {e}")
+            registros = []
+        
+        # Crear callback de edición (reutilizar la lógica de mostrar_tabla_base)
+        editar_cb = None
+        if tabla_sql == "Carreras":
+            from formularios_edicion import editar_carreras
+
+            def editar_cb(fila, callback_recargar):
+                try:
+                    editar_carreras(
+                        area_contenido, fila[0], fila[1], fila[2], fila[3], fila[4], cargar_datos_con_filtro)
+                except Exception as e:
+                    print(f"Error en edición de carrera: {e}")
+        elif tabla_sql == "Materia":
+            from formularios_edicion import editar_materias
+            from funciones_datos import obtener_id_carrera_por_nombre
+
+            def editar_cb(fila, callback_recargar):
+                try:
+                    id_carrera = obtener_id_carrera_por_nombre(fila[4])
+                    editar_materias(
+                        area_contenido, fila[0], fila[1], fila[2], fila[3], id_carrera, fila[5], cargar_datos_con_filtro)
+                except Exception as e:
+                    print(f"Error en edición de materia: {e}")
+        elif tabla_sql == "Grupo":
+            from formularios_edicion import editar_grupo
+
+            def editar_cb(fila, callback_recargar):
+                try:
+                    editar_grupo(area_contenido, fila[0], fila[1], fila[2], fila[3],
+                                 fila[4], fila[5], fila[6], fila[7], fila[8], cargar_datos_con_filtro)
+                except Exception as e:
+                    print(f"Error en edición de grupo: {e}")
+        
+        crear_tabla_editable(
+            area_contenido,
+            headers,
+            registros,
+            tabla_sql or "pendiente",
+            color_tabla,
+            actualizar_callback=actualizar_registro if tabla_sql else None,
+            eliminar_callback=eliminar_registro if tabla_sql else None,
+            header_text_color=header_text_color,
+            ocultar_primer_campo=ocultar_id,
+            editar_callback=editar_cb,
+            callback_recargar_tabla=cargar_datos_con_filtro if tabla_sql else None
+        )
+        
+        # Mostrar mensaje si no hay registros
+        if not registros:
+            CTkLabel(
+                area_contenido,
+                text="No hay registros en la base de datos",
+                font=("Arial", 15, "bold"),
+                text_color="#000000"
+            ).pack(pady=(10, 12))
+
+    # Usar consulta personalizada si se proporciona, si no usar la tabla base
+    if consulta_personalizada:
+        barra_busqueda.bind("<KeyRelease>", lambda event: cargar_datos_con_filtro())
+        cargar_datos_con_filtro()
+    else:
+        mostrar_tabla_base()
 
     for i, btn in enumerate(botones):
         comando_base = btn.get("comando")
@@ -1229,8 +1297,23 @@ def mostrar_inscripciones(frame):
     headers = ["Alumno", "Número de control", "Clave grupo",
                "Materia", "Estatus materia", "Tipo de inscripción"]
 
+    consulta_base = """SELECT r.id_registro, 
+                              CONCAT(a.nombre_alumno, ' ', a.apellido_paterno, ' ', a.apellido_materno) as alumno,
+                              a.numero_control,
+                              g.clave_grupo,
+                              m.nombre_materia,
+                              r.estatus_materia,
+                              r.tipo_registro
+                       FROM registro r
+                       JOIN alumno a ON r.id_alumno = a.id_alumno
+                       JOIN grupo g ON r.id_grupo = g.id_grupo
+                       JOIN materia m ON g.id_materia = m.id_materia"""
+
     mostrar_seccion_gestion(frame, "Inscripciones", "#7A3500",
-                            "#ffffff", "#C75C00", botones, headers, "Registro", ocultar_id=True)
+                            "#ffffff", "#C75C00", botones, headers, "Registro", 
+                            ocultar_id=True,
+                            consulta_personalizada=consulta_base,
+                            columnas_busqueda=["a.numero_control", "m.nombre_materia", "CONCAT(a.nombre_alumno, ' ', a.apellido_paterno, ' ', a.apellido_materno)"])
 
 
 def mostrar_usuarios(frame):
@@ -1517,7 +1600,6 @@ def mostrar_calificaciones_finales(frame):
 
     # Botones del menú
     botones = [
-        {"texto": "Registrar calificación", "color": "#2b4d7a", "comando": None},
         {"texto": "Importar CSV", "color": "#2b4d7a", "comando": None},
         {"texto": "Exportar CSV", "color": "#2b4d7a", "comando": None},
     ]

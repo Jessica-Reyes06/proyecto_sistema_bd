@@ -310,6 +310,15 @@ def crear_formulario_generico(frame_contenido, titulo, campos, sql_insert, volve
 
         try:
             ejecutar_insert(sql_insert, tuple(valores))
+            # Registrar en auditoría
+            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            import re
+            tabla_match = re.search(r'INSERT INTO (\w+)', sql_insert, re.IGNORECASE)
+            tabla_name = tabla_match.group(1).lower() if tabla_match else "desconocida"
+            nombre_admin = obtener_admin_actual()
+            id_registro = obtener_id_recien_insertado(tabla_name, valores[0]) if valores else None
+            registrar_auditoria(nombre_admin, tabla_name, "INSERT", id_registro)
+            
             estado_label.configure(
                 text="Registro guardado correctamente", text_color="green")
 
@@ -345,7 +354,7 @@ def mostrar_form_registro_alumno(frame_contenido, volver_a_lista=None):
         frame_contenido, text="Registrar alumno", font=("Arial", 22, "bold"))
     titulo.pack(pady=(10, 20))
 
-    cuerpo = customtkinter.CTkFrame(frame_contenido)
+    cuerpo = customtkinter.CTkScrollableFrame(frame_contenido)
     cuerpo.pack(padx=20, pady=10, fill="x")
 
     entradas = {}
@@ -425,6 +434,12 @@ def mostrar_form_registro_alumno(frame_contenido, volver_a_lista=None):
 
         try:
             ejecutar_insert(sql, datos)
+            # Registrar en auditoría
+            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            nombre_admin = obtener_admin_actual()
+            id_alumno = obtener_id_recien_insertado("alumno", valores_generados["numero"])
+            registrar_auditoria(nombre_admin, "alumno", "INSERT", id_alumno)
+
             estado_label.configure(text="Alumno guardado", text_color="green")
         except Exception as e:
             estado_label.configure(text=str(e), text_color="red")
@@ -447,7 +462,7 @@ def mostrar_form_registro_maestro(frame_contenido, volver_a_lista=None):
         frame_contenido, text="Registrar maestro", font=("Arial", 22, "bold"))
     titulo.pack(pady=(10, 20))
 
-    cuerpo = customtkinter.CTkFrame(frame_contenido)
+    cuerpo = customtkinter.CTkScrollableFrame(frame_contenido)
     cuerpo.pack(padx=20, pady=10, fill="x")
 
     entradas = {}
@@ -517,6 +532,12 @@ def mostrar_form_registro_maestro(frame_contenido, volver_a_lista=None):
 
         try:
             ejecutar_insert(sql, valores)
+            # Registrar en auditoría
+            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            nombre_admin = obtener_admin_actual()
+            id_maestro = obtener_id_recien_insertado("maestro", valores[0])
+            registrar_auditoria(nombre_admin, "maestro", "INSERT", id_maestro)
+
             estado_label.configure(
                 text="Registro guardado correctamente", text_color="green")
 
@@ -600,6 +621,11 @@ def mostrar_form_registro_administrador(frame_contenido, volver_a_lista=None):
 
         try:
             ejecutar_insert(sql, valores)
+            # Registrar en auditoría
+            from funciones_auditoria import registrar_auditoria, obtener_admin_actual
+            #nombre_admin = obtener_admin_actual()
+            registrar_auditoria(nombre_admin=None, tabla="administrador", tipo_operacion="INSERT", id_registro=valores[0])
+
             estado_label.configure(
                 text="Registro guardado correctamente", text_color="green")
 
@@ -678,6 +704,12 @@ def mostrar_form_registro_tipo_actividad(frame_contenido, volver_a_lista=None):
 
         try:
             ejecutar_insert(sql, (nombre, descripcion))
+            # Registrar en auditoría
+            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            nombre_admin = obtener_admin_actual()
+            id_tipo = obtener_id_recien_insertado("tipos_actividades", nombre)
+            registrar_auditoria(nombre_admin, "tipos_actividades", "INSERT", id_tipo)
+
             estado_label.configure(
                 text="Tipo de actividad guardado correctamente", text_color="green")
             if volver_a_lista:
@@ -815,6 +847,11 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
         """
         try:
             ejecutar_insert(sql, (id_tipo, id_unidad, detalles))
+            # Registrar en auditoría
+            from funciones_auditoria import registrar_auditoria, obtener_admin_actual
+            nombre_admin = obtener_admin_actual()
+            registrar_auditoria(nombre_admin, "actividad", "INSERT", None)
+            
             estado_label.configure(
                 text="Actividad registrada correctamente", text_color="green")
             if volver_a_lista:
@@ -905,6 +942,11 @@ def mostrar_form_registro_materia(frame_contenido, volver_a_lista=None):
             """
             valores = (clave, nombre_materia, horas_semana, id_carrera)
             ejecutar_insert(sql, valores)
+            # Registrar en auditoría
+            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            nombre_admin = obtener_admin_actual()
+            id_materia = obtener_id_recien_insertado("materia", clave)
+            registrar_auditoria(nombre_admin, "materia", "INSERT", id_materia)
 
             estado_label.configure(
                 text="Materia registrada correctamente", text_color="green")
@@ -938,8 +980,8 @@ def mostrar_form_registro_grupo(frame_contenido, volver_a_lista=None):
     )
     titulo.pack(pady=(10, 20))
 
-    cuerpo = customtkinter.CTkFrame(frame_contenido)
-    cuerpo.pack(padx=20, pady=10, fill="x")
+    cuerpo = customtkinter.CTkScrollableFrame(frame_contenido) 
+    cuerpo.pack(padx=20, pady=10, fill="both")
 
     # Obtener maestros directamente
     try:
@@ -1052,6 +1094,11 @@ def mostrar_form_registro_grupo(frame_contenido, volver_a_lista=None):
 
         try:
             ejecutar_insert(sql, valores)
+            # Registrar en auditoría
+            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            nombre_admin = obtener_admin_actual()
+            id_grupo = obtener_id_recien_insertado("grupo", valores[0])
+            registrar_auditoria(nombre_admin, "grupo", "INSERT", id_grupo)
 
             estado_label.configure(
                 text="Grupo creado correctamente",
@@ -1068,7 +1115,7 @@ def mostrar_form_registro_grupo(frame_contenido, volver_a_lista=None):
             )
 
     botones = customtkinter.CTkFrame(frame_contenido, fg_color="transparent")
-    botones.pack(pady=20)
+    botones.pack(pady=(0,20))
 
     customtkinter.CTkButton(
         botones,
@@ -1141,7 +1188,7 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
 
         # VALIDAR ESTADO GRUPO
         grupo_info = ejecutar_select(
-            "SELECT id_grupo, estatus FROM grupo WHERE clave_grupo=%s OR CAST(id_grupo AS TEXT)=%s LIMIT 1",
+            "SELECT id_grupo, estado FROM grupo WHERE clave_grupo=%s OR CAST(id_grupo AS TEXT)=%s LIMIT 1",
             (clave_grupo, clave_grupo)
         )
 
@@ -1179,6 +1226,10 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
         try:
 
             ejecutar_insert(sql, valores)
+            # Registrar en auditoría
+            from funciones_auditoria import registrar_auditoria, obtener_admin_actual
+            nombre_admin = obtener_admin_actual()
+            registrar_auditoria(nombre_admin, "registro", "INSERT", None)
 
             estado_label.configure(
                 text="Inscripción guardada",
@@ -1303,6 +1354,11 @@ def mostrar_form_registro_calificacion_final(frame_contenido, volver_a_lista=Non
 
         try:
             ejecutar_insert(sql, valores)
+            # Registrar en auditoría
+            from funciones_auditoria import registrar_auditoria, obtener_admin_actual
+            nombre_admin = obtener_admin_actual()
+            registrar_auditoria(nombre_admin, "calificaciones_finales", "INSERT", None)
+            
             estado_label.configure(
                 text="Calificación registrada", text_color="green")
             if volver_a_lista:
@@ -1392,6 +1448,11 @@ def mostrar_form_registro_calificacion_actividad(frame_contenido, volver_a_lista
 
         try:
             ejecutar_insert(sql, valores)
+            # Registrar en auditoría
+            from funciones_auditoria import registrar_auditoria, obtener_admin_actual
+            nombre_admin = obtener_admin_actual()
+            registrar_auditoria(nombre_admin, "calificaciones_actividades", "INSERT", None)
+            
             estado_label.configure(
                 text="Calificación registrada", text_color="green")
             if volver_a_lista:
