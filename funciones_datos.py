@@ -183,7 +183,7 @@ def obtener_id_carrera_por_nombre(nombre_carrera):
 def obtener_nombre_maestro_por_matricula(matricula_maestro):
     """Obtiene el nombre de un maestro por su matrícula"""
     resultado = ejecutar_select(
-        "SELECT nombre_maestro FROM maestro WHERE matricula_maestro=%s",
+        "SELECT nombre_maestro FROM maestro WHERE matricula=%s",
         (matricula_maestro,)
     )
     if resultado:
@@ -194,7 +194,7 @@ def obtener_nombre_maestro_por_matricula(matricula_maestro):
 def obtener_matricula_maestro_por_nombre(nombre_maestro):
     """Obtiene la matrícula de un maestro por su nombre. Retorna None si no existe."""
     resultado = ejecutar_select(
-        "SELECT matricula_maestro FROM maestro WHERE nombre_maestro=%s",
+        "SELECT matricula FROM maestro WHERE nombre_maestro=%s",
         (nombre_maestro,)
     )
     if resultado:

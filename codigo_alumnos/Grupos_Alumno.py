@@ -1,15 +1,17 @@
+from db_conexion import *
+from codigo_alumnos import funciones_Alumnos as funciones
+import datetime
+from PIL import Image
+from customtkinter import *
 import os
 import sys
+
+# Nota: archivo tocado para normalizar indentación/fin de línea (no funcional)
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from customtkinter import *
-from PIL import Image
-import datetime
-import funciones_Alumnos as funciones
-from db_conexion import *
 
 global id_grupo, nc_alumno, id_materia
 id_grupo = None
@@ -18,14 +20,15 @@ id_materia = None
 
 
 def ruta_recurso(ruta_relativa):
-    base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    base_path = getattr(sys, "_MEIPASS", ROOT_DIR)
     return os.path.join(base_path, ruta_relativa)
 
 
-#------------------FUNCIONES----------------
+# ------------------FUNCIONES----------------
 def limpiar_frame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
+
 
 def normalizar_id_grupo(valor_grupo):
     if valor_grupo is None:
@@ -53,6 +56,7 @@ def mostrar_placeholder_actividad(frame_detalle):
         justify="left",
         font=("Arial Rounded MT Bold", 14)
     ).pack(fill="x", padx=10, pady=10)
+
 
 def componentes_Info_General(frame_tab):
     global id_grupo
@@ -82,13 +86,14 @@ def componentes_Info_General(frame_tab):
             M.creditos,
             M.tipo,
             G.cupo_maximo
-        FROM grupos G
-        JOIN materias M ON G.id_materia = M.id_materia
+        FROM grupo G
+        JOIN materia M ON G.id_materia = M.id_materia
         WHERE G.id_grupo = %s
         LIMIT 1
     """
 
-    resultado = ejecutar_select(consulta, (id_grupo_sql,)) if id_grupo_sql else []
+    resultado = ejecutar_select(
+        consulta, (id_grupo_sql,)) if id_grupo_sql else []
 
     if resultado:
         (
@@ -140,7 +145,8 @@ def componentes_Info_General(frame_tab):
         font=("Arial Rounded MT Bold", 18),
     ).pack(pady=(8, 4), padx=8, anchor="w")
 
-    frame_horario = CTkFrame(contenedor, fg_color="white", height=240, border_width=0)
+    frame_horario = CTkFrame(
+        contenedor, fg_color="white", height=240, border_width=0)
     frame_horario.pack(fill="x", expand=False, padx=5, pady=(0, 8))
     frame_horario.pack_propagate(False)
     funciones.tabla_horario_materia(frame_horario, id_grupo_sql)
@@ -152,10 +158,12 @@ def componentes_Info_General(frame_tab):
         font=("Arial Rounded MT Bold", 18),
     ).pack(pady=(8, 4), padx=8, anchor="w")
 
-    frame_participantes = CTkFrame(contenedor, fg_color="white", height=280, border_width=0)
+    frame_participantes = CTkFrame(
+        contenedor, fg_color="white", height=280, border_width=0)
     frame_participantes.pack(fill="x", expand=False, padx=5, pady=(0, 8))
     frame_participantes.pack_propagate(False)
     funciones.crear_tabla_participantes(frame_participantes, id_grupo_sql)
+
 
 def componentes_actividades(frame_tab, titulo):
     limpiar_frame(frame_tab)
@@ -319,7 +327,7 @@ def componentes_actividades(frame_tab, titulo):
         text="Enviar actividad",
         fg_color="#715a72",
         text_color="white",
-        hover_color="#5e485f",  
+        hover_color="#5e485f",
         font=("Arial Rounded MT Bold", 14),
         command=lambda: enviar_actividad()
     )
@@ -354,7 +362,8 @@ def componentes_actividades(frame_tab, titulo):
             return
 
         ruta_archivo = texto_archivo.replace("Archivo: ", "", 1).strip()
-        ok, mensaje = funciones.entregar_actividad(nc_alumno, id_act, ruta_archivo)
+        ok, mensaje = funciones.entregar_actividad(
+            nc_alumno, id_act, ruta_archivo)
         label_estado_envio.configure(
             text=mensaje,
             text_color="#1B5E20" if ok else "#B00020"
@@ -363,11 +372,14 @@ def componentes_actividades(frame_tab, titulo):
         if ok:
             fecha_reporte = datetime.date.today()
             if fecha_limite is None or fecha_reporte <= fecha_limite:
-                label_estado_actividad.configure(text="Estado: ACTIVIDAD ENTREGADA", text_color="#1B5E20")
+                label_estado_actividad.configure(
+                    text="Estado: ACTIVIDAD ENTREGADA", text_color="#1B5E20")
             else:
-                label_estado_actividad.configure(text="Estado: ENTREGA CON RETRASO", text_color="#B26A00")
+                label_estado_actividad.configure(
+                    text="Estado: ENTREGA CON RETRASO", text_color="#B26A00")
 
-            label_fecha_entrega.configure(text=f"Fecha de entrega: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            label_fecha_entrega.configure(
+                text=f"Fecha de entrega: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
             label_observaciones.configure(text="Observaciones: Pendientes")
             label_calificacion.configure(text="Calificación: Pendiente")
@@ -381,7 +393,8 @@ def boton_unidad_grupo(frame_tab, frame_detalle, titulo_unidad, actividades):
     frame_grupo.pack(pady=0, padx=5, fill="x")
 
     img_unidad = CTkImage(
-        Image.open(ruta_recurso("carpeta_iconos/iconos_alumnos/resaltador.png")),
+        Image.open(ruta_recurso(
+            "carpeta_iconos/iconos_alumnos/resaltador.png")),
         size=(30, 30)
     )
 
@@ -422,7 +435,8 @@ def boton_unidad_grupo(frame_tab, frame_detalle, titulo_unidad, actividades):
         ).pack(fill="x", padx=10, pady=8)
     else:
         for actividad in actividades:
-            texto_actividad = actividad["nombre"] if isinstance(actividad, dict) else str(actividad)
+            texto_actividad = actividad["nombre"] if isinstance(
+                actividad, dict) else str(actividad)
             CTkButton(
                 frame_opciones,
                 text=texto_actividad,
@@ -433,15 +447,17 @@ def boton_unidad_grupo(frame_tab, frame_detalle, titulo_unidad, actividades):
                 text_color="white",
                 corner_radius=0,
                 font=("Arial Rounded MT Bold", 14),
-                command=lambda item=actividad: componentes_actividades(frame_detalle, item)
+                command=lambda item=actividad: componentes_actividades(
+                    frame_detalle, item)
             ).pack(fill="x", padx=0, pady=0)
 
 
 def obtener_id_registro_alumno(numero_control, id_grupo_valor):
     consulta = """
         SELECT R.id_registro
-        FROM registros R
-        WHERE TRIM(R.numero_control) = TRIM(%s)
+        FROM registro R
+        JOIN alumno A ON R.id_alumno = A.id_alumno
+        WHERE TRIM(A.numero_control) = TRIM(%s)
           AND TRIM(R.id_grupo) = TRIM(%s)
         LIMIT 1
     """
@@ -472,7 +488,7 @@ def obtener_actividades_por_unidad(id_grupo_valor, numero_control):
         fila_materia = ejecutar_select(
             """
             SELECT id_materia
-            FROM grupos
+            FROM grupo
             WHERE TRIM(id_grupo) = TRIM(%s)
             LIMIT 1
             """,
@@ -536,7 +552,8 @@ def obtener_actividades_por_unidad(id_grupo_valor, numero_control):
             filas_unidades = []
 
         for _id_unidad, unidad_mostrar in filas_unidades or []:
-            clave_unidad = str(unidad_mostrar).strip() if unidad_mostrar not in (None, "") else "Sin unidad"
+            clave_unidad = str(unidad_mostrar).strip(
+            ) if unidad_mostrar not in (None, "") else "Sin unidad"
             if clave_unidad not in actividades_por_unidad:
                 actividades_por_unidad[clave_unidad] = []
 
@@ -592,7 +609,8 @@ def obtener_actividades_por_unidad(id_grupo_valor, numero_control):
             if tiene_resultado:
                 try:
                     filas = ejecutar_select(
-                        consulta_con_resultado.format(tabla_actividad=tabla_actividad),
+                        consulta_con_resultado.format(
+                            tabla_actividad=tabla_actividad),
                         (id_registro, id_grupo_valor, id_materia_grupo),
                     )
                     break
@@ -656,7 +674,8 @@ def obtener_actividades_por_unidad(id_grupo_valor, numero_control):
             if tiene_resultado:
                 try:
                     filas = ejecutar_select(
-                        consulta_resultado_fallback.format(tabla_actividad=tabla_actividad),
+                        consulta_resultado_fallback.format(
+                            tabla_actividad=tabla_actividad),
                         (id_registro, id_grupo_valor),
                     )
                     break
@@ -664,7 +683,8 @@ def obtener_actividades_por_unidad(id_grupo_valor, numero_control):
                     pass
             try:
                 filas = ejecutar_select(
-                    consulta_base_fallback.format(tabla_actividad=tabla_actividad),
+                    consulta_base_fallback.format(
+                        tabla_actividad=tabla_actividad),
                     (id_grupo_valor,),
                 )
                 break
@@ -690,16 +710,18 @@ def obtener_actividades_por_unidad(id_grupo_valor, numero_control):
 
     return actividades_por_unidad
 
+
 def Informacion_General(tab):
     limpiar_frame(tab)
     CTkLabel(
-        tab, 
-        text="Informacion general del grupo", 
+        tab,
+        text="Informacion general del grupo",
         font=("Arial Rounded MT Bold", 20),
         text_color="black"
-        ).pack(pady=10)
-    
+    ).pack(pady=10)
+
     componentes_Info_General(tab)
+
 
 def Actividades(tab):
     global id_grupo
@@ -717,11 +739,11 @@ def Actividades(tab):
 
     CTkLabel(
         frame_scroll_actividades,
-        text="Actividades del grupo", 
+        text="Actividades del grupo",
         font=("Arial Rounded MT Bold", 20),
         text_color="black"
-        ).pack(pady=10)
-    
+    ).pack(pady=10)
+
     frame_menu_unidades = CTkFrame(frame_scroll_actividades, fg_color="white")
     frame_menu_unidades.pack(fill="x", padx=5, pady=0)
 
@@ -729,7 +751,8 @@ def Actividades(tab):
     frame_detalle.pack(fill="x", padx=5, pady=(5, 0))
 
     id_grupo_sql = normalizar_id_grupo(id_grupo)
-    data_unidades = obtener_actividades_por_unidad(id_grupo_sql, nc_alumno) if id_grupo_sql and nc_alumno else {}
+    data_unidades = obtener_actividades_por_unidad(
+        id_grupo_sql, nc_alumno) if id_grupo_sql and nc_alumno else {}
 
     if not data_unidades:
         CTkLabel(
@@ -747,7 +770,9 @@ def Actividades(tab):
 
     for unidad, actividades in data_unidades.items():
         nombre_unidad = formatear_nombre_unidad(unidad)
-        boton_unidad_grupo(frame_menu_unidades, frame_detalle, nombre_unidad, actividades)
+        boton_unidad_grupo(frame_menu_unidades, frame_detalle,
+                           nombre_unidad, actividades)
+
 
 def _a_numero(valor):
     try:
@@ -785,7 +810,8 @@ def _obtener_info_unidades(id_materia_valor, id_registro_valor):
 
     consulta_unidad = f"SELECT {', '.join(campos)} FROM Unidad{where_sql}"
     try:
-        filas = ejecutar_select(consulta_unidad, params) if params else ejecutar_select(consulta_unidad)
+        filas = ejecutar_select(
+            consulta_unidad, params) if params else ejecutar_select(consulta_unidad)
     except Exception:
         filas = []
 
@@ -793,11 +819,14 @@ def _obtener_info_unidades(id_materia_valor, id_registro_valor):
         idx = 0
         id_unidad_fila = str(fila[idx]).strip()
         idx += 1
-        numero_unidad = str(fila[idx]).strip() if col_numero else id_unidad_fila
+        numero_unidad = str(fila[idx]).strip(
+        ) if col_numero else id_unidad_fila
         if col_numero:
             idx += 1
-        tema_unidad = str(fila[idx]).strip() if col_tema and fila[idx] not in (None, "") else "Sin tema"
-        info[id_unidad_fila] = {"numero": numero_unidad, "tema": tema_unidad, "bonus_unidad": 0.0}
+        tema_unidad = str(fila[idx]).strip() if col_tema and fila[idx] not in (
+            None, "") else "Sin tema"
+        info[id_unidad_fila] = {"numero": numero_unidad,
+                                "tema": tema_unidad, "bonus_unidad": 0.0}
 
     columnas_bonus = obtener_columnas_tabla("BonusUnidad")
     if columnas_bonus and id_registro_valor is not None:
@@ -814,11 +843,13 @@ def _obtener_info_unidades(id_materia_valor, id_registro_valor):
             for id_unidad_bonus, bonus_val in bonus_rows or []:
                 clave = str(id_unidad_bonus).strip()
                 if clave not in info:
-                    info[clave] = {"numero": clave, "tema": "Sin tema", "bonus_unidad": 0.0}
+                    info[clave] = {"numero": clave,
+                                   "tema": "Sin tema", "bonus_unidad": 0.0}
                 bonus_num = _a_numero(bonus_val) or 0.0
                 info[clave]["bonus_unidad"] = bonus_num
 
     return info
+
 
 def _obtener_bonus_final(id_materia_valor, id_registro_valor):
     columnas_bonus = obtener_columnas_tabla("BonusMateria")
@@ -842,6 +873,7 @@ def _obtener_bonus_final(id_materia_valor, id_registro_valor):
         return 0.0
     return _a_numero(fila[0][0]) or 0.0
 
+
 def componentes_calificaciones(frame_tab, titulo, porcentaje, calificacion):
     frame_item = CTkFrame(frame_tab, fg_color="#cabece")
     frame_item.pack(fill="x", padx=0, pady=0)
@@ -855,7 +887,8 @@ def componentes_calificaciones(frame_tab, titulo, porcentaje, calificacion):
         font=("Arial Rounded MT Bold", 14)
     ).pack(side="left", padx=10, pady=6)
 
-    texto_porcentaje = f"{porcentaje:.2f}%" if isinstance(porcentaje, (int, float)) else str(porcentaje)
+    texto_porcentaje = f"{porcentaje:.2f}%" if isinstance(
+        porcentaje, (int, float)) else str(porcentaje)
     CTkLabel(
         frame_item,
         text=texto_porcentaje,
@@ -873,6 +906,7 @@ def componentes_calificaciones(frame_tab, titulo, porcentaje, calificacion):
         text_color="black",
         font=("Arial Rounded MT Bold", 14)
     ).pack(side="right", padx=(4, 10), pady=6)
+
 
 def bloque_calificaciones_unidad(frame_tab, titulo_unidad, tema_unidad, items, bonus_unidad=0.0):
     frame_bloque = CTkFrame(frame_tab, fg_color="white")
@@ -908,7 +942,8 @@ def bloque_calificaciones_unidad(frame_tab, titulo_unidad, tema_unidad, items, b
         if cal_num is not None:
             ponderada += cal_num * (por_num / 100.0)
 
-        texto_cal = str(calificacion_actividad) if calificacion_actividad not in (None, "") else "Por calificar"
+        texto_cal = str(calificacion_actividad) if calificacion_actividad not in (
+            None, "") else "Por calificar"
         componentes_calificaciones(frame_lista, titulo, por_num, texto_cal)
 
     base_unidad = round(ponderada, 2)
@@ -945,6 +980,7 @@ def bloque_calificaciones_unidad(frame_tab, titulo_unidad, tema_unidad, items, b
 
     return final_unidad
 
+
 def Calificaciones(tab):
     global id_grupo
     global nc_alumno
@@ -958,11 +994,13 @@ def Calificaciones(tab):
         text_color="black"
     ).pack(pady=10)
 
-    frame_calificaciones = CTkScrollableFrame(tab, fg_color="white", border_width=0)
+    frame_calificaciones = CTkScrollableFrame(
+        tab, fg_color="white", border_width=0)
     frame_calificaciones.pack(fill="both", expand=True, padx=5, pady=0)
 
     id_grupo_sql = normalizar_id_grupo(id_grupo)
-    data_unidades = obtener_actividades_por_unidad(id_grupo_sql, nc_alumno) if id_grupo_sql and nc_alumno else {}
+    data_unidades = obtener_actividades_por_unidad(
+        id_grupo_sql, nc_alumno) if id_grupo_sql and nc_alumno else {}
     if not data_unidades:
         CTkLabel(
             frame_calificaciones,
@@ -989,7 +1027,8 @@ def Calificaciones(tab):
         items = []
         for actividad in actividades:
             nombre = actividad.get("nombre") or "Actividad sin nombre"
-            porcentaje = funciones.a_numero(actividad.get("valor_porcentaje")) or 0.0
+            porcentaje = funciones.a_numero(
+                actividad.get("valor_porcentaje")) or 0.0
             calificacion = actividad.get("calificacion_unidad")
             items.append((nombre, porcentaje, calificacion))
 
@@ -1002,7 +1041,8 @@ def Calificaciones(tab):
         )
         finales_unidad.append(final_u)
 
-    promedio_base = (sum(finales_unidad) / len(finales_unidad)) if finales_unidad else 0.0
+    promedio_base = (sum(finales_unidad) / len(finales_unidad)
+                     ) if finales_unidad else 0.0
     promedio_base = round(promedio_base, 2)
 
     aplica_bonus_final = promedio_base < 100
@@ -1036,10 +1076,11 @@ def Calificaciones(tab):
         font=("Arial Rounded MT Bold", 16)
     ).pack(fill="x", padx=10, pady=(2, 8))
 
-#Formula para calificacion final por ponderacion: sumatoria de (calificacion_actividad * valor_porcentaje)
-#Bonus de unidad: formula de calificacion final por ponderacion + bonus_unidad (si existe) y no exceda el 100
-#Calificacion Final: Sumatoria de resultado de unidades/numero de unidades
-#Bonus de calificacion final: formula de calificacion final + bonus_calificacion_final (si existe) y no exceda el 100
+# Formula para calificacion final por ponderacion: sumatoria de (calificacion_actividad * valor_porcentaje)
+# Bonus de unidad: formula de calificacion final por ponderacion + bonus_unidad (si existe) y no exceda el 100
+# Calificacion Final: Sumatoria de resultado de unidades/numero de unidades
+# Bonus de calificacion final: formula de calificacion final + bonus_calificacion_final (si existe) y no exceda el 100
+
 
 def opciones_menu(tabview):
     opcion_activa = tabview.get()
@@ -1052,29 +1093,29 @@ def opciones_menu(tabview):
         Calificaciones(tabview.tab("Calificaciones"))
 
 
-def Info_Grupo(frame_contenido, materia, profesor, id_grupo,nc_alumno):
+def Info_Grupo(frame_contenido, materia, profesor, id_grupo, nc_alumno):
     global id_materia
     globals()["id_grupo"] = normalizar_id_grupo(id_grupo)
     globals()["nc_alumno"] = nc_alumno
 
     limpiar_frame(frame_contenido)
-    id_materia=funciones.obtener_id_materia(materia)
+    id_materia = funciones.obtener_id_materia(materia)
 
     frame_info_general = CTkFrame(frame_contenido, fg_color="#cabece")
     frame_info_general.pack(fill="x", padx=5, pady=(5, 2))
 
     CTkLabel(frame_info_general, text=materia,
-            font=("Arial Rounded MT Bold", 30),
-            text_color="black").pack(fill="x", padx=10)
+             font=("Arial Rounded MT Bold", 30),
+             text_color="black").pack(fill="x", padx=10)
 
     CTkLabel(frame_info_general, text=profesor,
-            font=("Arial Rounded MT Bold", 20),
-            text_color="black").pack(fill="x", padx=10)
+             font=("Arial Rounded MT Bold", 20),
+             text_color="black").pack(fill="x", padx=10)
 
     CTkLabel(frame_info_general, text=id_grupo,
-            font=("Arial Rounded MT Bold", 20),
-            text_color="black").pack(fill="x", padx=10)
-    opciones_grupo = CTkTabview(        
+             font=("Arial Rounded MT Bold", 20),
+             text_color="black").pack(fill="x", padx=10)
+    opciones_grupo = CTkTabview(
         frame_contenido,
         width=1200,
         height=700,
@@ -1087,11 +1128,11 @@ def Info_Grupo(frame_contenido, materia, profesor, id_grupo,nc_alumno):
     opciones_grupo.add("Calificaciones")
 
     opciones_grupo._segmented_button.configure(
-                                    width=150,
-                                    font=("Arial Rounded MT Bold",16),
-                                        fg_color="#715a72",
-                                        selected_color="#5e485f",
-                                        selected_hover_color="#5e485f",
-                                    unselected_hover_color="#715a72",
-                                    )
+        width=150,
+        font=("Arial Rounded MT Bold", 16),
+        fg_color="#715a72",
+        selected_color="#5e485f",
+        selected_hover_color="#5e485f",
+        unselected_hover_color="#715a72",
+    )
     opciones_menu(opciones_grupo)

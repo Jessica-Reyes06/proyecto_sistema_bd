@@ -1152,24 +1152,24 @@ def calendario_maestro(frame):
 def asignar_actividad(frame, id_grupo_seleccionado=None):
     limpiar_frame(frame)
     CTkLabel(frame, text="Asignar Actividad", text_color="black", anchor="w",
-             font=("Arial Rounded MT Bold", 30)).pack(fill="x", padx=10, pady=10)
+             font=("Arial Rounded MT Bold", 34)).pack(fill="x", padx=10, pady=10)
 
     form = CTkFrame(frame, fg_color="white")
-    form.pack(padx=20, pady=10, fill="x")
-
-    e_grupo = CTkEntry(form, placeholder_text="Id grupo")
-    e_desc = CTkEntry(form, placeholder_text="Detalles de la actividad")
-    e_valor = CTkEntry(form, placeholder_text="Ponderación % (ej. 20)")
+    form.pack(padx=20, pady=14, fill="x")
+    e_grupo = CTkEntry(form, placeholder_text="Id grupo",
+                       font=("Arial", 15), height=42)
 
     unidades_grupo = obtener_unidades_grupo(
         id_grupo_seleccionado) if id_grupo_seleccionado else []
     if unidades_grupo:
         opciones_unidad = [f"{id_unidad} - Unidad {numero_unidad}: {tema_unidad}"
                            for id_unidad, numero_unidad, tema_unidad in unidades_grupo]
-        e_unidad = CTkComboBox(form, values=opciones_unidad, state="readonly")
+        e_unidad = CTkComboBox(form, values=opciones_unidad,
+                               state="readonly", font=("Arial", 15), height=42)
         e_unidad.set(opciones_unidad[0])
     else:
-        e_unidad = CTkEntry(form, placeholder_text="Id unidad (obligatorio)")
+        e_unidad = CTkEntry(
+            form, placeholder_text="Id unidad (obligatorio)", font=("Arial", 15), height=42)
 
     # Tipos de actividad (combo)
     try:
@@ -1180,34 +1180,43 @@ def asignar_actividad(frame, id_grupo_seleccionado=None):
         tipos_nombres = []
 
     if tipos_nombres:
-        e_tipo = CTkComboBox(form, values=tipos_nombres, state="readonly")
+        e_tipo = CTkComboBox(form, values=tipos_nombres,
+                             state="readonly", font=("Arial", 15), height=42)
         e_tipo.set(tipos_nombres[0])
     else:
         e_tipo = CTkEntry(
-            form, placeholder_text="Tipo de actividad (obligatorio)")
+            form, placeholder_text="Tipo de actividad (obligatorio)", font=("Arial", 15), height=42)
 
-    for w in (e_grupo, e_desc, e_valor, e_unidad, e_tipo):
-        w.pack(fill="x", padx=10, pady=6)
+    e_desc = CTkEntry(form, placeholder_text="Detalles de la actividad", font=(
+        "Arial", 15), height=130)
+    e_valor = CTkEntry(
+        form, placeholder_text="Ponderación % (ej. 20)", font=("Arial", 15), height=42)
+
+    for w in (e_grupo, e_unidad, e_tipo, e_desc, e_valor):
+        w.pack(fill="x", padx=10, pady=7)
 
     if id_grupo_seleccionado is not None:
-        e_grupo.insert(0, str(id_grupo_seleccionado))
+        sql_clave = "SELECT clave_grupo FROM grupo WHERE id_grupo = %s LIMIT 1"
+        resultado_clave = ejecutar_select(sql_clave, (id_grupo_seleccionado,))
+        clave_grupo = resultado_clave[0][0] if resultado_clave else id_grupo_seleccionado
+        e_grupo.insert(0, str(clave_grupo))
         e_grupo.configure(state="disabled")
 
     CTkLabel(form, text="Selecciona la unidad a la que se asignará la actividad.",
-             text_color="gray").pack(anchor="w", padx=10, pady=(2, 6))
+             text_color="gray", font=("Arial", 12)).pack(anchor="w", padx=10, pady=(2, 6))
     if id_grupo_seleccionado is not None and not unidades_grupo:
         CTkLabel(form, text="No hay unidades configuradas para este grupo.",
-                 text_color="#B00020").pack(anchor="w", padx=10, pady=(0, 6))
+                 text_color="#B00020", font=("Arial", 12)).pack(anchor="w", padx=10, pady=(0, 6))
 
     lbl_suma_actual = CTkLabel(form, text="Suma de ponderaciones actual: 0.00%",
-                               text_color="#0E7490", font=("Arial Rounded MT Bold", 12))
-    lbl_suma_actual.pack(anchor="w", padx=10, pady=(2, 2))
+                               text_color="#0E7490", font=("Arial Rounded MT Bold", 13))
+    lbl_suma_actual.pack(anchor="w", padx=10, pady=(3, 2))
     lbl_suma_nueva = CTkLabel(form, text="Suma con nueva actividad: 0.00%",
-                              text_color="#7A4B00", font=("Arial Rounded MT Bold", 12))
-    lbl_suma_nueva.pack(anchor="w", padx=10, pady=(0, 6))
+                              text_color="#7A4B00", font=("Arial Rounded MT Bold", 13))
+    lbl_suma_nueva.pack(anchor="w", padx=10, pady=(0, 8))
 
     estado = CTkLabel(form, text="", text_color="gray")
-    estado.pack(anchor="w", padx=10, pady=6)
+    estado.pack(anchor="w", padx=10, pady=8)
 
     def id_grupo_actual():
         return e_grupo.get().strip() if id_grupo_seleccionado is None else str(id_grupo_seleccionado).strip()

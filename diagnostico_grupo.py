@@ -17,8 +17,9 @@ try:
 except Exception as e:
     print(f"   ❌ Error accediendo a 'Grupo': {e}")
     try:
-        resultado = ejecutar_select("SELECT COUNT(*) FROM grupos")
-        print(f"   ⚠️  Pero 'grupos' (minúscula) existe con {resultado[0][0]} registros")
+        resultado = ejecutar_select("SELECT COUNT(*) FROM grupo")
+        print(
+            f"   ⚠️  Pero 'grupos' (minúscula) existe con {resultado[0][0]} registros")
     except:
         print(f"   ❌ Tampoco existe 'grupos' (minúscula)")
 
@@ -42,9 +43,9 @@ except Exception as e:
 print("\n3. Prueba de obtener_grupos_ordenadas():")
 try:
     sql = """
-    SELECT g.id_grupo, m.nombre_maestro, mat.nombre_materia, g.cupo_maximo, g.periodo, g.anio, g.inscritos, g.horario, g.estado
+    SELECT g.id_grupo, m.nombre_maestro, mat.nombre_materia, g.cupo_maximo, g.periodo, g.years AS anio, g.alumnos_inscritos AS inscritos, g.horario, g.estado
     FROM grupo g
-    JOIN maestro m ON g.matricula_maestro = m.matricula_maestro
+    JOIN maestro m ON g.id_maestro = m.id_maestro
     JOIN materia mat ON g.id_materia = mat.id_materia
     ORDER BY g.id_grupo ASC
     """

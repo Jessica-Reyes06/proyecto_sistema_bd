@@ -1,3 +1,10 @@
+from db_conexion import ejecutar_select, ejecutar_insert
+from codigo_alumnos import Grupos_Alumno as grupos_alumno
+import importlib
+import datetime
+from tkcalendar import Calendar
+from PIL import Image
+from customtkinter import *
 import os
 import sys
 
@@ -5,13 +12,6 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from customtkinter import *
-from PIL import Image
-from tkcalendar import Calendar
-import datetime
-import importlib
-import Grupos_Alumno as grupos_alumno
-from db_conexion import ejecutar_select, ejecutar_insert
 
 ventana = None
 frame_contenido = None
@@ -20,17 +20,21 @@ nombre_alumno = None
 
 
 def ruta_recurso(ruta_relativa):
-    base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    base_path = getattr(sys, "_MEIPASS", ROOT_DIR)
     return os.path.join(base_path, ruta_relativa)
 
-#------------------FUNCIONES----------------
+# ------------------FUNCIONES----------------
+
+
 def mostrar_maximizada():
     ventana.state("zoomed")
     ventana.deiconify()
 
+
 def limpiar_frame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
+
 
 def cerrar_sesion():
     global ventana
@@ -40,105 +44,116 @@ def cerrar_sesion():
     import interfaz_login
     importlib.reload(interfaz_login)
 
+
 def crear_icono_clases(frame_clases, columna, fila, nombre_grupo, maestro, materia, frame_contenido):
-    frame_grupo_ind=CTkFrame(frame_clases,
-                            fg_color="white")
-    frame_grupo_ind.grid(row=fila, column=columna, padx=5, pady=5)     
+    frame_grupo_ind = CTkFrame(frame_clases,
+                               fg_color="white")
+    frame_grupo_ind.grid(row=fila, column=columna, padx=5, pady=5)
     img_grupo = CTkImage(
-        light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png")),
+        light_image=Image.open(ruta_recurso(
+            "carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png")),
         size=(90, 90)
     )
     CTkButton(
-    frame_grupo_ind,
-    text=nombre_grupo,
-    width=160,
-    height=150,
-    fg_color="#715a72",
-    hover_color="#5e485f",
-    text_color="white",
-    image=img_grupo,
-    compound="bottom",
-    font=("Arial Rounded MT Bold", 18),
-    command=lambda m=materia, p=maestro, g=nombre_grupo:
-        grupos_alumno.Info_Grupo(frame_contenido, m, p, g, numero_control_alumno)
-).grid(row=0, column=0, padx=10, pady=5)
+        frame_grupo_ind,
+        text=nombre_grupo,
+        width=160,
+        height=150,
+        fg_color="#715a72",
+        hover_color="#5e485f",
+        text_color="white",
+        image=img_grupo,
+        compound="bottom",
+        font=("Arial Rounded MT Bold", 18),
+        command=lambda m=materia, p=maestro, g=nombre_grupo:
+        grupos_alumno.Info_Grupo(
+            frame_contenido, m, p, g, numero_control_alumno)
+    ).grid(row=0, column=0, padx=10, pady=5)
     # Etiqueta para el nombre de la materia
     CTkLabel(frame_grupo_ind,
-                text=materia,
-                text_color="#000000",
-                justify="left",
-                font=("Arial Rounded MT Bold", 20, "bold")
-                ).grid(row=1, column=0, padx=10, pady=(0,0), sticky="w")
+             text=materia,
+             text_color="#000000",
+             justify="left",
+             font=("Arial Rounded MT Bold", 20, "bold")
+             ).grid(row=1, column=0, padx=10, pady=(0, 0), sticky="w")
     # Etiqueta para el nombre del maestro
     CTkLabel(frame_grupo_ind,
-                text=maestro,
-                text_color="#000000",
-                justify="left",
-                font=("Arial", 16, "italic")
-                ).grid(row=2, column=0, padx=10, pady=(0,5), sticky="w")
-    	
+             text=maestro,
+             text_color="#000000",
+             justify="left",
+             font=("Arial", 16, "italic")
+             ).grid(row=2, column=0, padx=10, pady=(0, 5), sticky="w")
+
+
 def menu_opcioneas(frame_menu):
     global numero_control_alumno, nombre_alumno
 
-    logo_img = CTkImage(light_image=Image.open(ruta_recurso("carpeta_iconos/general/logo.jpeg")), size=(120, 50))
+    logo_img = CTkImage(light_image=Image.open(ruta_recurso(
+        "carpeta_iconos/general/logo.jpeg")), size=(120, 50))
     # Frame de fondo del color del logo
     frame_logo_bg = CTkFrame(frame_menu, fg_color="#003152", corner_radius=0)
     frame_logo_bg.pack(fill="x", pady=(0, 5), padx=0)
-    CTkLabel(frame_logo_bg, text="", image=logo_img, bg_color="#003152").pack(padx=10, pady=5)
+    CTkLabel(frame_logo_bg, text="", image=logo_img,
+             bg_color="#003152").pack(padx=10, pady=5)
 
-    frame_usuario=CTkFrame(frame_menu,
-                        width=250,
-                        fg_color="#cabece")
-    frame_usuario.pack(pady=(5,10), padx=20)
+    frame_usuario = CTkFrame(frame_menu,
+                             width=250,
+                             fg_color="#cabece")
+    frame_usuario.pack(pady=(5, 10), padx=20)
 
-    img_usuario=CTkImage(
-        light_image=Image.open(ruta_recurso("carpeta_iconos/iconos_alumnos/avatar.png")),
+    img_usuario = CTkImage(
+        light_image=Image.open(ruta_recurso(
+            "carpeta_iconos/iconos_alumnos/avatar.png")),
         size=(100, 100)
     )
     CTkLabel(frame_usuario,
-            text="",
-            text_color="black",
-            image=img_usuario,
-            font=("Arial Rounded MT Bold", 15)
-            ).pack(pady=10, padx=10, anchor="center")
+             text="",
+             text_color="black",
+             image=img_usuario,
+             font=("Arial Rounded MT Bold", 15)
+             ).pack(pady=10, padx=10, anchor="center")
 
     texto_nombre = nombre_alumno if nombre_alumno else "Nombre del usuario"
     texto_numero = numero_control_alumno if numero_control_alumno else "Numero de control"
 
     CTkLabel(frame_usuario,
-            text=texto_nombre,
-            text_color="black",
-            compound="left",
-            font=("Arial Rounded MT Bold", 20),
-            wraplength=240
-            ).pack(pady=10, padx=10)
+             text=texto_nombre,
+             text_color="black",
+             compound="left",
+             font=("Arial Rounded MT Bold", 20),
+             wraplength=240
+             ).pack(pady=10, padx=10)
     CTkLabel(frame_usuario,
-            text=texto_numero,
-            text_color="black",
-            compound="left",
-            font=("Arial Rounded MT Bold", 20)
-            ).pack(pady=(0,10), padx=10)
+             text=texto_numero,
+             text_color="black",
+             compound="left",
+             font=("Arial Rounded MT Bold", 20)
+             ).pack(pady=(0, 10), padx=10)
 
-    frame_opciones=CTkFrame(frame_menu,
-                        width=250,
-                        height=400,
-                        fg_color="#cabece")
+    frame_opciones = CTkFrame(frame_menu,
+                              width=250,
+                              height=400,
+                              fg_color="#cabece")
     frame_opciones.pack(pady=10, padx=20)
 
-    crear_opciones_menu(frame_opciones,"      Inicio",img_hogar,5,lambda: Mis_Clases(frame_contenido))
-    crear_opciones_menu(frame_opciones,"      Calendario",img_calendario,5,lambda: calendario(frame_contenido))
-    crear_opciones_menu(frame_opciones,"      Tareas Pendientes",img_pendiente,5,lambda: tareas_pendientes(frame_contenido))
-    crear_opciones_menu(frame_opciones,"      Cerrar Sesión",img_cerrar_sesion,260,cerrar_sesion)
+    crear_opciones_menu(frame_opciones, "      Inicio",
+                        img_hogar, 5, lambda: Mis_Clases(frame_contenido))
+    crear_opciones_menu(frame_opciones, "      Calendario",
+                        img_calendario, 5, lambda: calendario(frame_contenido))
+    crear_opciones_menu(frame_opciones, "      Tareas Pendientes",
+                        img_pendiente, 5, lambda: tareas_pendientes(frame_contenido))
+    crear_opciones_menu(frame_opciones, "      Cerrar Sesión",
+                        img_cerrar_sesion, 260, cerrar_sesion)
     boton = CTkButton(frame_opciones,
-                        text="Configuracion de Perfil",
-                        width=300,
-                        fg_color="#715a72",
-                        hover_color="#5e485f",
-                        text_color="white",
-                        anchor="w",
-                        font=("Arial Rounded MT Bold", 16),
-                        command=Configuracion_Perfil
-                        )
+                      text="Configuracion de Perfil",
+                      width=300,
+                      fg_color="#715a72",
+                      hover_color="#5e485f",
+                      text_color="white",
+                      anchor="w",
+                      font=("Arial Rounded MT Bold", 16),
+                      command=Configuracion_Perfil
+                      )
     boton.pack(pady=(10, 10), padx=10)
 
 
@@ -177,13 +192,14 @@ def Configuracion_Perfil():
 
     consulta_alumno = """
         SELECT
-            TRIM(nombre_alumno),
-            TRIM(apellido_paterno),
-            TRIM(apellido_materno),
-            COALESCE(TRIM(correo_alumno), ''),
-            COALESCE(TRIM(carrera), '')
-        FROM alumnos
-        WHERE numero_control = %s
+            TRIM(A.nombre_alumno),
+            TRIM(A.apellido_paterno),
+            TRIM(A.apellido_materno),
+            COALESCE(TRIM(A.correo_alumno), ''),
+            COALESCE(TRIM(C.nombre_carrera), '')
+        FROM alumno A
+        LEFT JOIN carreras C ON A.id_carrera = C.id_carrera
+        WHERE A.numero_control = %s
         LIMIT 1
     """
     datos_alumno = ejecutar_select(consulta_alumno, (numero_control_alumno,))
@@ -199,7 +215,8 @@ def Configuracion_Perfil():
         return
 
     nombre, ap_paterno, ap_materno, correo, carrera = datos_alumno[0]
-    nombre_completo = " ".join([parte for parte in [nombre, ap_paterno, ap_materno] if parte])
+    nombre_completo = " ".join(
+        [parte for parte in [nombre, ap_paterno, ap_materno] if parte])
 
     CTkLabel(
         tarjeta_info,
@@ -288,11 +305,13 @@ def Configuracion_Perfil():
         confirmar = entry_confirmar.get().strip()
 
         if not nueva or not confirmar:
-            label_estado.configure(text="Completa ambos campos.", text_color="#a11")
+            label_estado.configure(
+                text="Completa ambos campos.", text_color="#a11")
             return
 
         if nueva != confirmar:
-            label_estado.configure(text="Las contrasenas no coinciden.", text_color="#a11")
+            label_estado.configure(
+                text="Las contrasenas no coinciden.", text_color="#a11")
             return
 
         try:
@@ -302,11 +321,13 @@ def Configuracion_Perfil():
                 WHERE usuario = %s
             """
             ejecutar_insert(sql_update, (nueva, numero_control_alumno))
-            label_estado.configure(text="Contrasena actualizada correctamente.", text_color="#1d6f42")
+            label_estado.configure(
+                text="Contrasena actualizada correctamente.", text_color="#1d6f42")
             entry_nueva.delete(0, "end")
             entry_confirmar.delete(0, "end")
         except Exception:
-            label_estado.configure(text="No fue posible actualizar la contrasena.", text_color="#a11")
+            label_estado.configure(
+                text="No fue posible actualizar la contrasena.", text_color="#a11")
 
     frame_botones = CTkFrame(frame_formulario, fg_color="transparent")
     frame_botones.pack(fill="x", padx=10, pady=(0, 10))
@@ -353,49 +374,59 @@ def Configuracion_Perfil():
         font=("Arial Rounded MT Bold", 14),
         command=alternar_formulario
     ).pack(anchor="e", padx=12, pady=(0, 12))
-    
-def crear_opciones_menu(frame,texto,imagen,y,funcion=None):
+
+
+def crear_opciones_menu(frame, texto, imagen, y, funcion=None):
     boton = CTkButton(frame,
-                        text=texto,
-                        width=300,
-                        fg_color="#715a72",
-                        hover_color="#5e485f",
-                        #selected_color="#715a72",
-                        text_color="white",
-                        image=imagen,
-                        anchor="w",
-                        font=("Arial Rounded MT Bold", 15),
-                        command=funcion
-                        )
+                      text=texto,
+                      width=300,
+                      fg_color="#715a72",
+                      hover_color="#5e485f",
+                      # selected_color="#715a72",
+                      text_color="white",
+                      image=imagen,
+                      anchor="w",
+                      font=("Arial Rounded MT Bold", 15),
+                      command=funcion
+                      )
     boton.pack(pady=(y, 10), padx=10)
 
+
 def crear_icono(ruta):
+    # aceptar `ruta` como ruta absoluta o relativa dentro del proyecto
+    if os.path.isabs(ruta) and os.path.exists(ruta):
+        path = ruta
+    else:
+        path = ruta_recurso(ruta)
     imagen = CTkImage(
-        light_image=Image.open(ruta_recurso(ruta)),
+        light_image=Image.open(path),
         size=(20, 20)
     )
     return imagen
 
+
 def obtener_grupos_alumno(numero_control):
     consulta = """
-        SELECT registros.id_grupo,
-        materias.nombre_materia,
+        SELECT registro.id_grupo,
+        materia.nombre_materia,
         CONCAT(maestros.nombre_maestro, ' ', maestros.apellido_paterno, ' ', maestros.apellido_materno) AS nombre_maestro
-        FROM registros
-        JOIN grupos   ON registros.id_grupo       = grupos.id_grupo
-        JOIN materias ON grupos.id_materia        = materias.id_materia
-        JOIN maestros ON grupos.matricula_maestro = maestros.matricula_maestro
-        WHERE registros.numero_control = %s
+        FROM registro
+        JOIN grupo   ON registro.id_grupo       = grupo.id_grupo
+        JOIN materia ON grupo.id_materia        = materia.id_materia
+        JOIN maestro maestros ON grupo.id_maestro = maestros.id_maestro
+        JOIN alumno A ON registro.id_alumno = A.id_alumno
+        WHERE A.numero_control = %s
     """
     return ejecutar_select(consulta, (numero_control,))
+
 
 def Mis_Clases(frame_contenido):
     global numero_control_alumno
     limpiar_frame(frame_contenido)
 
     CTkLabel(
-        frame_contenido, 
-        text="Mis Clases", 
+        frame_contenido,
+        text="Mis Clases",
         text_color="black",
         anchor="w",
         font=("Arial Rounded MT Bold", 30)
@@ -412,15 +443,15 @@ def Mis_Clases(frame_contenido):
     frame_clases = CTkScrollableFrame(
         frame_contenido,
         fg_color="#fbf8fd",
-        width=1200, 
+        width=1200,
         height=700,
         scrollbar_fg_color="#fbf8fd",
         scrollbar_button_color="#fbf8fd",
         scrollbar_button_hover_color="#fbf8fd"
     )
-    frame_clases.pack(pady=(5,10), padx=10, anchor="w")
+    frame_clases.pack(pady=(5, 10), padx=10, anchor="w")
     frame_clases.pack_propagate(False)
-    
+
     if numero_control_alumno is None:
         CTkLabel(
             frame_clases,
@@ -458,16 +489,17 @@ def Mis_Clases(frame_contenido):
             frame_contenido,
         )
 
+
 def calendario(frame):
     global numero_control_alumno
     limpiar_frame(frame)
 
     CTkLabel(
-        frame, 
-		text="Calendario", 
-		text_color="black",
-		anchor="w",
-		font=("Arial Rounded MT Bold", 30)
+        frame,
+        text="Calendario",
+        text_color="black",
+        anchor="w",
+        font=("Arial Rounded MT Bold", 30)
     ).pack(fill="x", anchor="w", pady=10, padx=10)
     CTkLabel(
         frame,
@@ -486,7 +518,8 @@ def calendario(frame):
     )
     label_estado_tareas.pack(fill="x", anchor="w", padx=12, pady=(0, 8))
 
-    frame_calendario = CTkFrame(frame, fg_color="white", width=1200, height=500)
+    frame_calendario = CTkFrame(
+        frame, fg_color="white", width=1200, height=500)
     frame_calendario.pack(pady=10, padx=20)
     frame_calendario.pack_propagate(False)
 
@@ -530,13 +563,14 @@ def calendario(frame):
         COALESCE(M.nombre_materia, 'Sin materia') AS nombre_materia,
         A.fecha_entrega,
         MAX(RES.fecha_registro) AS fecha_entrega_alumno
-        FROM registros R
-        JOIN grupos G ON TRIM(R.id_grupo) = TRIM(G.id_grupo)
+        FROM registro R
+        JOIN grupo G ON TRIM(R.id_grupo) = TRIM(G.id_grupo)
         JOIN Actividad A ON TRIM(A.id_grupo) = TRIM(G.id_grupo)
-        LEFT JOIN materias M ON G.id_materia = M.id_materia
+        LEFT JOIN materia M ON G.id_materia = M.id_materia
         LEFT JOIN resultado RES ON RES.id_registro = R.id_registro
         AND RES.id_actividad = A.id_actividad
-        WHERE TRIM(R.numero_control) = TRIM(%s)
+        JOIN alumno AL ON R.id_alumno = AL.id_alumno
+        WHERE TRIM(AL.numero_control) = TRIM(%s)
         GROUP BY A.id_actividad, COALESCE(NULLIF(TRIM(A.nombre_actividad), ''), 'Actividad sin nombre'),
         COALESCE(NULLIF(TRIM(A.descripcion), ''), A.nombre_actividad), CONCAT('Grupo ', TRIM(G.id_grupo)),
         COALESCE(M.nombre_materia, 'Sin materia'), A.fecha_entrega
@@ -578,22 +612,26 @@ def calendario(frame):
         fecha_envio = fecha_entrega_alumno
 
         if isinstance(fecha_limite, datetime.date) and not isinstance(fecha_limite, datetime.datetime):
-            fecha_limite = datetime.datetime.combine(fecha_limite, datetime.time(23, 59, 59))
+            fecha_limite = datetime.datetime.combine(
+                fecha_limite, datetime.time(23, 59, 59))
         elif isinstance(fecha_limite, str):
             try:
                 fecha_limite = datetime.datetime.fromisoformat(fecha_limite)
             except ValueError:
                 try:
-                    fecha_limite = datetime.datetime.strptime(fecha_limite, "%Y-%m-%d %H:%M:%S")
+                    fecha_limite = datetime.datetime.strptime(
+                        fecha_limite, "%Y-%m-%d %H:%M:%S")
                 except ValueError:
-                    fecha_limite = datetime.datetime.strptime(fecha_limite, "%Y-%m-%d")
+                    fecha_limite = datetime.datetime.strptime(
+                        fecha_limite, "%Y-%m-%d")
 
         if isinstance(fecha_envio, str):
             try:
                 fecha_envio = datetime.datetime.fromisoformat(fecha_envio)
             except ValueError:
                 try:
-                    fecha_envio = datetime.datetime.strptime(fecha_envio, "%Y-%m-%d %H:%M:%S")
+                    fecha_envio = datetime.datetime.strptime(
+                        fecha_envio, "%Y-%m-%d %H:%M:%S")
                 except ValueError:
                     fecha_envio = None
 
@@ -605,7 +643,8 @@ def calendario(frame):
             estado_entrega = "ENTREGA CON RETRASO"
 
         tareas_por_fecha.setdefault(clave, []).append(
-            (nombre_actividad, descripcion, nombre_grupo, nombre_materia, estado_entrega)
+            (nombre_actividad, descripcion, nombre_grupo,
+             nombre_materia, estado_entrega)
         )
 
         if primera_clave_fecha is None or clave < primera_clave_fecha:
@@ -704,19 +743,20 @@ def calendario(frame):
 
     cal.bind("<<CalendarSelected>>", mostrar_tareas_del_dia)
     mostrar_tareas_del_dia()
-    
+
     return cal
-    
+
+
 def tareas_pendientes(frame):
     global numero_control_alumno, frame_contenido
     limpiar_frame(frame)
 
     CTkLabel(
-        frame, 
-		text="Tareas Pendientes", 
-		text_color="black",
-		anchor="w",
-		font=("Arial Rounded MT Bold", 30)
+        frame,
+        text="Tareas Pendientes",
+        text_color="black",
+        anchor="w",
+        font=("Arial Rounded MT Bold", 30)
     ).pack(fill="x", anchor="w", pady=10, padx=10)
 
     CTkLabel(
@@ -756,15 +796,17 @@ def tareas_pendientes(frame):
         COALESCE(NULLIF(TRIM(A.nombre_actividad), ''), 'Actividad sin nombre') AS nombre_actividad,
         A.fecha_entrega,
         MAX(RES.fecha_registro) AS fecha_entrega_alumno
-        FROM registros R
+        FROM registro R
         JOIN Actividad A ON TRIM(A.id_grupo) = TRIM(R.id_grupo)
         LEFT JOIN resultado RES ON RES.id_registro = R.id_registro
         AND RES.id_actividad = A.id_actividad
-        WHERE TRIM(R.numero_control) = TRIM(%s)
+        JOIN alumno AL ON R.id_alumno = AL.id_alumno
+        WHERE TRIM(AL.numero_control) = TRIM(%s)
         GROUP BY A.id_actividad, TRIM(A.id_grupo), COALESCE(NULLIF(TRIM(A.nombre_actividad), ''), 'Actividad sin nombre'), A.fecha_entrega
         ORDER BY A.fecha_entrega ASC
     """
-    filas_tareas = ejecutar_select(consulta_tareas, (numero_control_alumno,)) or []
+    filas_tareas = ejecutar_select(
+        consulta_tareas, (numero_control_alumno,)) or []
 
     tareas_por_grupo = {}
 
@@ -779,10 +821,12 @@ def tareas_pendientes(frame):
                 fecha_limite = datetime.datetime.fromisoformat(fecha_entrega)
             except ValueError:
                 try:
-                    fecha_limite = datetime.datetime.strptime(fecha_entrega, "%Y-%m-%d %H:%M:%S")
+                    fecha_limite = datetime.datetime.strptime(
+                        fecha_entrega, "%Y-%m-%d %H:%M:%S")
                 except ValueError:
                     try:
-                        fecha_limite = datetime.datetime.strptime(fecha_entrega, "%Y-%m-%d")
+                        fecha_limite = datetime.datetime.strptime(
+                            fecha_entrega, "%Y-%m-%d")
                     except ValueError:
                         continue
 
@@ -791,12 +835,14 @@ def tareas_pendientes(frame):
                 fecha_envio = datetime.datetime.fromisoformat(fecha_envio)
             except ValueError:
                 try:
-                    fecha_envio = datetime.datetime.strptime(fecha_envio, "%Y-%m-%d %H:%M:%S")
+                    fecha_envio = datetime.datetime.strptime(
+                        fecha_envio, "%Y-%m-%d %H:%M:%S")
                 except ValueError:
                     fecha_envio = None
 
         if isinstance(fecha_limite, datetime.date) and not isinstance(fecha_limite, datetime.datetime):
-            fecha_limite = datetime.datetime.combine(fecha_limite, datetime.time(23, 59, 59))
+            fecha_limite = datetime.datetime.combine(
+                fecha_limite, datetime.time(23, 59, 59))
 
         if not isinstance(fecha_limite, datetime.datetime):
             continue
@@ -808,7 +854,8 @@ def tareas_pendientes(frame):
         else:
             estado_entrega = "ENTREGA CON RETRASO"
 
-        tareas_por_grupo.setdefault(id_grupo, []).append((nombre_actividad, estado_entrega))
+        tareas_por_grupo.setdefault(id_grupo, []).append(
+            (nombre_actividad, estado_entrega))
 
     for id_grupo, nombre_materia, nombre_maestro in grupos:
         frame_bloque = CTkFrame(contenedor, fg_color="white")
@@ -880,7 +927,8 @@ def tareas_pendientes(frame):
             text_color="white",
             font=("Arial Rounded MT Bold", 14),
             command=lambda m=nombre_materia, p=nombre_maestro, g=f"Grupo {id_grupo}":
-                grupos_alumno.Info_Grupo(frame_contenido, m, p, g,numero_control_alumno)
+                grupos_alumno.Info_Grupo(
+                    frame_contenido, m, p, g, numero_control_alumno)
         ).pack(anchor="e", padx=10, pady=(8, 10))
 
 
@@ -894,7 +942,7 @@ def iniciar_alumno(numero_control):
     # Consultar nombre del alumno en la base de datos
     consulta_alumno = """
         SELECT nombre_alumno, apellido_paterno, apellido_materno
-        FROM alumnos
+        FROM alumno
         WHERE numero_control = %s
     """
     resultado = ejecutar_select(consulta_alumno, (numero_control_alumno,))
@@ -905,30 +953,32 @@ def iniciar_alumno(numero_control):
         nombre_alumno = None
     ventana = CTk(fg_color="white")
     ventana.title("Inicio Alumnos")
-    ventana.withdraw()
-    ventana.after(0, mostrar_maximizada)
+    # Mostrar y maximizar antes de crear recursos gráficos para evitar
+    # errores de imagen vinculados a la instancia Tk
+    mostrar_maximizada()
 
-    img_hogar = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/hogar.png"))
-    img_calendario = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/calendario.png"))
-    img_notificaciones = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/reloj.png"))
-    img_pendiente = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/lista.png"))
-    img_cerrar_sesion = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/salida.png"))
-    img_usuario = crear_icono(ruta_recurso("carpeta_iconos/iconos_alumnos/avatar.png"))
+    img_hogar = crear_icono(
+        "carpeta_iconos/iconos_alumnos/hogar.png")
+    img_calendario = crear_icono(
+        "carpeta_iconos/iconos_alumnos/calendario.png")
+    img_notificaciones = crear_icono("carpeta_iconos/iconos_alumnos/reloj.png")
+    img_pendiente = crear_icono("carpeta_iconos/iconos_alumnos/lista.png")
+    img_cerrar_sesion = crear_icono("carpeta_iconos/iconos_alumnos/salida.png")
+    img_usuario = crear_icono("carpeta_iconos/iconos_alumnos/avatar.png")
 
-    frame_menu= CTkFrame(ventana, 
-                        width=300,
-                        corner_radius=0, 
-                        fg_color="#cabece")
+    frame_menu = CTkFrame(ventana,
+                          width=300,
+                          corner_radius=0,
+                          fg_color="#cabece")
     frame_menu.pack(side="left", fill="y")
     frame_menu.pack_propagate(False)
 
-    frame_contenido=CTkFrame(ventana,
-                        fg_color="white")
-    frame_contenido.pack(side="left", pady=10, padx=20, fill="both", expand=True)
+    frame_contenido = CTkFrame(ventana,
+                               fg_color="white")
+    frame_contenido.pack(side="left", pady=10, padx=20,
+                         fill="both", expand=True)
 
     menu_opcioneas(frame_menu)
     Mis_Clases(frame_contenido)
 
-
     ventana.mainloop()
-iniciar_alumno("A2402303")
