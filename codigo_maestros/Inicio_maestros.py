@@ -612,7 +612,8 @@ def agregar_unidad_general(frame):
     form = CTkFrame(frame, fg_color="white")
     form.pack(padx=20, pady=10, fill="both", expand=True)
 
-    e_numero = CTkEntry(form, placeholder_text="Número de unidad (ej. 1)")
+    e_numero = CTkOptionMenu(form, values=["Selecciona un grupo primero"], text_color="black", fg_color="#F0F0F0", button_color="#E0E0E0", button_hover_color="#D0D0D0")
+    e_numero.configure(state="disabled")
     e_tema = CTkEntry(form, placeholder_text="Tema de la unidad")
     e_desc = CTkEntry(form, placeholder_text="Descripción")
     e_numero.pack(fill="x", padx=10, pady=6)
@@ -625,33 +626,93 @@ def agregar_unidad_general(frame):
     lista = CTkScrollableFrame(form, fg_color="#F8FCFD", height=240)
     lista.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-    seleccion_grupos = {}
+    grupo_seleccionado = StringVar(value="")
+
+    def actualizar_opciones_unidad():
+        unidades_disponibles = mostrar_unidades_disponibles()
+        if not unidades_disponibles:
+            e_numero.configure(values=["Selecciona un grupo primero"])
+            e_numero.set("Selecciona un grupo primero")
+            e_numero.configure(state="disabled")
+            return
+
+        e_numero.configure(values=unidades_disponibles)
+        e_numero.set(unidades_disponibles[0])
+        e_numero.configure(state="normal")
+
     for clave_grupo, id_grupo, _, nombre_materia in grupos:
         fila = CTkFrame(lista, fg_color="white")
         fila.pack(fill="x", padx=4, pady=4)
-        var = BooleanVar(value=False)
-        seleccion_grupos[id_grupo] = var
-        CTkCheckBox(fila, text=f"Grupo {clave_grupo} - {nombre_materia}", variable=var,
-                    ).pack(anchor="w", padx=10, pady=8)
+        CTkRadioButton(
+            fila,
+            text=f"Grupo {clave_grupo} - {nombre_materia}",
+            variable=grupo_seleccionado,
+            value=str(id_grupo),
+            command=actualizar_opciones_unidad,
+        ).pack(anchor="w", padx=10, pady=8)
 
     estado = CTkLabel(form, text="", text_color="gray")
     estado.pack(anchor="w", padx=10, pady=6)
+
+    def mostrar_unidades_disponibles():
+        grupo = grupo_seleccionado.get().strip()
+        if not grupo:
+            estado.configure(
+                text="Selecciona un grupo.",
+                text_color="#B00020",
+            )
+            return {}
+
+        """sql = ""
+            SELECT
+                g.id_grupo,
+                g.id_materia,
+                m.unidades AS total_unidades
+            FROM grupo g
+            JOIN materia m ON g.id_materia = m.id_materia
+            WHERE g.id_grupo = %s
+            Limit 1
+        ""
+        numero_unidades = ejecutar_select(sql, (grupo,))
+        if not numero_unidades:
+            estado.configure(
+                text="No se encontró información para el grupo seleccionado.",
+                text_color="#B00020",
+            )
+            return {}"""
+        
+        unidades = obtener_unidades_grupo(grupo)
+
+        #total = int(numero_unidades[0][2] if numero_unidades else 5)
+        total = 5
+        existentes = set()
+        for fila in unidades or []:
+            try:
+                existentes.add(int(fila[1]))
+            except Exception:
+                continue
+
+        unidades_disponibles = [
+            str(numero)
+            for numero in range(1, total + 1)
+            if numero not in existentes
+        ]
+        
+        return unidades_disponibles
 
     def guardar_unidad_general():
         numero = e_numero.get().strip()
         tema = e_tema.get().strip()
         descripcion = e_desc.get().strip()
-        grupos_seleccionados = [
-            id_grupo for id_grupo, var in seleccion_grupos.items() if var.get()
-        ]
-
+        grupo = grupo_seleccionado.get().strip()
+        
         if not numero or not tema:
             estado.configure(
                 text="Número de unidad y tema son obligatorios.", text_color="#B00020")
             return
-        if not grupos_seleccionados:
+        if not grupo:
             estado.configure(
-                text="Selecciona al menos un grupo.", text_color="#B00020")
+                text="Selecciona un grupo.", text_color="#B00020")
             return
 
         sql = """
@@ -659,13 +720,15 @@ def agregar_unidad_general(frame):
             VALUES (%s, %s, %s, %s)
         """
         try:
-            for id_grupo in grupos_seleccionados:
-                ejecutar_insert(sql, (numero, tema, descripcion, id_grupo))
+            ejecutar_insert(sql, (numero, tema, descripcion, grupo))
             estado.configure(
                 text="Unidad agregada correctamente.", text_color="#1B5E20")
+            actualizar_opciones_unidad()
         except Exception as ex:
             estado.configure(
                 text=f"Error al agregar unidad: {ex}", text_color="#B00020")
+
+    actualizar_opciones_unidad()
 
     CTkButton(form, text="Guardar unidad", fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
               font=BUTTON_FONT, command=guardar_unidad_general).pack(anchor="e", padx=10, pady=(0, 10))
