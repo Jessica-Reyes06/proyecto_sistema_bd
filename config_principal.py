@@ -1,6 +1,6 @@
-from customtkinter import CTkFrame, CTkButton
+from customtkinter import CTkFrame, CTkButton, CTkScrollableFrame, CTkLabel
 from tkcalendar import Calendar
-import datetime
+from funciones_auditoria import obtener_ultimos_cambios
 
 
 def limpiar_frame(frame):
@@ -8,39 +8,37 @@ def limpiar_frame(frame):
 	for widget in frame.winfo_children():
 		widget.destroy()
 
-def calendario(frame):
-	"""Calendario reutilizable para el panel administrador.
-
-	Crea un calendario compacto dentro del frame que se le pasa,
-	sin limpiar el frame padre (eso lo hace quien llama).
-	"""
+def bitacora_cambios(frame):
+	"""Muestra una lista con los ultimos cambios registrados en la bitácora de auditoría"""
 
 	contenedor = CTkFrame(frame, fg_color="white")
 	contenedor.pack(fill="both", expand=True, padx=5, pady=5)
 
-	hoy = datetime.date.today()
+	contenedor.columnconfigure(0, weight=1)
+	contenedor.columnconfigure(1, weight=0)
 
-	cal = Calendar(
-		contenedor,
-		selectmode="day",
-		year=hoy.year,
-		month=hoy.month,
-		day=hoy.day,
-		font=("Arial Rounded MT Bold", 20),
-		background="#ffffff",
-		foreground="#000000",
-		headersbackground="#ffffff",
-		headersforeground="#000000",
-		normalbackground="#ffffff",
-		normalforeground="#000000",
-		weekendbackground="#ffffff",
-		weekendforeground="#000000",
-		selectbackground="#d9d9d9",
-		selectforeground="#000000",
-		bordercolor="#ffffff",
-	)
+	titulo = CTkLabel(contenedor, text="🗓 Bitácora de Cambios", font=("Arial", 16, "bold"))
+	titulo.grid(pady=10, padx=10, sticky="w", column=0, row=0)
 
-	cal.pack(fill="both", expand=True, padx=5, pady=5)
+	boton_refresh = CTkButton(contenedor, text="↻", width=20, command=lambda: mostrar_cambios())
+	boton_refresh.grid(pady=10, padx=10, sticky="w", column=1, row=0)
 
-	return cal
+	contenedor_cambios = CTkScrollableFrame(contenedor, fg_color="transparent", width=300)
+	contenedor_cambios.grid(pady=0, padx=5, sticky="nsew", column=0, row=1, columnspan=2)
+
+	def mostrar_cambios():
+		# Obtener cambios CADA VEZ que se presiona refresh
+		cambios = obtener_ultimos_cambios(20)
+		
+		for widget in contenedor_cambios.winfo_children():
+			widget.destroy()
+
+		for admin, tabla, operacion, descripcion, fecha_hora in cambios:
+			texto = f"{fecha_hora.strftime('%Y-%m-%d %H:%M:%S')}: {descripcion}"
+			label_cambio = CTkLabel(contenedor_cambios, wraplength=300, height=50, fg_color="#f0f4f8", text=texto, anchor="w", justify="left")
+			label_cambio.pack(fill="x", padx=5, pady=5)
+	
+	mostrar_cambios()
+	
+	
 
