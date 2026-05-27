@@ -1,17 +1,14 @@
+from customtkinter import *
+from PIL import Image
+import importlib
+from db_conexion import ejecutar_select, ejecutar_insert
+from codigo_alumnos import funciones_Alumnos as funciones_alumnos
 import os
 import sys
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
-
-from codigo_alumnos import funciones_Alumnos as funciones_alumnos
-from db_conexion import ejecutar_select, ejecutar_insert
-import importlib
-import datetime
-from tkcalendar import Calendar
-from PIL import Image
-from customtkinter import *
 
 
 ventana = None
@@ -52,7 +49,10 @@ def crear_icono(ruta, size=(20, 20)):
 
 def obtener_datos_maestro(matricula):
     sql = """
-        SELECT nombre_maestro, apellido_paterno, apellido_materno
+        SELECT nombre_maestro, apellido_paterno, apellido_materno,
+               COALESCE(correo, ''),
+               COALESCE(perfil_docente, ''),
+               COALESCE(cedula_profesional, '')
         FROM maestro
         WHERE matricula = %s
         LIMIT 1
@@ -735,7 +735,7 @@ def menu_opciones(frame_menu):
 
     # ── Botones de navegación ─────────────────────────────────────────────
     frame_nav = CTkFrame(frame_menu, fg_color=COLOR_SIDE)
-    frame_nav.pack(pady=(5, 0), padx=8, fill="both", expand=True)
+    frame_nav.pack(pady=(5, 0), padx=10, fill="both", expand=True)
 
     _btn_nav_activo[0] = None
 
@@ -750,14 +750,264 @@ def menu_opciones(frame_menu):
         lambda: agregar_unidad_general(frame_contenido))
 
     nav_btn(
-        frame_nav, "Calendario",
-        crear_icono("carpeta_iconos/iconos_alumnos/calendario.png"),
-        lambda: calendario_maestro(frame_contenido))
+        frame_nav, "Configuracion de Perfil",
+        crear_icono("carpeta_iconos/iconos_admin/usuario.png"),
+        lambda: Configuracion_Perfil_Maestro())
 
     # Activar "Mis Grupos" por defecto
     btn_grupos.configure(
         fg_color=COLOR_MAIN, text_color="white", hover_color=COLOR_HOVER)
     _btn_nav_activo[0] = btn_grupos
+
+
+def Configuracion_Perfil_Maestro():
+    global matricula_maestro, frame_contenido
+    limpiar_frame(frame_contenido)
+
+    encabezado = CTkFrame(frame_contenido, fg_color="white")
+    encabezado.pack(fill="x", padx=10, pady=(10, 6))
+
+    CTkLabel(
+        encabezado,
+        text="Configuracion de Perfil",
+        text_color="black",
+        anchor="w",
+        font=("Arial Rounded MT Bold", 30)
+    ).pack(fill="x", anchor="w", pady=(10, 4), padx=12)
+
+    CTkLabel(
+        encabezado,
+        text="Consulta tu informacion y actualiza tu contrasena",
+        text_color="gray",
+        anchor="w",
+        font=("Arial", 16)
+    ).pack(fill="x", anchor="w", padx=12, pady=(0, 10))
+
+    tarjeta_info = CTkFrame(frame_contenido, fg_color=COLOR_SIDE)
+    tarjeta_info.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+
+    if not matricula_maestro:
+        CTkLabel(
+            tarjeta_info,
+            text="No hay una sesion de maestro activa.",
+            text_color="black",
+            anchor="w",
+            font=("Arial", 16)
+        ).pack(fill="x", padx=10, pady=10)
+        return
+
+    consulta_maestro = """
+        SELECT
+            TRIM(nombre_maestro),
+            TRIM(apellido_paterno),
+            TRIM(apellido_materno),
+            COALESCE(TRIM(correo), ''),
+            COALESCE(TRIM(perfil_docente), ''),
+            COALESCE(TRIM(cedula_profesional), '')
+        FROM maestro
+        WHERE matricula = %s
+        LIMIT 1
+    """
+    datos_maestro = ejecutar_select(consulta_maestro, (matricula_maestro,))
+
+    if not datos_maestro:
+        CTkLabel(
+            tarjeta_info,
+            text="No se encontro informacion del maestro en sesion.",
+            text_color="black",
+            anchor="w",
+            font=("Arial", 16)
+        ).pack(fill="x", padx=10, pady=10)
+        return
+
+    nombre, ap_paterno, ap_materno, correo, perfil_docente, cedula_profesional = datos_maestro[
+        0]
+    nombre_completo = " ".join(
+        [parte for parte in [nombre, ap_paterno, ap_materno] if parte])
+
+    CTkLabel(
+        tarjeta_info,
+        text=f"Nombre: {nombre_completo}",
+        text_color="black",
+        anchor="w",
+        font=("Arial Rounded MT Bold", 20)
+    ).pack(fill="x", padx=12, pady=(10, 6))
+
+    CTkLabel(
+        tarjeta_info,
+        text=f"Matricula: {matricula_maestro}",
+        text_color="#333333",
+        anchor="w",
+        font=("Arial", 16)
+    ).pack(fill="x", padx=12, pady=4)
+
+    CTkLabel(
+        tarjeta_info,
+        text=f"Correo: {correo if correo else 'Sin correo registrado'}",
+        text_color="#333333",
+        anchor="w",
+        font=("Arial", 16)
+    ).pack(fill="x", padx=12, pady=4)
+
+    CTkLabel(
+        tarjeta_info,
+        text=f"Perfil docente: {perfil_docente if perfil_docente else 'Sin perfil registrado'}",
+        text_color="#333333",
+        anchor="w",
+        font=("Arial", 16)
+    ).pack(fill="x", padx=12, pady=4)
+
+    CTkLabel(
+        tarjeta_info,
+        text=f"Cedula profesional: {cedula_profesional if cedula_profesional else 'Sin cedula registrada'}",
+        text_color="#333333",
+        anchor="w",
+        font=("Arial", 16)
+    ).pack(fill="x", padx=12, pady=(4, 10))
+
+    frame_formulario = CTkFrame(tarjeta_info, fg_color=COLOR_MAIN)
+    frame_formulario.pack(fill="x", padx=12, pady=(5, 10))
+    frame_formulario.pack_forget()
+
+    CTkLabel(
+        frame_formulario,
+        text="Nueva contrasena",
+        text_color="white",
+        anchor="w",
+        font=("Arial Rounded MT Bold", 14)
+    ).pack(fill="x", padx=10, pady=(10, 5))
+
+    entry_nueva = CTkEntry(
+        frame_formulario,
+        show="*",
+        width=340,
+        fg_color="white",
+        text_color="black",
+        border_color=COLOR_HOVER
+    )
+    entry_nueva.pack(fill="x", padx=10, pady=(0, 10))
+
+    CTkLabel(
+        frame_formulario,
+        text="Confirmar contrasena",
+        text_color="white",
+        anchor="w",
+        font=("Arial Rounded MT Bold", 14)
+    ).pack(fill="x", padx=10, pady=(0, 5))
+
+    entry_confirmar = CTkEntry(
+        frame_formulario,
+        show="*",
+        width=340,
+        fg_color="white",
+        text_color="black",
+        border_color=COLOR_HOVER
+    )
+    entry_confirmar.pack(fill="x", padx=10, pady=(0, 10))
+
+    estado_contrasena = {"visible": False}
+
+    def alternar_visibilidad_contrasena():
+        if estado_contrasena["visible"]:
+            entry_nueva.configure(show="*")
+            entry_confirmar.configure(show="*")
+            boton_mostrar.configure(text="Mostrar contrasena")
+            estado_contrasena["visible"] = False
+        else:
+            entry_nueva.configure(show="")
+            entry_confirmar.configure(show="")
+            boton_mostrar.configure(text="Ocultar contrasena")
+            estado_contrasena["visible"] = True
+
+    label_estado = CTkLabel(
+        frame_formulario,
+        text="",
+        text_color="white",
+        anchor="w",
+        justify="left",
+        font=("Arial", 14)
+    )
+    label_estado.pack(fill="x", padx=10, pady=(0, 10))
+
+    def guardar_nueva_contrasena():
+        nueva = entry_nueva.get().strip()
+        confirmar = entry_confirmar.get().strip()
+
+        if not nueva or not confirmar:
+            label_estado.configure(
+                text="Completa ambos campos.", text_color="#a11")
+            return
+
+        if nueva != confirmar:
+            label_estado.configure(
+                text="Las contrasenas no coinciden.", text_color="#a11")
+            return
+
+        try:
+            sql_update = """
+                UPDATE cuentas
+                SET password = %s
+                WHERE id_cuenta = (
+                    SELECT id_cuenta
+                    FROM maestro
+                    WHERE matricula = %s
+                    LIMIT 1
+                )
+            """
+            ejecutar_insert(sql_update, (nueva, matricula_maestro))
+            label_estado.configure(
+                text="Contrasena actualizada correctamente.", text_color="#1d6f42")
+            entry_nueva.delete(0, "end")
+            entry_confirmar.delete(0, "end")
+        except Exception:
+            label_estado.configure(
+                text="No fue posible actualizar la contrasena.", text_color="#a11")
+
+    frame_botones = CTkFrame(frame_formulario, fg_color="transparent")
+    frame_botones.pack(fill="x", padx=10, pady=(0, 10))
+
+    boton_mostrar = CTkButton(
+        frame_botones,
+        text="Mostrar contrasena",
+        fg_color=COLOR_HOVER,
+        hover_color=COLOR_MAIN,
+        text_color="white",
+        font=("Arial Rounded MT Bold", 12),
+        width=180,
+        command=alternar_visibilidad_contrasena
+    )
+    boton_mostrar.pack(side="left")
+
+    boton_guardar = CTkButton(
+        frame_botones,
+        text="Guardar contrasena",
+        fg_color=COLOR_MAIN,
+        hover_color=COLOR_HOVER,
+        text_color="white",
+        font=("Arial Rounded MT Bold", 14),
+        command=guardar_nueva_contrasena
+    )
+    boton_guardar.pack(side="right")
+
+    estado_formulario = {"visible": False}
+
+    def alternar_formulario():
+        if estado_formulario["visible"]:
+            frame_formulario.pack_forget()
+            estado_formulario["visible"] = False
+        else:
+            frame_formulario.pack(fill="x", padx=12, pady=(5, 10))
+            estado_formulario["visible"] = True
+
+    CTkButton(
+        tarjeta_info,
+        text="Modificar contrasena",
+        fg_color=COLOR_MAIN,
+        hover_color=COLOR_HOVER,
+        text_color="white",
+        font=("Arial Rounded MT Bold", 14),
+        command=alternar_formulario
+    ).pack(anchor="e", padx=12, pady=(0, 12))
 
 
 def nav_btn(parent, texto, img, cmd):
@@ -1073,20 +1323,6 @@ def mis_grupos(frame):
                         lambda e, g=id_grupo: ver_grupo(frame, g))
 
 
-def calendario_maestro(frame):
-    limpiar_frame(frame)
-    CTkLabel(frame, text="Calendario", text_color="black", anchor="w",
-             font=("Arial Rounded MT Bold", 30)).pack(fill="x", padx=10, pady=10)
-    CTkLabel(frame, text="Fechas de entrega por grupo", text_color="gray",
-             font=("Arial", 16)).pack(anchor="w", padx=12, pady=(0, 8))
-
-    hoy = datetime.date.today()
-    cal = Calendar(frame, selectmode="day", year=hoy.year, month=hoy.month, day=hoy.day,
-                   background=COLOR_MAIN, headersbackground=COLOR_HOVER,
-                   normalbackground=COLOR_SIDE, foreground="white")
-    cal.pack(fill="both", expand=True, padx=20, pady=10)
-
-
 def asignar_actividad(frame, id_grupo_seleccionado=None):
     limpiar_frame(frame)
     CTkLabel(frame, text="Asignar Actividad", text_color="black", anchor="w",
@@ -1284,7 +1520,7 @@ def iniciar_maestro(matricula):
     try:
         datos = obtener_datos_maestro(matricula_maestro)
         if datos:
-            n, ap, am = datos
+            n, ap, am, *_ = datos
             nombre_maestro = f"{n} {ap} {am}"
         else:
             nombre_maestro = None
@@ -1296,7 +1532,7 @@ def iniciar_maestro(matricula):
     ventana.withdraw()
     ventana.after(0, mostrar_maximizada)
 
-    frame_menu = CTkFrame(ventana, width=230,
+    frame_menu = CTkFrame(ventana, width=270,
                           corner_radius=0, fg_color=COLOR_SIDE)
     frame_menu.pack(side="left", fill="y")
     frame_menu.pack_propagate(False)
