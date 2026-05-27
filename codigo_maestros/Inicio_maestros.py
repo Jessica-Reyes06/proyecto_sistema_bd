@@ -1,3 +1,10 @@
+import os
+import sys
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
 from codigo_alumnos import funciones_Alumnos as funciones_alumnos
 from db_conexion import ejecutar_select, ejecutar_insert
 import importlib
@@ -5,12 +12,6 @@ import datetime
 from tkcalendar import Calendar
 from PIL import Image
 from customtkinter import *
-import os
-import sys
-
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
 
 
 ventana = None
@@ -24,6 +25,7 @@ COLOR_HOVER = "#155E75"
 BUTTON_FONT = ("Arial Rounded MT Bold", 16)
 BONUS_UNIDAD_TABLE = None
 BONUS_MATERIA_TABLE = None
+_btn_nav_activo = [None]
 
 
 def limpiar_frame(frame):
@@ -292,8 +294,9 @@ def bonus_unidad_view(frame, id_grupo):
 
     opciones_alumno = [
         f"{r} - {nc} - {n} {ap} {am}" for r, nc, n, ap, am in alumnos]
-    opciones_unidad = [
-        f"{id_u} - U{num}: {tema}" for id_u, num, tema in unidades]
+    # mantener lista de ids por índice y mostrar al usuario solo el número/tema
+    unidad_ids = [str(id_u).strip() for id_u, num, tema in unidades]
+    opciones_unidad = [f"Unidad {num}: {tema}" for id_u, num, tema in unidades]
 
     cb_alumno = CTkComboBox(form, values=opciones_alumno, state="readonly")
     cb_unidad = CTkComboBox(form, values=opciones_unidad, state="readonly")
@@ -314,7 +317,17 @@ def bonus_unidad_view(frame, id_grupo):
             return
 
         id_registro = cb_alumno.get().split(" - ", 1)[0].strip()
-        id_unidad = cb_unidad.get().split(" - ", 1)[0].strip()
+        # Obtener id_unidad por índice desde el mapeo interno; soportar formato antiguo si aparece
+        selected_unidad = cb_unidad.get()
+        id_unidad = None
+        try:
+            idx = opciones_unidad.index(selected_unidad)
+            id_unidad = unidad_ids[idx]
+        except Exception:
+            try:
+                id_unidad = cb_unidad.get().split(" - ", 1)[0].strip()
+            except Exception:
+                id_unidad = None
         _, final_antes = obtener_resumen_alumno(id_registro, id_grupo)
 
         max_bonus_permitido = max(0.0, round(100.0 - final_antes, 2))
@@ -463,9 +476,9 @@ def obtener_etiquetas_unidad(ids_unidad):
         id_txt = str(id_u).strip()
         num_txt = str(numero_u).strip()
         if conteo_numero.get(num_txt, 0) > 1:
-            etiquetas[id_txt] = f"U{num_txt} ({id_txt})"
+            etiquetas[id_txt] = f"Unidad {num_txt} ({id_txt})"
         else:
-            etiquetas[id_txt] = f"U{num_txt}"
+            etiquetas[id_txt] = f"Unidad {num_txt}"
     return etiquetas
 
 
@@ -660,38 +673,124 @@ def agregar_unidad_general(frame):
 
 
 def menu_opciones(frame_menu):
-    global nombre_maestro, matricula_maestro
+    global nombre_maestro, matricula_maestro, _btn_nav_activo
 
-    logo_img = CTkImage(light_image=Image.open(
-        "carpeta_iconos/general/logo.jpeg"), size=(120, 50))
-    frame_logo = CTkFrame(frame_menu, fg_color="#003152", corner_radius=0)
-    frame_logo.pack(fill="x", pady=(0, 5))
-    CTkLabel(frame_logo, text="", image=logo_img,
-             bg_color="#003152").pack(padx=10, pady=5)
+    # ── Logo ──────────────────────────────────────────────────────────────
+    try:
+        logo_img = CTkImage(light_image=Image.open(
+            "carpeta_iconos/general/logo.jpeg"), size=(130, 55))
+        frame_logo = CTkFrame(frame_menu, fg_color="#003152", corner_radius=0)
+        frame_logo.pack(fill="x")
+        CTkLabel(frame_logo, text="", image=logo_img,
+                 bg_color="#003152").pack(padx=10, pady=8)
+    except Exception:
+        frame_logo = CTkFrame(frame_menu, fg_color="#003152",
+                              corner_radius=0, height=65)
+        frame_logo.pack(fill="x")
 
+    # ── Perfil del usuario ────────────────────────────────────────────────
     frame_user = CTkFrame(frame_menu, fg_color=COLOR_SIDE)
-    frame_user.pack(pady=(5, 10), padx=20)
+    frame_user.pack(pady=(14, 5), padx=12, fill="x")
 
-    avatar = crear_icono(
-        "carpeta_iconos/iconos_alumnos/avatar.png", (100, 100))
-    CTkLabel(frame_user, text="", image=avatar).pack(pady=10)
+    try:
+        avatar_img = CTkImage(light_image=Image.open(
+            "carpeta_iconos/iconos_alumnos/avatar.png"), size=(80, 80))
+        frame_circle = CTkFrame(
+            frame_user, fg_color="#A8D8E8", corner_radius=50, width=96, height=96)
+        frame_circle.pack(pady=(10, 6))
+        frame_circle.pack_propagate(False)
+        CTkLabel(frame_circle, text="", image=avatar_img,
+                 fg_color="transparent").place(relx=0.5, rely=0.5, anchor="center")
+    except Exception:
+        CTkLabel(frame_user, text="👤", font=("Arial", 50)).pack(pady=10)
 
-    CTkLabel(frame_user, text=nombre_maestro or "Maestro", text_color="black",
-             font=("Arial Rounded MT Bold", 20), wraplength=240).pack(pady=8)
-    CTkLabel(frame_user, text=matricula_maestro or "-", text_color="black",
-             font=("Arial Rounded MT Bold", 18)).pack(pady=(0, 10))
+    CTkLabel(frame_user,
+             text=nombre_maestro or "Maestro",
+             text_color="#0a0a0a",
+             font=("Arial Rounded MT Bold", 15),
+             wraplength=210,
+             justify="center").pack(pady=(2, 2))
+    CTkLabel(frame_user,
+             text=matricula_maestro or "-",
+             text_color="gray",
+             font=("Arial", 13)).pack(pady=(0, 12))
 
-    frame_ops = CTkFrame(frame_menu, fg_color=COLOR_SIDE)
-    frame_ops.pack(pady=10, padx=20, fill="both", expand=True)
+    # ── Cerrar Sesión al fondo (debe empaquetar antes de expand=True) ─────
+    frame_bottom = CTkFrame(frame_menu, fg_color=COLOR_SIDE, corner_radius=0)
+    frame_bottom.pack(side="bottom", fill="x", padx=8, pady=10)
+    try:
+        salida_icon = crear_icono("carpeta_iconos/iconos_alumnos/salida.png")
+    except Exception:
+        salida_icon = None
+    CTkButton(frame_bottom,
+              text="  Cerrar Sesión",
+              image=salida_icon,
+              anchor="w",
+              fg_color="transparent",
+              hover_color="#C9E8EE",
+              text_color="#1a1a1a",
+              font=BUTTON_FONT,
+              command=cerrar_sesion,
+              corner_radius=8).pack(pady=5, padx=8, fill="x")
 
-    btn(frame_ops, "      Mis Grupos", crear_icono(
-        "carpeta_iconos/iconos_alumnos/hogar.png"), lambda: mis_grupos(frame_contenido))
-    btn(frame_ops, "      Agregar Unidad", crear_icono(
-        "carpeta_iconos/iconos_alumnos/lista.png"), lambda: agregar_unidad_general(frame_contenido))
-    btn(frame_ops, "      Calendario", crear_icono(
-        "carpeta_iconos/iconos_alumnos/calendario.png"), lambda: calendario_maestro(frame_contenido))
-    btn(frame_ops, "      Cerrar Sesión", crear_icono(
-        "carpeta_iconos/iconos_alumnos/salida.png"), cerrar_sesion)
+    # ── Botones de navegación ─────────────────────────────────────────────
+    frame_nav = CTkFrame(frame_menu, fg_color=COLOR_SIDE)
+    frame_nav.pack(pady=(5, 0), padx=8, fill="both", expand=True)
+
+    _btn_nav_activo[0] = None
+
+    btn_grupos = nav_btn(
+        frame_nav, "Mis Grupos",
+        crear_icono("carpeta_iconos/iconos_alumnos/hogar.png"),
+        lambda: mis_grupos(frame_contenido))
+
+    nav_btn(
+        frame_nav, "Agregar Unidad",
+        crear_icono("carpeta_iconos/iconos_alumnos/lista.png"),
+        lambda: agregar_unidad_general(frame_contenido))
+
+    nav_btn(
+        frame_nav, "Calendario",
+        crear_icono("carpeta_iconos/iconos_alumnos/calendario.png"),
+        lambda: calendario_maestro(frame_contenido))
+
+    # Activar "Mis Grupos" por defecto
+    btn_grupos.configure(
+        fg_color=COLOR_MAIN, text_color="white", hover_color=COLOR_HOVER)
+    _btn_nav_activo[0] = btn_grupos
+
+
+def nav_btn(parent, texto, img, cmd):
+    """Botón de navegación con soporte de estado activo."""
+    def on_click():
+        if _btn_nav_activo[0] is not None:
+            try:
+                _btn_nav_activo[0].configure(
+                    fg_color="transparent",
+                    text_color="#1a1a1a",
+                    hover_color="#C9E8EE"
+                )
+            except Exception:
+                pass
+        b.configure(fg_color=COLOR_MAIN, text_color="white",
+                    hover_color=COLOR_HOVER)
+        _btn_nav_activo[0] = b
+        cmd()
+
+    b = CTkButton(
+        parent,
+        text=f"  {texto}",
+        image=img,
+        anchor="w",
+        fg_color="transparent",
+        hover_color="#C9E8EE",
+        text_color="#1a1a1a",
+        font=BUTTON_FONT,
+        command=on_click,
+        corner_radius=8
+    )
+    b.pack(pady=5, padx=8, fill="x")
+    return b
 
 
 def btn(parent, texto, img, cmd):
@@ -773,6 +872,14 @@ def ver_grupo(frame, id_grupo):
 
     CTkLabel(header, text=f"Grupo {clave_grupo}", text_color="black", anchor="w",
              font=("Arial Rounded MT Bold", 30)).pack(side="left")
+    # Mostrar un indicador con id_grupo y número de alumnos para depuración rápida
+    try:
+        from codigo_maestros.funciones_actividad import obtener_alumnos_grupo_bonus
+        num_alumnos = len(obtener_alumnos_grupo_bonus(id_grupo))
+        CTkLabel(header, text=f"Grupo: {id_grupo} — Alumnos: {num_alumnos}",
+                 text_color="#374151", font=("Arial", 12)).pack(side="left", padx=(12, 0))
+    except Exception as _ex:
+        print(f"DEBUG: no se pudo obtener conteo alumnos para grupo {id_grupo}: {_ex}")
     CTkButton(header, text="Refrescar todo", fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
               font=("Arial Rounded MT Bold", 14), width=150,
               command=lambda: ver_grupo(frame, id_grupo),
@@ -820,6 +927,7 @@ def ver_grupo(frame, id_grupo):
 
     def on_tab_change():
         tab = tabview.get()
+        print(f"DEBUG: on_tab_change tab={tab} id_grupo={id_grupo}")
         if tab in cargadas:
             return
         cargadas.add(tab)
@@ -876,7 +984,7 @@ def eliminar_actividades(frame, id_grupo):
                         border_width=1, border_color="#E0E0E0")
         card.pack(fill="x", padx=5, pady=6)
 
-        CTkLabel(card, text=f"{id_actividad} - Unidad {id_unidad}", text_color="black",
+        CTkLabel(card, text=f"Actividad {id_actividad} - Unidad {id_unidad}", text_color="black",
                  font=("Arial Rounded MT Bold", 14)).pack(anchor="w", padx=10, pady=(8, 2))
         CTkLabel(card, text=f"Ponderación: {ponderacion}%",
                  text_color="#444444", font=("Arial", 12)).pack(anchor="w", padx=10, pady=2)
@@ -901,32 +1009,69 @@ def eliminar_actividades(frame, id_grupo):
 def mis_grupos(frame):
     limpiar_frame(frame)
     CTkLabel(frame, text="Mis Grupos", text_color="black", anchor="w",
-             font=("Arial Rounded MT Bold", 30)).pack(fill="x", padx=10, pady=10)
+             font=("Arial Rounded MT Bold", 34)).pack(fill="x", padx=10, pady=(14, 2))
     CTkLabel(frame, text="Gestiona tus grupos asignados", text_color="gray",
-             font=("Arial", 16)).pack(anchor="w", padx=12)
+             font=("Arial", 15)).pack(anchor="w", padx=12, pady=(0, 10))
 
-    cont = CTkScrollableFrame(
-        frame, fg_color="#F2FBFD", width=1200, height=700)
-    cont.pack(padx=10, pady=10, anchor="w")
     grupos = obtener_grupos_maestro(matricula_maestro)
+
+    cont = CTkScrollableFrame(frame, fg_color="white")
+    cont.pack(padx=10, pady=5, fill="both", expand=True)
 
     if not grupos:
         CTkLabel(cont, text="No tienes grupos asignados.", text_color="black",
-                 font=("Arial Rounded MT Bold", 18)).grid(row=0, column=0, padx=10, pady=10, sticky="w")
+                 font=("Arial Rounded MT Bold", 18)).grid(
+                     row=0, column=0, padx=10, pady=10, sticky="w")
         return
 
-    folder = crear_icono(
-        "carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png", (90, 90))
+    # Intentar cargar ícono de grupo; varios nombres posibles
+    grupo_icon = None
+    for nombre_icono in ("usuarios.png", "grupo.png", "archivo-de-carpetas.png", "avatar.png"):
+        try:
+            grupo_icon = crear_icono(
+                f"carpeta_iconos/iconos_alumnos/{nombre_icono}", (70, 70))
+            break
+        except Exception:
+            continue
+
+    COLS = 4  # tarjetas por fila
     for i, (clave_grupo, id_grupo, _, materia) in enumerate(grupos):
-        r, c = i // 5, i % 5
-        f = CTkFrame(cont, fg_color="white")
-        f.grid(row=r, column=c, padx=8, pady=8)
-        CTkButton(f, text=f"{clave_grupo}", image=folder, compound="bottom",
-                  width=170, height=150, fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
-                  font=BUTTON_FONT,
-                  command=lambda g=id_grupo: ver_grupo(frame, g)).grid(row=0, column=0, padx=8, pady=5)
-        CTkLabel(f, text=materia, text_color="black",
-                 font=("Arial Rounded MT Bold", 16)).grid(row=1, column=0, padx=8, pady=(0, 8), sticky="w")
+        r, c = i // COLS, i % COLS
+
+        # ── Tarjeta exterior (fondo teal con esquinas redondeadas) ────────
+        card = CTkFrame(
+            cont,
+            fg_color=COLOR_MAIN,
+            corner_radius=14,
+            width=210,
+            height=220,
+            cursor="hand2"
+        )
+        card.grid(row=r, column=c, padx=10, pady=10)
+        card.pack_propagate(False)
+        card.grid_propagate(False)
+
+        # ── Ícono centrado en la parte teal ──────────────────────────────
+        lbl_icon = CTkLabel(card, text="", image=grupo_icon,
+                            fg_color="transparent")
+        lbl_icon.pack(expand=True)
+
+        # ── Sección blanca inferior ───────────────────────────────────────
+        bottom = CTkFrame(card, fg_color="white", corner_radius=10)
+        bottom.pack(fill="x", side="bottom", padx=3, pady=3)
+
+        lbl_clave = CTkLabel(bottom, text=clave_grupo, text_color=COLOR_MAIN,
+                             font=("Arial Rounded MT Bold", 20))
+        lbl_clave.pack(pady=(8, 2))
+
+        lbl_materia = CTkLabel(bottom, text=materia, text_color="gray",
+                               font=("Arial", 13))
+        lbl_materia.pack(pady=(0, 8))
+
+        # ── Hacer toda la tarjeta clicleable ─────────────────────────────
+        for widget in (card, lbl_icon, bottom, lbl_clave, lbl_materia):
+            widget.bind("<Button-1>",
+                        lambda e, g=id_grupo: ver_grupo(frame, g))
 
 
 def calendario_maestro(frame):
@@ -955,8 +1100,11 @@ def asignar_actividad(frame, id_grupo_seleccionado=None):
 
     unidades_grupo = obtener_unidades_grupo(
         id_grupo_seleccionado) if id_grupo_seleccionado else []
+    unidad_ids = None
     if unidades_grupo:
-        opciones_unidad = [f"{id_unidad} - Unidad {numero_unidad}: {tema_unidad}"
+        unidad_ids = [str(id_unidad).strip()
+                      for id_unidad, numero_unidad, tema_unidad in unidades_grupo]
+        opciones_unidad = [f"Unidad {numero_unidad}: {tema_unidad}"
                            for id_unidad, numero_unidad, tema_unidad in unidades_grupo]
         e_unidad = CTkComboBox(form, values=opciones_unidad,
                                state="readonly", font=("Arial", 15), height=42)
@@ -1019,6 +1167,12 @@ def asignar_actividad(frame, id_grupo_seleccionado=None):
         valor = e_unidad.get().strip()
         if not valor:
             return None
+        if isinstance(e_unidad, CTkComboBox) and unidad_ids is not None:
+            try:
+                idx = opciones_unidad.index(valor)
+                return unidad_ids[idx]
+            except Exception:
+                pass
         return valor.split(" - ", 1)[0].strip()
 
     def id_tipo_actual():
@@ -1143,7 +1297,7 @@ def iniciar_maestro(matricula):
     ventana.withdraw()
     ventana.after(0, mostrar_maximizada)
 
-    frame_menu = CTkFrame(ventana, width=300,
+    frame_menu = CTkFrame(ventana, width=230,
                           corner_radius=0, fg_color=COLOR_SIDE)
     frame_menu.pack(side="left", fill="y")
     frame_menu.pack_propagate(False)
@@ -1158,4 +1312,4 @@ def iniciar_maestro(matricula):
 
 
 if __name__ == "__main__":
-    iniciar_maestro("")
+    iniciar_maestro("M001")

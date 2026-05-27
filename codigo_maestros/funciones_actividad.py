@@ -738,6 +738,7 @@ def abrir_modal_bonus(parent, id_registro, numero_control, nombre_completo, id_g
 
 def vista_bonus(frame, id_grupo):
     """Vista unificada de bonus: tabla con alumnos, bonus y promedio final."""
+    print(f"DEBUG: vista_bonus called with id_grupo={id_grupo}")
     for w in frame.winfo_children():
         w.destroy()
 
@@ -749,7 +750,14 @@ def vista_bonus(frame, id_grupo):
     CTkLabel(header, text="Asigna puntos bonus por unidad o por semestre a tus alumnos",
              font=("Arial", 13), text_color="#6B7280").pack(anchor="w", padx=4, pady=(2, 12))
 
-    # No fetch here; obtain the list when rendering filas to ensure fresh data
+    # Obtener alumnos y mostrar estado en la cabecera
+    alumnos = obtener_alumnos_grupo_bonus(id_grupo)
+    CTkLabel(header, text=f"Grupo: {id_grupo} — Alumnos: {len(alumnos)}",
+             font=("Arial", 12), text_color="#374151").pack(anchor="w", padx=4, pady=(0, 8))
+    if not alumnos:
+        CTkLabel(frame, text="No hay alumnos inscritos en este grupo.",
+                 font=("Arial", 16), text_color="gray").pack(pady=40)
+        return
 
     # Tabla
     tabla = CTkFrame(frame, fg_color="white", corner_radius=12,
