@@ -106,9 +106,11 @@ def obtener_unidades_grupo(id_grupo):
 
 def obtener_actividades_grupo(id_grupo):
     sql = """
-        SELECT DISTINCT U.id_unidad
-        FROM unidad U
+        SELECT DISTINCT A.id_unidad
+        FROM actividad A
+        JOIN unidad U ON A.id_unidad = U.id_unidad
         WHERE U.id_grupo = %s
+        ORDER BY A.id_unidad
     """
     filas = ejecutar_select(sql, (id_grupo,))
     if not filas:
@@ -802,260 +804,66 @@ def ver_grupo(frame, id_grupo):
     tabview.add("Bonus unidad")
     tabview.add("Bonus materia")
 
-    frame_info_general = CTkFrame(tabview.tab(
-        "Informacion general"), fg_color="#F2FBFD")
+    # Frames de cada pestaña
+    frame_info_general = CTkFrame(tabview.tab("Informacion general"), fg_color="#F2FBFD")
     frame_info_general.pack(fill="both", expand=True)
-    informacion_general_grupo(frame_info_general, id_grupo)
 
     frame_asignar = CTkFrame(tabview.tab(
         "Asignar actividad"), fg_color="#F2FBFD")
     frame_asignar.pack(fill="both", expand=True)
-    asignar_actividad(frame_asignar, id_grupo)
 
     frame_eliminar = CTkFrame(tabview.tab(
         "Eliminar actividad"), fg_color="#F2FBFD")
     frame_eliminar.pack(fill="both", expand=True)
-    eliminar_actividades(frame_eliminar, id_grupo)
 
     frame_pend = CTkFrame(tabview.tab("Actividades"), fg_color="#F2FBFD")
     frame_pend.pack(fill="both", expand=True)
-    pendientes(frame_pend, id_grupo)
 
     frame_bonus_u = CTkFrame(tabview.tab("Bonus unidad"), fg_color="#F2FBFD")
     frame_bonus_u.pack(fill="both", expand=True)
-    bonus_unidad_view(frame_bonus_u, id_grupo)
 
     frame_bonus_m = CTkFrame(tabview.tab("Bonus materia"), fg_color="#F2FBFD")
     frame_bonus_m.pack(fill="both", expand=True)
-    bonus_materia_view(frame_bonus_m, id_grupo)
+
+    # Renderizar la primera pestaña inmediatamente
+    informacion_general_grupo(frame_info_general, id_grupo)
+
+    # Lazy loading: renderizar cada pestaña solo cuando se selecciona
+    cargadas = {"Informacion general"}
+
+    def on_tab_change():
+        tab = tabview.get()
+        if tab in cargadas:
+            return
+        cargadas.add(tab)
+        if tab == "Asignar actividad":
+            asignar_actividad(frame_asignar, id_grupo)
+        elif tab == "Eliminar actividad":
+            eliminar_actividades(frame_eliminar, id_grupo)
+        elif tab == "Actividades":
+            pendientes(frame_pend, id_grupo)
+        elif tab == "Bonus unidad":
+            bonus_unidad_view(frame_bonus_u, id_grupo)
+        elif tab == "Bonus materia":
+            bonus_materia_view(frame_bonus_m, id_grupo)
+
+    tabview.configure(command=on_tab_change)
 
 
 def pendientes(frame, id_grupo):
-    limpiar_frame(frame)
+    from codigo_maestros.funciones_actividad import vista_actividades
 
-    # Obtener clave_grupo
-    sql_clave = "SELECT clave_grupo FROM grupo WHERE id_grupo = %s LIMIT 1"
-    resultado_clave = ejecutar_select(sql_clave, (id_grupo,))
-    clave_grupo = resultado_clave[0][0] if resultado_clave else id_grupo
+    sql = """
+        SELECT m.nombre_materia
+        FROM grupo g
+        JOIN materia m ON g.id_materia = m.id_materia
+        WHERE g.id_grupo = %s
+        LIMIT 1
+    """
+    resultado = ejecutar_select(sql, (id_grupo,))
+    nombre_materia = resultado[0][0] if resultado else ""
 
-    CTkLabel(frame, text=f"Actividades - Grupo {clave_grupo}", text_color="black", anchor="w",
-             font=("Arial Rounded MT Bold", 30)).pack(fill="x", padx=10, pady=10)
-    CTkLabel(frame, text="Por revisar = entregadas por alumno y aún sin calificación.",
-             text_color="gray", font=("Arial", 13)).pack(anchor="w", padx=12, pady=(0, 6))
-
-    actividades = obtener_actividades_grupo(id_grupo)
-
-    if not actividades:
-        CTkLabel(frame, text="No hay actividades para este grupo.",
-                 text_color="gray", font=("Arial", 14)).pack(pady=20)
-        return
-
-    detalles_frame = CTkFrame(frame, fg_color="white",
-                              border_width=2, border_color="#0E7490")
-    detalles_frame.pack(fill="x", padx=10, pady=10, ipady=10)
-
-    estado_detalle = {"seleccion": None, "visible": False}
-
-    def mostrar_placeholder_detalles():
-        limpiar_frame(detalles_frame)
-        CTkLabel(detalles_frame, text="Selecciona un alumno para ver detalles",
-                 text_color="gray", font=("Arial", 11)).pack(pady=20)
-        estado_detalle["seleccion"] = None
-        estado_detalle["visible"] = False
-
-    mostrar_placeholder_detalles()
-
-    tabview = CTkTabview(
-        frame,
-        fg_color="#F2FBFD",
-        segmented_button_fg_color="#BFEAF1",
-        segmented_button_selected_color=COLOR_MAIN,
-        segmented_button_selected_hover_color=COLOR_HOVER,
-        segmented_button_unselected_color="#7CC9D6",
-        segmented_button_unselected_hover_color="#5CB8C9",
-        text_color="white",
-    )
-    aplicar_fuente_tabview(tabview)
-    tabview.pack(fill="both", expand=True, padx=10, pady=10)
-    tabview.add("Por revisar")
-    tabview.add("Revisadas")
-
-    def render_detalle_alumno(id_actividad, id_registro, numero_control, nombre, apellido_p, apellido_m, editable):
-        clave_actual = (str(id_actividad), str(id_registro))
-        if estado_detalle["visible"] and estado_detalle["seleccion"] == clave_actual:
-            mostrar_placeholder_detalles()
-            return
-
-        limpiar_frame(detalles_frame)
-
-        alumnos = obtener_alumnos_actividad(id_grupo, id_actividad)
-        alumno_data = next(
-            (a for a in alumnos if a[1] == numero_control), None)
-        if not alumno_data:
-            return
-
-        actividad_data = next(
-            (a for a in actividades if a[0] == id_actividad), None)
-        if not actividad_data:
-            return
-
-        promedio_base, promedio_final = obtener_resumen_alumno(
-            id_registro, id_grupo)
-
-        frame_info = CTkFrame(detalles_frame, fg_color="#F5F5F5")
-        frame_info.pack(fill="x", padx=10, pady=10)
-
-        fila_titulo = CTkFrame(frame_info, fg_color="#F5F5F5")
-        fila_titulo.pack(fill="x", padx=8, pady=(4, 2))
-
-        CTkLabel(fila_titulo,
-                 text=f"Alumno: {numero_control} - {nombre} {apellido_p} {apellido_m}",
-                 text_color="black", font=("Arial Rounded MT Bold", 14)).pack(side="left", padx=2, pady=2)
-        CTkButton(fila_titulo, text="Cerrar", width=90,
-                  fg_color="#7CC9D6", hover_color="#5CB8C9",
-                  text_color="black", font=("Arial Rounded MT Bold", 12),
-                  command=mostrar_placeholder_detalles).pack(side="right", padx=2, pady=2)
-
-        # actividad_data: (id_actividad, id_unidad, detalles, ponderacion)
-        CTkLabel(frame_info, text=f"Actividad ID: {actividad_data[0]}",
-                 text_color="black", font=("Arial Rounded MT Bold", 13)).pack(anchor="w", padx=10, pady=4)
-        CTkLabel(frame_info, text=f"Detalles: {actividad_data[2]}",
-                 text_color="gray", font=("Arial", 10)).pack(anchor="w", padx=10, pady=3)
-        CTkLabel(frame_info, text=f"Ponderación: {actividad_data[3]}%",
-                 text_color="gray", font=("Arial", 10)).pack(anchor="w", padx=10, pady=3)
-
-        if alumno_data[6] is not None:
-            CTkLabel(frame_info, text=f"Calificación: {alumno_data[6]}",
-                     text_color="black", font=("Arial Rounded MT Bold", 12)).pack(anchor="w", padx=10, pady=3)
-        if alumno_data[7]:
-            CTkLabel(frame_info, text=f"Observaciones: {alumno_data[7]}",
-                     text_color="gray", font=("Arial", 10)).pack(anchor="w", padx=10, pady=3)
-
-        CTkLabel(frame_info, text=f"Promedio actual sin bonus: {promedio_base:.2f}",
-                 text_color="#0E7490", font=("Arial Rounded MT Bold", 12)).pack(anchor="w", padx=10, pady=3)
-        CTkLabel(frame_info, text=f"Promedio final con bonus: {promedio_final:.2f}",
-                 text_color="#1B5E20", font=("Arial Rounded MT Bold", 12)).pack(anchor="w", padx=10, pady=3)
-        CTkLabel(frame_info, text="Gestión de bonus disponible en pestañas: Bonus unidad / Bonus materia",
-                 text_color="#7A4B00", font=("Arial Rounded MT Bold", 12)).pack(anchor="w", padx=10, pady=(3, 6))
-
-        estado_detalle["seleccion"] = clave_actual
-        estado_detalle["visible"] = True
-
-        if not editable:
-            CTkLabel(detalles_frame,
-                     text="Esta actividad aún no está entregada; no se puede capturar calificación.",
-                     text_color="#B26A00", font=("Arial Rounded MT Bold", 12)).pack(anchor="w", padx=10, pady=(0, 10))
-            return
-
-        frame_entrada = CTkFrame(detalles_frame, fg_color="white")
-        frame_entrada.pack(fill="x", padx=10, pady=10)
-
-        e_calif = CTkEntry(frame_entrada, placeholder_text="Calificación")
-        e_obs = CTkEntry(frame_entrada, placeholder_text="Observaciones")
-        e_calif.pack(fill="x", padx=10, pady=6)
-        e_obs.pack(fill="x", padx=10, pady=6)
-
-        estado = CTkLabel(frame_entrada, text="", text_color="gray")
-        estado.pack(anchor="w", padx=10, pady=6)
-
-        def enviar_calificacion():
-            calif = a_numero(e_calif.get())
-            if calif is None:
-                estado.configure(text="Calificación inválida.",
-                                 text_color="#B00020")
-                return
-            try:
-                if alumno_data[5] is None:
-                    sql_insert = """
-                        INSERT INTO resultado (id_registro, id_actividad, calificacion, fecha_registro, observaciones)
-                        VALUES (%s, %s, %s, NOW(), %s)
-                    """
-                    ejecutar_insert(
-                        sql_insert, (id_registro, id_actividad, calif, e_obs.get().strip()))
-                else:
-                    sql_update = """
-                        UPDATE resultado
-                        SET calificacion = %s,
-                            observaciones = %s,
-                            fecha_modificacion = NOW()
-                        WHERE id_resultado = %s
-                    """
-                    ejecutar_insert(
-                        sql_update, (calif, e_obs.get().strip(), alumno_data[5]))
-
-                base_nuevo, final_nuevo = obtener_resumen_alumno(
-                    id_registro, id_grupo)
-                estado.configure(
-                    text=f"Resultado actualizado. Promedio final: {final_nuevo:.2f}",
-                    text_color="#1B5E20",
-                )
-            except Exception as ex:
-                estado.configure(text=f"Error: {ex}", text_color="#B00020")
-
-        CTkButton(frame_entrada, text="Enviar", fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
-                  font=BUTTON_FONT, command=enviar_calificacion).pack(anchor="e", padx=10, pady=10)
-
-    pending_scroll = CTkScrollableFrame(
-        tabview.tab("Por revisar"), fg_color="#F2FBFD")
-    pending_scroll.pack(fill="both", expand=True, padx=5, pady=5)
-
-    for id_actividad, id_unidad, detalles, ponderacion in actividades:
-        frame_act = CTkFrame(pending_scroll, fg_color="white",
-                             border_width=1, border_color="#E0E0E0")
-        frame_act.pack(fill="x", padx=5, pady=5)
-
-        CTkLabel(frame_act, text=f"Actividad {id_actividad} - U{id_unidad}", text_color="black",
-                 font=("Arial Rounded MT Bold", 12)).pack(anchor="w", padx=10, pady=6)
-
-        alumnos = obtener_alumnos_actividad(id_grupo, id_actividad)
-        hay_pendientes = False
-        for id_reg, num_ctrl, nombre, ape_p, ape_m, id_res, calif, obs, estado_al in alumnos:
-            if estado_al == "Por revisar":
-                hay_pendientes = True
-
-                def make_callback(ia, ir, nc, n, ap, am):
-                    return lambda: render_detalle_alumno(ia, ir, nc, n, ap, am, editable=True)
-                CTkButton(frame_act, text=f"  {num_ctrl} - {nombre} {ape_p}", anchor="w",
-                          fg_color="#FFF3E0", text_color="black", hover_color="#FFE0B2",
-                          font=BUTTON_FONT, height=28,
-                          command=make_callback(
-                              id_actividad, id_reg, num_ctrl, nombre, ape_p, ape_m)
-                          ).pack(fill="x", padx=8, pady=2)
-
-        if not hay_pendientes:
-            CTkLabel(frame_act, text="  Sin actividades por revisar",
-                     text_color="gray", font=("Arial", 9)).pack(anchor="w", padx=10, pady=4)
-
-    entregadas_scroll = CTkScrollableFrame(
-        tabview.tab("Revisadas"), fg_color="#F2FBFD")
-    entregadas_scroll.pack(fill="both", expand=True, padx=5, pady=5)
-
-    for id_actividad, id_unidad, detalles, ponderacion in actividades:
-        frame_act = CTkFrame(entregadas_scroll, fg_color="white",
-                             border_width=1, border_color="#E0E0E0")
-        frame_act.pack(fill="x", padx=5, pady=5)
-
-        CTkLabel(frame_act, text=f"Actividad {id_actividad} - U{id_unidad}", text_color="black",
-                 font=("Arial Rounded MT Bold", 12)).pack(anchor="w", padx=10, pady=6)
-
-        alumnos = obtener_alumnos_actividad(id_grupo, id_actividad)
-        hay_entregadas = False
-        for id_reg, num_ctrl, nombre, ape_p, ape_m, id_res, calif, obs, estado_al in alumnos:
-            if estado_al == "Revisada":
-                hay_entregadas = True
-
-                def make_callback_entregada(ia, ir, nc, n, ap, am):
-                    return lambda: render_detalle_alumno(ia, ir, nc, n, ap, am, editable=True)
-                CTkButton(frame_act, text=f"  {num_ctrl} - {nombre} {ape_p}", anchor="w",
-                          fg_color="#E8F5E9", text_color="black", hover_color="#C8E6C9",
-                          font=BUTTON_FONT, height=28,
-                          command=make_callback_entregada(
-                              id_actividad, id_reg, num_ctrl, nombre, ape_p, ape_m)
-                          ).pack(fill="x", padx=8, pady=2)
-
-        if not hay_entregadas:
-            CTkLabel(frame_act, text="  Sin actividades revisadas",
-                     text_color="gray", font=("Arial", 9)).pack(anchor="w", padx=10, pady=4)
+    vista_actividades(frame, id_grupo, nombre_materia)
 
 
 def eliminar_actividades(frame, id_grupo):
