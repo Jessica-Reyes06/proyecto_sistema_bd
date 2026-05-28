@@ -1618,7 +1618,7 @@ def mostrar_calificaciones_finales(frame):
 
         filtro = barra_busqueda.get().strip()
 
-        # Consulta SQL con JOINs y cálculo de bonuses
+        # Listar desde registro para no depender de calificacion_final poblada
         sql = """
         SELECT
             cf.id_final,
@@ -1627,11 +1627,9 @@ def mostrar_calificaciones_finales(frame):
             g.clave_grupo as grupo,
             m.nombre_materia as materia,
             CONCAT(g.periodo, ' ', g.years) as periodo,
-            cf.calificacion +
-            COALESCE((SELECT SUM(valor) FROM BonusMateria WHERE id_registro = r.id_registro), 0) +
-            COALESCE((SELECT SUM(bu.valor) FROM BonusUnidad bu WHERE bu.id_registro = r.id_registro), 0) as calificacion_final
-        FROM Calificacion_final cf
-        JOIN Registro r ON cf.id_registro = r.id_registro
+            r.id_registro
+        FROM Registro r
+        LEFT JOIN Calificacion_final cf ON cf.id_registro = r.id_registro
         JOIN Alumno a ON r.id_alumno = a.id_alumno
         JOIN Grupo g ON r.id_grupo = g.id_grupo
         JOIN Materia m ON g.id_materia = m.id_materia
@@ -1649,17 +1647,55 @@ def mostrar_calificaciones_finales(frame):
             resultados = ejecutar_select(
                 sql, tuple(params) if params else None)
 
-            # Transformar al formato esperado
+            # Transformar y calcular final con la fórmula vigente:
+            # promedio(unidades calculadas desde resultado+ponderación) + bonus materia
             datos = []
             for row in resultados:
+                id_final, numero_control, alumno, grupo, materia, periodo, id_registro = row
+
+                filas_unidad = ejecutar_select(
+                    """
+                    SELECT A.id_unidad, A.ponderacion, RES.calificacion
+                    FROM unidad U
+                    JOIN actividad A ON A.id_unidad = U.id_unidad
+                    LEFT JOIN resultado RES
+                        ON RES.id_registro = %s
+                       AND RES.id_actividad = A.id_actividad
+                    WHERE U.id_grupo = (
+                        SELECT id_grupo FROM registro WHERE id_registro = %s LIMIT 1
+                    )
+                    """,
+                    (id_registro, id_registro),
+                )
+
+                por_unidad = {}
+                for id_unidad, ponderacion, calificacion in filas_unidad:
+                    if calificacion is None:
+                        continue
+                    clave = str(id_unidad).strip()
+                    por_unidad.setdefault(clave, 0.0)
+                    por_unidad[clave] += float(calificacion) * (float(ponderacion or 0) / 100.0)
+
+                if por_unidad:
+                    promedio_unidades = sum(min(100.0, v) for v in por_unidad.values()) / len(por_unidad)
+                else:
+                    promedio_unidades = 0.0
+
+                bonus_materia = ejecutar_select(
+                    "SELECT COALESCE(SUM(valor), 0) FROM BonusMateria WHERE id_registro = %s",
+                    (id_registro,),
+                )
+                bonus_materia = float(bonus_materia[0][0]) if bonus_materia and bonus_materia[0] else 0.0
+                calificacion_final = min(100.0, round(promedio_unidades + bonus_materia, 2))
+
                 datos.append((
-                    row[0],  # id_final (para editar/eliminar)
-                    row[1],  # numero_control
-                    row[2],  # alumno (nombre completo)
-                    row[3],  # grupo
-                    row[4],  # materia
-                    row[5],  # periodo
-                    f"{float(row[6]):.1f}"  # calificacion_final formateada
+                    id_final,  # id_final (puede ser None si aún no existe registro consolidado)
+                    numero_control,
+                    alumno,
+                    grupo,
+                    materia,
+                    periodo,
+                    f"{calificacion_final:.1f}"
                 ))
 
         except Exception as e:
@@ -1887,11 +1923,9 @@ def mostrar_reporte_grupal(frame, clave_grupo):
 
     # ── CONSULTAR UNIDADES DEL GRUPO ─────────────────────────
     unidades = ejecutar_select("""
-    SELECT DISTINCT cu.id_unidad, u.numero_unidad
-    FROM calificaciones_unidad cu
-    JOIN unidad u ON cu.id_unidad = u.id_unidad
-    JOIN registro r ON cu.id_registro = r.id_registro
-    WHERE r.id_grupo = %s
+    SELECT u.id_unidad, u.numero_unidad
+    FROM unidad u
+    WHERE u.id_grupo = %s
     ORDER BY u.numero_unidad
 """, (id_grupo,))
 
@@ -1917,16 +1951,32 @@ def mostrar_reporte_grupal(frame, clave_grupo):
         nombre_completo = f"{nombre} {ap} {am or ''}".strip()
 
         cals_unidad = ejecutar_select("""
-            SELECT id_unidad, calificacion
-            FROM calificaciones_unidad
-            WHERE id_registro = %s
-        """, (id_registro,))
+            SELECT A.id_unidad, A.ponderacion, RES.calificacion
+            FROM unidad U
+            JOIN actividad A ON A.id_unidad = U.id_unidad
+            LEFT JOIN resultado RES
+                ON RES.id_registro = %s
+               AND RES.id_actividad = A.id_actividad
+            WHERE U.id_grupo = %s
+        """, (id_registro, id_grupo))
 
-        cal_por_unidad = {cu[0]: float(cu[1]) for cu in cals_unidad}
+        cal_por_unidad = {}
+        for id_unidad, ponderacion, calificacion in cals_unidad:
+            if calificacion is None:
+                continue
+            cal_por_unidad.setdefault(id_unidad, 0.0)
+            cal_por_unidad[id_unidad] += float(calificacion) * (float(ponderacion or 0) / 100.0)
+
+        promedio_base = (sum(min(100.0, v) for v in cal_por_unidad.values()) / len(cal_por_unidad)) if cal_por_unidad else 0.0
+        bonus_materia = ejecutar_select(
+            "SELECT COALESCE(SUM(valor), 0) FROM BonusMateria WHERE id_registro = %s",
+            (id_registro,)
+        )
+        bonus_materia = float(bonus_materia[0][0]) if bonus_materia and bonus_materia[0] else 0.0
         filas.append({
             "nombre": nombre_completo,
             "unidades": cal_por_unidad,
-            "final": float(cal_final) if cal_final else None
+            "final": min(100.0, round(promedio_base + bonus_materia, 2)) if cal_por_unidad else 0.0
         })
 
     # ── CALCULAR ESTADÍSTICAS ────────────────────────────────

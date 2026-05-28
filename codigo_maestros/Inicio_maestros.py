@@ -17,10 +17,15 @@ frame_contenido = None
 matricula_maestro = None
 nombre_maestro = None
 
-COLOR_SIDE = "#DFF4F7"
+COLOR_SIDE = "#e3efff"
 COLOR_MAIN = "#0E7490"
 COLOR_HOVER = "#155E75"
-BUTTON_FONT = ("Arial Rounded MT Bold", 16)
+COLOR_AZUL = "#2563EB"
+BUTTON_FONT = ("Arial", 16)
+FORMAL_FONT = ("Arial", 16)
+FORMAL_FONT_SMALL = ("Arial", 13)
+FORMAL_FONT_BOLD = ("Arial", 16, "bold")
+FORMAL_FONT_TITLE = ("Arial", 30, "bold")
 BONUS_UNIDAD_TABLE = None
 BONUS_MATERIA_TABLE = None
 _btn_nav_activo = [None]
@@ -44,8 +49,26 @@ def cerrar_sesion():
     importlib.reload(interfaz_login)
 
 
-def crear_icono(ruta, size=(20, 20)):
-    return CTkImage(light_image=Image.open(ruta), size=size)
+def crear_icono(ruta, size=(20, 20), color=None):
+    """Crea un CTkImage desde ruta. Si se pasa `color` (hex), pinta la silueta del icono de ese color.
+    Esto funciona asumiendo que el recurso tiene un canal alpha con la forma del icono.
+    """
+    try:
+        img = Image.open(ruta).convert("RGBA")
+        if color:
+            # convertir hex a RGB
+            hexc = color.lstrip("#")
+            r = int(hexc[0:2], 16)
+            g = int(hexc[2:4], 16)
+            b = int(hexc[4:6], 16)
+            color_img = Image.new("RGBA", img.size, (r, g, b, 255))
+            alpha = img.split()[3]
+            colored = Image.new("RGBA", img.size)
+            colored.paste(color_img, (0, 0), mask=alpha)
+            return CTkImage(light_image=colored, size=size)
+        return CTkImage(light_image=img, size=size)
+    except Exception:
+        return None
 
 
 def obtener_datos_maestro(matricula):
@@ -121,10 +144,18 @@ def obtener_actividades_grupo(id_grupo):
     ids_unidad = [f[0] for f in filas]
     marcadores = ",".join(["%s"] * len(ids_unidad))
     sql2 = f"""
-        SELECT A.id_actividad, A.id_unidad, A.detalles, A.ponderacion
+        SELECT A.id_actividad,
+               A.id_unidad,
+               U.numero_unidad,
+               A.id_tipo,
+               COALESCE(TA.nombre, '') AS tipo_actividad,
+               A.detalles,
+               A.ponderacion
         FROM actividad A
+        JOIN unidad U ON A.id_unidad = U.id_unidad
+        LEFT JOIN tipos_actividades TA ON A.id_tipo = TA.id_tipo
         WHERE A.id_unidad IN ({marcadores})
-        ORDER BY A.id_unidad, A.id_actividad
+        ORDER BY U.numero_unidad, A.id_actividad
     """
     return ejecutar_select(sql2, tuple(ids_unidad))
 
@@ -203,12 +234,10 @@ def obtener_suma_ponderaciones(id_grupo, id_unidad):
 def obtener_bonus_unidad(id_registro, id_unidad):
     tabla_bonus_unidad, _ = asegurar_tablas_bonus()
     sql = """
-        SELECT valor
+        SELECT COALESCE(SUM(valor), 0)
         FROM {tabla}
         WHERE id_registro = %s
           AND id_unidad = %s
-        ORDER BY "id_bonusUnidad" DESC
-        LIMIT 1
     """.format(tabla=tabla_bonus_unidad)
     filas = ejecutar_select(sql, (id_registro, id_unidad))
     if not filas:
@@ -229,13 +258,11 @@ def guardar_bonus_unidad(id_registro, id_unidad, valor_bonus, justificacion_text
 def obtener_bonus_materia(id_registro, id_grupo):
     _, tabla_bonus_materia = asegurar_tablas_bonus()
     sql = """
-        SELECT valor
+        SELECT COALESCE(SUM(valor), 0)
         FROM {tabla} BM
         JOIN registro R ON BM.id_registro = R.id_registro
         WHERE BM.id_registro = %s
           AND R.id_grupo = %s
-        ORDER BY "id_bonusMateria" DESC
-        LIMIT 1
     """.format(tabla=tabla_bonus_materia)
     filas = ejecutar_select(sql, (id_registro, id_grupo))
     if not filas:
@@ -504,7 +531,7 @@ def calcular_calificaciones_unidad_alumno(id_registro, id_grupo):
             ON RES.id_actividad = A.id_actividad
             AND RES.id_registro = %s
         WHERE U.id_grupo = %s
-        ORDER BY A.id_unidad
+        ORDER BY U.numero_unidad, A.id_actividad
     """
     filas = ejecutar_select(sql, (id_registro, id_grupo))
 
@@ -525,6 +552,48 @@ def calcular_calificaciones_unidad_alumno(id_registro, id_grupo):
         por_unidad[clave]["tiene_calif"] = True
 
     return por_unidad
+
+
+def obtener_resumen_alumno(id_registro, id_grupo):
+    sql = """
+        SELECT A.id_unidad, A.ponderacion, RES.calificacion
+        FROM unidad U
+        JOIN actividad A ON A.id_unidad = U.id_unidad
+        LEFT JOIN resultado RES
+            ON RES.id_registro = %s AND RES.id_actividad = A.id_actividad
+        WHERE U.id_grupo = %s
+    """
+    filas = ejecutar_select(sql, (id_registro, id_grupo))
+    if not filas:
+        return 0.0, 0.0
+
+    unidades = {}
+    for id_unidad, ponderacion, calificacion in filas:
+        clave = str(id_unidad).strip()
+        if clave not in unidades:
+            unidades[clave] = {"base": 0.0}
+
+        por = a_numero(ponderacion) or 0.0
+        cal = a_numero(calificacion)
+        if cal is None:
+            continue
+        unidades[clave]["base"] += cal * (por / 100.0)
+
+    if not unidades:
+        return 0.0, 0.0
+
+    suma_base = 0.0
+    suma_final = 0.0
+    for clave, data in unidades.items():
+        bonus = obtener_bonus_unidad(id_registro, clave)
+        base = min(100.0, data["base"])
+        final = min(100.0, base + bonus)
+        suma_base += base
+        suma_final += final
+
+    promedio_base = round(suma_base / len(unidades), 2)
+    promedio_final = round(suma_final / len(unidades), 2)
+    return promedio_base, promedio_final
 
 
 def crear_tabla_participantes_con_calificaciones(parent, id_grupo):
@@ -681,7 +750,7 @@ def agregar_unidad_general(frame):
                 text_color="#B00020",
             )
             return {}
-        
+
         unidades = obtener_unidades_grupo(grupo)
 
         total = int(numero_unidades[0][2] if numero_unidades else 5)
@@ -697,7 +766,7 @@ def agregar_unidad_general(frame):
             for numero in range(1, total + 1)
             if numero not in existentes
         ]
-        
+
         return unidades_disponibles
 
     def guardar_unidad_general():
@@ -705,7 +774,7 @@ def agregar_unidad_general(frame):
         tema = e_tema.get().strip()
         descripcion = e_desc.get().strip()
         grupo = grupo_seleccionado.get().strip()
-        
+
         if not numero or not tema:
             estado.configure(
                 text="Número de unidad y tema son obligatorios.", text_color="#B00020")
@@ -740,13 +809,13 @@ def menu_opciones(frame_menu):
     # ── Logo ──────────────────────────────────────────────────────────────
     try:
         logo_img = CTkImage(light_image=Image.open(
-            "carpeta_iconos/general/logo.jpeg"), size=(130, 55))
-        frame_logo = CTkFrame(frame_menu, fg_color="#003152", corner_radius=0)
+            "carpeta_iconos/general/logo.jpeg"), size=(200, 95))
+        frame_logo = CTkFrame(frame_menu, fg_color="#FFFFFF", corner_radius=0)
         frame_logo.pack(fill="x")
         CTkLabel(frame_logo, text="", image=logo_img,
-                 bg_color="#003152").pack(padx=10, pady=8)
+                 bg_color="#FFFFFF").pack(padx=10, pady=8)
     except Exception:
-        frame_logo = CTkFrame(frame_menu, fg_color="#003152",
+        frame_logo = CTkFrame(frame_menu, fg_color="#FFFFFF",
                               corner_radius=0, height=65)
         frame_logo.pack(fill="x")
 
@@ -781,19 +850,20 @@ def menu_opciones(frame_menu):
     frame_bottom = CTkFrame(frame_menu, fg_color=COLOR_SIDE, corner_radius=0)
     frame_bottom.pack(side="bottom", fill="x", padx=8, pady=10)
     try:
-        salida_icon = crear_icono("carpeta_iconos/iconos_alumnos/salida.png")
+        salida_icon = crear_icono("carpeta_iconos/iconos_alumnos/salida.png", size=(22, 22), color="#1a1a1a")
     except Exception:
         salida_icon = None
     CTkButton(frame_bottom,
               text="  Cerrar Sesión",
               image=salida_icon,
               anchor="w",
-              fg_color="transparent",
-              hover_color="#C9E8EE",
+              fg_color="white",
+              hover_color="#EAF6FF",
               text_color="#1a1a1a",
               font=BUTTON_FONT,
               command=cerrar_sesion,
-              corner_radius=8).pack(pady=5, padx=8, fill="x")
+              corner_radius=12,
+              height=56).pack(pady=10, padx=12, fill="x")
 
     # ── Botones de navegación ─────────────────────────────────────────────
     frame_nav = CTkFrame(frame_menu, fg_color=COLOR_SIDE)
@@ -803,17 +873,17 @@ def menu_opciones(frame_menu):
 
     btn_grupos = nav_btn(
         frame_nav, "Mis Grupos",
-        crear_icono("carpeta_iconos/iconos_alumnos/hogar.png"),
+        crear_icono("carpeta_iconos/iconos_alumnos/hogar.png", size=(22,22), color="#1a1a1a"),
         lambda: mis_grupos(frame_contenido))
 
     nav_btn(
         frame_nav, "Agregar Unidad",
-        crear_icono("carpeta_iconos/iconos_alumnos/lista.png"),
+        crear_icono("carpeta_iconos/iconos_alumnos/lista.png", size=(22,22), color="#1a1a1a"),
         lambda: agregar_unidad_general(frame_contenido))
 
     nav_btn(
         frame_nav, "Configuracion de Perfil",
-        crear_icono("carpeta_iconos/iconos_admin/usuario.png"),
+        crear_icono("carpeta_iconos/iconos_admin/usuario.png", size=(22,22), color="#1a1a1a"),
         lambda: Configuracion_Perfil_Maestro())
 
     # Activar "Mis Grupos" por defecto
@@ -1078,9 +1148,9 @@ def nav_btn(parent, texto, img, cmd):
         if _btn_nav_activo[0] is not None:
             try:
                 _btn_nav_activo[0].configure(
-                    fg_color="transparent",
+                    fg_color="white",
                     text_color="#1a1a1a",
-                    hover_color="#C9E8EE"
+                    hover_color="#EAF6FF"
                 )
             except Exception:
                 pass
@@ -1094,14 +1164,15 @@ def nav_btn(parent, texto, img, cmd):
         text=f"  {texto}",
         image=img,
         anchor="w",
-        fg_color="transparent",
-        hover_color="#C9E8EE",
+        fg_color="white",
+        hover_color="#EAF6FF",
         text_color="#1a1a1a",
         font=BUTTON_FONT,
         command=on_click,
-        corner_radius=8
+        corner_radius=12,
+        height=56
     )
-    b.pack(pady=5, padx=8, fill="x")
+    b.pack(pady=10, padx=12, fill="x")
     return b
 
 
@@ -1113,7 +1184,7 @@ def btn(parent, texto, img, cmd):
 
 def aplicar_fuente_tabview(tabview):
     try:
-        tabview._segmented_button.configure(font=("Arial Rounded MT Bold", 16))
+        tabview._segmented_button.configure(font=("Arial", 16, "bold"))
     except Exception:
         pass
 
@@ -1275,7 +1346,7 @@ def pendientes(frame, id_grupo):
 def eliminar_actividades(frame, id_grupo):
     limpiar_frame(frame)
     CTkLabel(frame, text="Eliminar actividades", text_color="black", anchor="w",
-             font=("Arial Rounded MT Bold", 30)).pack(fill="x", padx=10, pady=10)
+             font=("Arial", 30, "bold")).pack(fill="x", padx=10, pady=10)
     CTkLabel(frame, text="Elimina actividades asignadas previamente en este grupo.",
              text_color="gray", font=("Arial", 14)).pack(anchor="w", padx=12, pady=(0, 8))
 
@@ -1291,17 +1362,29 @@ def eliminar_actividades(frame, id_grupo):
                  text_color="gray", font=("Arial", 14)).pack(anchor="w", padx=10, pady=10)
         return
 
-    for id_actividad, id_unidad, detalles, ponderacion in actividades:
+    for id_actividad, id_unidad, numero_unidad, id_tipo, tipo_actividad, detalles, ponderacion in actividades:
         card = CTkFrame(contenedor, fg_color="white",
                         border_width=1, border_color="#E0E0E0")
         card.pack(fill="x", padx=5, pady=6)
 
-        CTkLabel(card, text=f"Actividad {id_actividad} - Unidad {id_unidad}", text_color="black",
-                 font=("Arial Rounded MT Bold", 14)).pack(anchor="w", padx=10, pady=(8, 2))
-        CTkLabel(card, text=f"Ponderación: {ponderacion}%",
-                 text_color="#444444", font=("Arial", 12)).pack(anchor="w", padx=10, pady=2)
-        CTkLabel(card, text=f"Detalles: {detalles}", text_color="#666666",
-                 font=("Arial", 11)).pack(anchor="w", padx=10, pady=(0, 8))
+        etiqueta_tipo = tipo_actividad.strip() if tipo_actividad else f"Tipo {id_tipo}" if id_tipo is not None else "Tipo sin asignar"
+        card.configure(height=165)
+        card.pack_propagate(False)
+        contenido = CTkFrame(card, fg_color="transparent")
+        contenido.pack(fill="both", expand=True, padx=16, pady=(8, 4))
+
+        CTkLabel(contenido, text=f"{etiqueta_tipo}", text_color="black",
+               font=("Arial", 16, "bold")).pack(anchor="w")
+        badge_unidad = CTkFrame(contenido, fg_color=COLOR_AZUL, corner_radius=12)
+        badge_unidad.pack(anchor="w", pady=(4, 4))
+        CTkLabel(badge_unidad, text=f"Unidad {numero_unidad}", text_color="white",
+               font=("Arial", 12, "bold"), padx=12, pady=4).pack()
+        CTkLabel(contenido, text=f"ID actividad: {id_actividad}",
+               text_color="#555555", font=("Arial", 11)).pack(anchor="w", pady=(0, 4))
+        CTkLabel(contenido, text=f"Ponderación: {ponderacion}%",
+               text_color="#444444", font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 2))
+        CTkLabel(contenido, text=f"Detalles: {detalles}", text_color="#666666",
+               font=("Arial", 10), wraplength=720, justify="left").pack(anchor="w", pady=(0, 2))
 
         def eliminar_actual(ia=id_actividad):
             try:
@@ -1313,9 +1396,10 @@ def eliminar_actividades(frame, id_grupo):
                 estado.configure(
                     text=f"No se pudo eliminar la actividad {ia}: {ex}", text_color="#B00020")
 
-        CTkButton(card, text="Eliminar", fg_color="#B00020", hover_color="#8E0000",
-                  font=("Arial Rounded MT Bold", 13), width=120,
-                  command=eliminar_actual).pack(anchor="e", padx=10, pady=(0, 10))
+        CTkButton(contenido, text="Eliminar", fg_color="#B00020", hover_color="#8E0000",
+              font=("Arial", 14, "bold"), width=160, height=38,
+              corner_radius=10,
+              command=eliminar_actual).place(relx=0.98, rely=0.78, anchor="e")
 
 
 def mis_grupos(frame):
@@ -1336,13 +1420,23 @@ def mis_grupos(frame):
                      row=0, column=0, padx=10, pady=10, sticky="w")
         return
 
-    # Intentar cargar ícono de grupo; varios nombres posibles
+    # Intentar cargar ícono de grupo: preferir el recurso en carpeta 'general', luego caer a iconos_alumnos
     grupo_icon = None
-    for nombre_icono in ("usuarios.png", "grupo.png", "archivo-de-carpetas.png", "avatar.png"):
+    posibles = [
+        "carpeta_iconos/general/grupo.png",
+        "carpeta_iconos/general/grupo.jpeg",
+        "carpeta_iconos/general/grupo.jpg",
+        "carpeta_iconos/iconos_alumnos/grupo.png",
+        "carpeta_iconos/iconos_alumnos/usuarios.png",
+        "carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png",
+        "carpeta_iconos/iconos_alumnos/avatar.png",
+    ]
+    # DESPUÉS:
+    for ruta in posibles:
         try:
-            grupo_icon = crear_icono(
-                f"carpeta_iconos/iconos_alumnos/{nombre_icono}", (70, 70))
-            break
+            grupo_icon = crear_icono(ruta, (70, 70), color="#FFFFFF")
+            if grupo_icon:
+                break
         except Exception:
             continue
 
@@ -1353,10 +1447,10 @@ def mis_grupos(frame):
         # ── Tarjeta exterior (fondo teal con esquinas redondeadas) ────────
         card = CTkFrame(
             cont,
-            fg_color=COLOR_MAIN,
+            fg_color="#4b7b9c",
             corner_radius=14,
-            width=210,
-            height=220,
+            width=260,
+            height=210,
             cursor="hand2"
         )
         card.grid(row=r, column=c, padx=10, pady=10)
@@ -1365,12 +1459,12 @@ def mis_grupos(frame):
 
         # ── Ícono centrado en la parte teal ──────────────────────────────
         lbl_icon = CTkLabel(card, text="", image=grupo_icon,
-                            fg_color="transparent")
-        lbl_icon.pack(expand=True)
+                    fg_color="transparent")
+        lbl_icon.pack(expand=True, fill="both", padx=20, pady=(14, 8))
 
         # ── Sección blanca inferior ───────────────────────────────────────
         bottom = CTkFrame(card, fg_color="white", corner_radius=10)
-        bottom.pack(fill="x", side="bottom", padx=3, pady=3)
+        bottom.pack(fill="x", side="bottom", padx=6, pady=(0, 6))
 
         lbl_clave = CTkLabel(bottom, text=clave_grupo, text_color=COLOR_MAIN,
                              font=("Arial Rounded MT Bold", 20))
@@ -1602,7 +1696,7 @@ def iniciar_maestro(matricula):
 
     frame_contenido = CTkFrame(ventana, fg_color="white")
     frame_contenido.pack(side="left", fill="both",
-                         expand=True, padx=20, pady=10)
+                         expand=True, padx=20, pady=(40, 10))
 
     menu_opciones(frame_menu)
     mis_grupos(frame_contenido)
