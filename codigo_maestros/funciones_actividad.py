@@ -405,6 +405,27 @@ def vista_calificacion(frame, id_grupo, id_actividad, tipo_actividad, detalles, 
 
 # ── BONUS ─────────────────────────────────────────────────────────────────────
 
+def calcular_resultado_unidad(id_registro, id_unidad):
+    """Resultado Unidad = Σ(Calificación Actividad × Peso/100)"""
+    filas = ejecutar_select("""
+        SELECT A.ponderacion, RES.calificacion
+        FROM actividad A
+        LEFT JOIN resultado RES
+            ON RES.id_actividad = A.id_actividad
+            AND RES.id_registro = %s
+        WHERE A.id_unidad = %s
+    """, (id_registro, id_unidad))
+    total = 0.0
+    for ponderacion, calificacion in filas:
+        try:
+            por = float(ponderacion) if ponderacion else 0.0
+            cal = float(calificacion) if calificacion is not None else 0.0
+        except Exception:
+            continue
+        total += cal * (por / 100.0)
+    return round(total, 2)
+
+
 def obtener_alumnos_grupo_bonus(id_grupo):
     sql = """
         SELECT R.id_registro, A.numero_control, A.nombre_alumno,
@@ -610,14 +631,33 @@ def abrir_modal_bonus(parent, id_registro, numero_control, nombre_completo, id_g
              font=("Arial", 10, "bold"), text_color="#6B7280",
              fg_color="transparent").pack(anchor="w", padx=12, pady=(10, 4))
 
-    promedio_actual = obtener_promedio_final_alumno(id_registro, id_grupo)
+    # Base para el cálculo: depende del tipo de bonus
+    # Para unidad: mostramos el resultado actual de esa unidad
+    # Para semestre: mostramos la calificación final actual (sin bonus semestre)
+    def get_base_calculo():
+        if tipo_var.get() == "unidad" and ids_unidad:
+            idx = opciones_unidad.index(cb_unidad.get()) if cb_unidad.get() in opciones_unidad else 0
+            id_u = ids_unidad[idx]
+            return calcular_resultado_unidad(id_registro, int(id_u))
+        else:
+            return obtener_promedio_final_alumno(id_registro, id_grupo)
+
+    def get_label_base():
+        if tipo_var.get() == "unidad":
+            return "Calificación Unidad Actual:"
+        return "Calificación Final Actual:"
+
+    base_actual = get_base_calculo()
 
     fila_actual = CTkFrame(sep_calc, fg_color="transparent")
     fila_actual.pack(fill="x", padx=12, pady=2)
-    CTkLabel(fila_actual, text="Calificación Actual:", font=("Arial", 13),
-             text_color="#374151", fg_color="transparent").pack(side="left")
-    CTkLabel(fila_actual, text=f"{promedio_actual:.1f}", font=("Arial Rounded MT Bold", 15),
-             text_color="#0F172A", fg_color="transparent").pack(side="right")
+    lbl_cal_texto = CTkLabel(fila_actual, text=get_label_base(), font=("Arial", 13),
+                              text_color="#374151", fg_color="transparent")
+    lbl_cal_texto.pack(side="left")
+    lbl_cal_valor = CTkLabel(fila_actual, text=f"{base_actual:.1f}",
+                              font=("Arial Rounded MT Bold", 15),
+                              text_color="#0F172A", fg_color="transparent")
+    lbl_cal_valor.pack(side="right")
 
     fila_bonus = CTkFrame(sep_calc, fg_color="transparent")
     fila_bonus.pack(fill="x", padx=12, pady=2)
@@ -633,31 +673,38 @@ def abrir_modal_bonus(parent, id_registro, numero_control, nombre_completo, id_g
     fila_op.pack(fill="x", padx=12, pady=2)
     CTkLabel(fila_op, text="Operación:", font=("Arial", 11),
              text_color="#9CA3AF", fg_color="transparent").pack(anchor="center")
-    lbl_operacion = CTkLabel(fila_op, text=f"{promedio_actual:.1f} + 0.0 = {promedio_actual:.1f}",
+    lbl_operacion = CTkLabel(fila_op, text=f"{base_actual:.1f} + 0.0 = {base_actual:.1f}",
                               font=("Arial", 13), text_color="#374151", fg_color="transparent")
     lbl_operacion.pack(anchor="center")
 
     fila_final = CTkFrame(sep_calc, fg_color="transparent")
     fila_final.pack(fill="x", padx=12, pady=(4, 12))
-    CTkLabel(fila_final, text="Calificación Final:", font=("Arial Rounded MT Bold", 14),
+    CTkLabel(fila_final, text="Resultado con Bonus:", font=("Arial Rounded MT Bold", 14),
              text_color="#0F172A", fg_color="transparent").pack(side="left")
-    lbl_final_preview = CTkLabel(fila_final, text=f"{promedio_actual:.1f}",
+    lbl_final_preview = CTkLabel(fila_final, text=f"{base_actual:.1f}",
                                   font=("Arial Rounded MT Bold", 22),
                                   text_color="#1B5E20", fg_color="transparent")
     lbl_final_preview.pack(side="right")
 
     def actualizar_calculo(*_):
+        base = get_base_calculo()
+        lbl_cal_texto.configure(text=get_label_base())
+        lbl_cal_valor.configure(text=f"{base:.1f}")
         try:
             b = float(e_bonus.get().strip())
         except Exception:
             b = 0.0
-        nueva = round(min(100.0, promedio_actual + b), 1)
+        nueva = round(min(100.0, base + b), 1)
         lbl_bonus_preview.configure(text=f"+{b:.1f}")
-        lbl_operacion.configure(text=f"{promedio_actual:.1f} + {b:.1f} = {nueva:.1f}")
+        lbl_operacion.configure(text=f"{base:.1f} + {b:.1f} = {nueva:.1f}")
         lbl_final_preview.configure(text=f"{nueva:.1f}",
-                                     text_color="#1B5E20" if nueva >= 60 else "#B00020")
+                                     text_color="#1B5E20" if nueva >= 70 else "#B00020")
 
     e_bonus.bind("<KeyRelease>", actualizar_calculo)
+    # Actualizar cuando cambia tipo o unidad
+    btn_unidad.configure(command=lambda: (sel_unidad(), actualizar_calculo()))
+    btn_semestre.configure(command=lambda: (sel_semestre(), actualizar_calculo()))
+    cb_unidad.configure(command=lambda v: (lbl_res_unidad.configure(text=f"Unidad: {v}"), actualizar_calculo()))
 
     lbl_estado = CTkLabel(scroll_modal, text="", font=("Arial", 13),
                           text_color="gray", fg_color="white", wraplength=500)
@@ -828,7 +875,7 @@ def vista_bonus(frame, id_grupo):
             # Promedio final
             CTkLabel(scroll, text=f"{promedio:.1f}",
                      font=("Arial Rounded MT Bold", 13),
-                     text_color="#1B5E20" if promedio >= 60 else "#B00020",
+                     text_color="#1B5E20" if promedio >= 70 else "#B00020",
                      anchor="center", fg_color=bg).grid(
                      row=r_idx, column=c, padx=12, pady=12, sticky="ew")
             c += 1

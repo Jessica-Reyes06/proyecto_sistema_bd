@@ -659,12 +659,16 @@ def crear_tabla_participantes_con_calificaciones(parent, id_grupo):
         final_real = min(100.0, final_unidades + bonus_materia)
         final_txt = f"{final_real:.2f}"
 
+        # Determinar color de fondo según calificación final
+        color_fila = "#C8E6C9" if final_real >= 70 else "#FFCDD2"  # Verde o rojo claro
+
         fila = datos_base + valores_unidad + [final_txt]
         for col_idx, valor in enumerate(fila):
             cuerpo.grid_columnconfigure(col_idx, weight=1)
             CTkLabel(cuerpo, text=str(valor), text_color="#111111",
-                     font=("Arial", 12), anchor="w", justify="left",
-                     ).grid(row=fila_idx, column=col_idx, padx=10, pady=6, sticky="ew")
+                     font=("Arial Rounded MT Bold", 14), anchor="w", justify="left",
+                     fg_color=color_fila
+                     ).grid(row=fila_idx, column=col_idx, padx=10, pady=8, sticky="ew")
 
 
 def agregar_unidad_general(frame):
@@ -1206,26 +1210,28 @@ def informacion_general_grupo(frame, id_grupo):
             M.nombre_materia,
             M.horas_semana,
             G.cupo_maximo,
-            G.alumnos_inscritos,
             G.periodo,
             G.years,
-            G.estado
+            G.estado,
+            COUNT(R.id_registro) AS alumnos_reales
         FROM grupo G
         JOIN materia M ON G.id_materia = M.id_materia
+        LEFT JOIN registro R ON R.id_grupo = G.id_grupo
         WHERE G.id_grupo = %s
+        GROUP BY G.clave_grupo, M.id_materia, M.nombre_materia,
+                 M.horas_semana, G.cupo_maximo, G.periodo, G.years, G.estado
         LIMIT 1
     """
     resultado = ejecutar_select(consulta, (id_grupo_sql,))
 
     if resultado:
-        clave_grupo, id_materia, nombre_materia, horas_semana, cupo, alumnos_inscritos, periodo, years, estado = resultado[
-            0]
+        clave_grupo, id_materia, nombre_materia, horas_semana, cupo, periodo, years, estado, alumnos_reales = resultado[0]
         CTkLabel(frame_info, text=f"Grupo: {clave_grupo}", text_color="black",
                  font=("Arial Rounded MT Bold", 20)).pack(anchor="w", padx=10, pady=(8, 2))
         CTkLabel(frame_info, text=f"Materia: {nombre_materia}", text_color="black",
                  font=("Arial Rounded MT Bold", 15)).pack(anchor="w", padx=10, pady=2)
         CTkLabel(frame_info,
-                 text=f"Alumnos inscritos: {alumnos_inscritos}    Periodo: {periodo}",
+                 text=f"Alumnos inscritos: {alumnos_reales}    Periodo: {periodo}",
                  text_color="black", font=("Arial Rounded MT Bold", 13)).pack(anchor="w", padx=10, pady=(2, 4))
         CTkLabel(frame_info,
                  text=f"Año: {years}    Estado del grupo: {estado}",
@@ -1255,15 +1261,8 @@ def ver_grupo(frame, id_grupo):
 
     CTkLabel(header, text=f"Grupo {clave_grupo}", text_color="black", anchor="w",
              font=("Arial Rounded MT Bold", 30)).pack(side="left")
-    # Mostrar un indicador con id_grupo y número de alumnos para depuración rápida
-    try:
-        from codigo_maestros.funciones_actividad import obtener_alumnos_grupo_bonus
-        num_alumnos = len(obtener_alumnos_grupo_bonus(id_grupo))
-        CTkLabel(header, text=f"Grupo: {id_grupo} — Alumnos: {num_alumnos}",
-                 text_color="#374151", font=("Arial", 12)).pack(side="left", padx=(12, 0))
-    except Exception as _ex:
-        print(f"DEBUG: no se pudo obtener conteo alumnos para grupo {id_grupo}: {_ex}")
-    CTkButton(header, text="Refrescar todo", fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
+
+    CTkButton(header, text="Actualizar", fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
               font=("Arial Rounded MT Bold", 14), width=150,
               command=lambda: ver_grupo(frame, id_grupo),
               ).pack(side="right", padx=(8, 0), pady=4)
