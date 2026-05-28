@@ -61,7 +61,7 @@ def mostrar_placeholder_actividad(frame_detalle):
 def componentes_Info_General(frame_tab):
     global id_grupo
 
-    id_grupo_sql = normalizar_id_grupo(id_grupo)
+    id_grupo_sql = str(id_grupo).strip()
 
     contenedor = CTkScrollableFrame(
         frame_tab,
@@ -79,13 +79,11 @@ def componentes_Info_General(frame_tab):
 
     consulta = """
         SELECT
-            G.id_grupo,
-            M.id_materia,
+            G.clave_grupo,
             M.nombre_materia,
-            M.horas_semana,
-            M.creditos,
-            M.tipo,
-            G.cupo_maximo
+            G.periodo,
+            G.years,
+            G.estado
         FROM grupo G
         JOIN materia M ON G.id_materia = M.id_materia
         WHERE G.id_grupo = %s
@@ -97,18 +95,16 @@ def componentes_Info_General(frame_tab):
 
     if resultado:
         (
-            grupo,
-            materia_id,
+            clave_grupo,
             materia_nombre,
-            horas_semana,
-            creditos,
-            tipo_materia,
-            cupo_maximo,
+            periodo,
+            years,
+            estado,
         ) = resultado[0]
 
         CTkLabel(
             frame_info,
-            text=f"Grupo: {grupo}",
+            text=f"{materia_nombre}",
             text_color="black",
             justify="left",
             font=("Arial Rounded MT Bold", 20),
@@ -116,7 +112,7 @@ def componentes_Info_General(frame_tab):
 
         CTkLabel(
             frame_info,
-            text=f"Materia: {materia_id} - {materia_nombre}",
+            text=f"Clave del grupo: {clave_grupo}",
             text_color="black",
             justify="left",
             font=("Arial Rounded MT Bold", 15),
@@ -124,7 +120,7 @@ def componentes_Info_General(frame_tab):
 
         CTkLabel(
             frame_info,
-            text=f"Horas/semana: {horas_semana}    Creditos: {creditos}    Tipo: {tipo_materia}    Cupo: {cupo_maximo}",
+            text=f"Año: {years}    Período: {periodo}    Estado: {estado}",
             text_color="black",
             justify="left",
             font=("Arial Rounded MT Bold", 14),
@@ -1101,6 +1097,12 @@ def Info_Grupo(frame_contenido, materia, profesor, id_grupo, nc_alumno):
     limpiar_frame(frame_contenido)
     id_materia = funciones.obtener_id_materia(materia)
 
+    # Obtener clave_grupo de la base de datos
+    id_grupo_sql = normalizar_id_grupo(id_grupo)
+    consulta_clave = "SELECT clave_grupo FROM grupo WHERE id_grupo = %s LIMIT 1"
+    resultado_clave = ejecutar_select(consulta_clave, (id_grupo_sql,))
+    clave_grupo = resultado_clave[0][0] if resultado_clave else id_grupo_sql
+
     frame_info_general = CTkFrame(frame_contenido, fg_color="#cabece")
     frame_info_general.pack(fill="x", padx=5, pady=(5, 2))
 
@@ -1112,7 +1114,7 @@ def Info_Grupo(frame_contenido, materia, profesor, id_grupo, nc_alumno):
              font=("Arial Rounded MT Bold", 20),
              text_color="black").pack(fill="x", padx=10)
 
-    CTkLabel(frame_info_general, text=id_grupo,
+    CTkLabel(frame_info_general, text=clave_grupo,
              font=("Arial Rounded MT Bold", 20),
              text_color="black").pack(fill="x", padx=10)
     opciones_grupo = CTkTabview(

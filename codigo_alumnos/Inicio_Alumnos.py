@@ -45,7 +45,7 @@ def cerrar_sesion():
     importlib.reload(interfaz_login)
 
 
-def crear_icono_clases(frame_clases, columna, fila, nombre_grupo, maestro, materia, frame_contenido):
+def crear_icono_clases(frame_clases, columna, fila, clave_grupo, maestro, materia, frame_contenido, id_grupo):
     frame_grupo_ind = CTkFrame(frame_clases,
                                fg_color="white")
     frame_grupo_ind.grid(row=fila, column=columna, padx=5, pady=5)
@@ -56,7 +56,7 @@ def crear_icono_clases(frame_clases, columna, fila, nombre_grupo, maestro, mater
     )
     CTkButton(
         frame_grupo_ind,
-        text=nombre_grupo,
+        text=clave_grupo,
         width=160,
         height=150,
         fg_color="#715a72",
@@ -65,7 +65,7 @@ def crear_icono_clases(frame_clases, columna, fila, nombre_grupo, maestro, mater
         image=img_grupo,
         compound="bottom",
         font=("Arial Rounded MT Bold", 18),
-        command=lambda m=materia, p=maestro, g=nombre_grupo:
+        command=lambda m=materia, p=maestro, g=id_grupo:
         grupos_alumno.Info_Grupo(
             frame_contenido, m, p, g, numero_control_alumno)
     ).grid(row=0, column=0, padx=10, pady=5)
@@ -408,6 +408,7 @@ def crear_icono(ruta):
 def obtener_grupos_alumno(numero_control):
     consulta = """
         SELECT registro.id_grupo,
+        grupo.clave_grupo,
         materia.nombre_materia,
         CONCAT(maestros.nombre_maestro, ' ', maestros.apellido_paterno, ' ', maestros.apellido_materno) AS nombre_maestro
         FROM registro
@@ -475,18 +476,18 @@ def Mis_Clases(frame_contenido):
         return
 
     # máximo 6 por fila
-    for i, (id_grupo, nombre_materia, nombre_maestro) in enumerate(grupos):
+    for i, (id_grupo, clave_grupo, nombre_materia, nombre_maestro) in enumerate(grupos):
         fila = i // 6
         columna = i % 6
-        nombre_grupo = f"Grupo {id_grupo}"
         crear_icono_clases(
             frame_clases,
             columna,
             fila,
-            nombre_grupo,
+            clave_grupo,
             nombre_maestro,
             nombre_materia,
             frame_contenido,
+            id_grupo
         )
 
 
