@@ -95,11 +95,20 @@ def obtener_nombre_registro(tabla, id_valor):
 def obtener_admin_actual():
     """
     Obtiene el nombre del administrador actual.
+    Retorna el primer administrador disponible en la BD.
     
     Returns:
-        Nombre constante del administrador
+        Nombre del administrador o "Admin Desconocido"
     """
-    return "Administrador2"
+    try:
+        sql = """SELECT CONCAT(nombre, ' ', apellido_paterno, ' ', apellido_materno) 
+                 FROM "administrador" 
+                 ORDER BY id_administrador ASC 
+                 LIMIT 1"""
+        resultado = ejecutar_select(sql)
+        return resultado[0][0] if resultado else "Admin Desconocido"
+    except Exception:
+        return "Admin Desconocido"
 
 
 # Mapeo de tablas -> (campo_busqueda, campo_id)

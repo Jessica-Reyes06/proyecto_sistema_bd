@@ -269,6 +269,7 @@ def actualizar_registro(tabla, id_valor, nuevos_valores):
     }
 
     campo_id = campos_id.get(tabla, "id")
+    id_tabla= obtener_id_recien_insertado(tabla, campo_id)
 
     # Construir UPDATE dinámico
     try:
@@ -289,13 +290,12 @@ def actualizar_registro(tabla, id_valor, nuevos_valores):
         # Construir SET
         set_clause = ", ".join([f"{col}=%s" for col in columnas_sin_id])
 
-        sql = f"UPDATE {tabla} SET {set_clause} WHERE {campo_id}=%s"
+        sql = f"UPDATE {tabla} SET {set_clause} WHERE {campo_id}= %s"
 
         ejecutar_update(sql, tuple(nuevos_valores) + (id_valor,))
         
         # Registrar en auditoría
         nombre_admin = obtener_admin_actual()
-        id_tabla= obtener_id_recien_insertado(tabla, campo_id)
         registrar_auditoria(nombre_admin, tabla.lower(), "UPDATE", id_tabla)
 
         messagebox.showinfo("Éxito", "Registro actualizado correctamente")
@@ -386,6 +386,7 @@ def eliminar_registro(tabla, id_valor, callback_recargar):
     }
 
     campo_id = campos_id.get(tabla, "id")
+    id_tabla = obtener_id_recien_insertado(tabla, campo_id)
     
 
     # VERIFICAR DEPENDENCIAS
@@ -424,8 +425,7 @@ def eliminar_registro(tabla, id_valor, callback_recargar):
             if exito:
                 # Registrar en auditoría
                 nombre_admin = obtener_admin_actual()
-                id_tabla= obtener_id_recien_insertado(tabla, campo_id)
-                registrar_auditoria(nombre_admin, tabla, "DELETE",id_tabla)
+                registrar_auditoria(nombre_admin, tabla.lower(), "DELETE", id_tabla)
                 
                 messagebox.showinfo(
                     "Éxito",

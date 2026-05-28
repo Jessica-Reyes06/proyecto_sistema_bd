@@ -1,14 +1,15 @@
-from customtkinter import *
-from PIL import Image
-import importlib
-from db_conexion import ejecutar_select, ejecutar_insert
-from codigo_alumnos import funciones_Alumnos as funciones_alumnos
 import os
 import sys
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
+
+from customtkinter import *
+from PIL import Image
+import importlib
+from db_conexion import ejecutar_select, ejecutar_insert
+from codigo_alumnos import funciones_Alumnos as funciones_alumnos
 
 
 ventana = None
@@ -664,7 +665,7 @@ def agregar_unidad_general(frame):
             )
             return {}
 
-        """sql = ""
+        sql = """
             SELECT
                 g.id_grupo,
                 g.id_materia,
@@ -672,20 +673,18 @@ def agregar_unidad_general(frame):
             FROM grupo g
             JOIN materia m ON g.id_materia = m.id_materia
             WHERE g.id_grupo = %s
-            Limit 1
-        ""
+        """
         numero_unidades = ejecutar_select(sql, (grupo,))
         if not numero_unidades:
             estado.configure(
                 text="No se encontró información para el grupo seleccionado.",
                 text_color="#B00020",
             )
-            return {}"""
+            return {}
         
         unidades = obtener_unidades_grupo(grupo)
 
-        #total = int(numero_unidades[0][2] if numero_unidades else 5)
-        total = 5
+        total = int(numero_unidades[0][2] if numero_unidades else 5)
         existentes = set()
         for fila in unidades or []:
             try:
