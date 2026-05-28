@@ -12,7 +12,6 @@ def ruta_recurso(ruta_relativa):
         os.path.abspath(__file__)))
     return os.path.join(base_path, ruta_relativa)
 
-
 set_appearance_mode("light")
 ventana_login = CTk()
 ventana_login.title("Sistema de Registro Escolar")

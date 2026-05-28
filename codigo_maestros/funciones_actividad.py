@@ -530,13 +530,13 @@ def abrir_modal_bonus(parent, id_registro, numero_control, nombre_completo, id_g
     selector.grid_columnconfigure(1, weight=1)
 
     btn_unidad = CTkButton(selector,
-                           text="Bonus por Unidad Aplicar bonus a una unidad específica",
+                                                     text="Bonus por Unidad\nAplicar bonus a una unidad específica",
                            font=("Arial Rounded MT Bold", 13), corner_radius=10,
                            fg_color=COLOR_AZUL_CLARO, text_color=COLOR_AZUL,
                            border_width=2, border_color=COLOR_AZUL,
                            hover_color="#DBEAFE", height=70)
     btn_semestre = CTkButton(selector,
-                             text="Bonus por Semestre Aplicar bonus a toda la materia",
+                                                         text="Bonus por Semestre\nAplicar bonus a toda la materia",
                              font=("Arial Rounded MT Bold", 13), corner_radius=10,
                              fg_color="white", text_color="#374151",
                              border_width=1, border_color="#E2E8F0",
@@ -737,93 +737,109 @@ def abrir_modal_bonus(parent, id_registro, numero_control, nombre_completo, id_g
 
 
 def vista_bonus(frame, id_grupo):
-    """Vista unificada de bonus: tabla con alumnos, bonus y promedio final."""
-    print(f"DEBUG: vista_bonus called with id_grupo={id_grupo}")
+    """Vista unificada de bonus con una columna por unidad."""
     for w in frame.winfo_children():
         w.destroy()
 
+    alumnos = obtener_alumnos_grupo_bonus(id_grupo)
+    unidades = ejecutar_select(
+        "SELECT id_unidad, numero_unidad, tema_unidad FROM unidad WHERE id_grupo=%s ORDER BY numero_unidad",
+        (id_grupo,)
+    )
+
     # Header
-    header = CTkFrame(frame, fg_color="white", corner_radius=12)
+    header = CTkFrame(frame, fg_color="white", corner_radius=0)
     header.pack(fill="x", padx=16, pady=(16, 4))
     CTkLabel(header, text="Gestión de Bonus",
-             font=("Arial Rounded MT Bold", 24), text_color="#0F172A").pack(anchor="w", padx=4)
+             font=("Arial Rounded MT Bold", 24), text_color="#0F172A").pack(anchor="w")
     CTkLabel(header, text="Asigna puntos bonus por unidad o por semestre a tus alumnos",
-             font=("Arial", 13), text_color="#6B7280").pack(anchor="w", padx=4, pady=(2, 12))
+             font=("Arial", 13), text_color="#6B7280").pack(anchor="w", pady=(2, 12))
 
-    # Obtener alumnos y mostrar estado en la cabecera
-    alumnos = obtener_alumnos_grupo_bonus(id_grupo)
-    CTkLabel(header, text=f"Grupo: {id_grupo} — Alumnos: {len(alumnos)}",
-             font=("Arial", 12), text_color="#374151").pack(anchor="w", padx=4, pady=(0, 8))
     if not alumnos:
         CTkLabel(frame, text="No hay alumnos inscritos en este grupo.",
-                 font=("Arial", 16), text_color="gray").pack(pady=40)
+                 font=("Arial", 14), text_color="gray").pack(pady=40)
         return
 
-    # Tabla
-    tabla = CTkFrame(frame, fg_color="white", corner_radius=12,
-                     border_width=1, border_color="#E2E8F0")
-    tabla.pack(fill="both", expand=True, padx=16, pady=(0, 16))
+    # Tabla usando grid directamente en un CTkScrollableFrame
+    scroll = CTkScrollableFrame(frame, fg_color="white", corner_radius=12,
+                                border_width=1, border_color="#E2E8F0")
+    scroll.pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
-    # Encabezado
-    enc = CTkFrame(tabla, fg_color="#F8FAFC", corner_radius=0)
-    enc.pack(fill="x")
-    for col, (texto, minsize) in enumerate([
-        ("MATRÍCULA", 130), ("NOMBRE COMPLETO", 0),
-        ("BONUS UNIDADES", 140), ("BONUS SEMESTRE", 140),
-        ("PROMEDIO FINAL", 140), ("ACCIONES", 170)
-    ]):
-        enc.grid_columnconfigure(col, minsize=minsize, weight=1 if minsize == 0 else 0)
-        CTkLabel(enc, text=texto, font=("Arial", 11, "bold"),
-                 text_color="#6B7280", anchor="w").grid(
-                 row=0, column=col, padx=16, pady=12, sticky="w")
-
-    scroll = CTkScrollableFrame(tabla, fg_color="white")
-    scroll.pack(fill="both", expand=True)
-
-    def render_filas():
+    def render():
         for w in scroll.winfo_children():
             w.destroy()
 
-        alumnos = obtener_alumnos_grupo_bonus(id_grupo)
-        if not alumnos:
-            CTkLabel(scroll, text="No hay alumnos inscritos en este grupo.",
-                     font=("Arial", 14), text_color="gray").pack(pady=20)
-            return
+        # Definir columnas: Matrícula, Nombre, una por unidad, Bonus Semestre, Promedio Final, Acciones
+        cols = [("MATRÍCULA", 130, 0), ("NOMBRE COMPLETO", 200, 1)]
+        for i, (id_u, num_u, tema_u) in enumerate(unidades):
+            cols.append((f"U{num_u} BONUS", 100, 0))
+        cols.append(("BONUS SEM.", 100, 0))
+        cols.append(("PROMEDIO FINAL", 120, 0))
+        cols.append(("ACCIONES", 160, 0))
 
-        for idx, (id_registro, numero_control, nombre, ap_pat, ap_mat) in enumerate(alumnos):
+        # Configurar columnas del scroll
+        for c_idx, (_, minsz, wt) in enumerate(cols):
+            scroll.grid_columnconfigure(c_idx, minsize=minsz, weight=wt)
+
+        # Encabezados en fila 0
+        for c_idx, (texto, _, _) in enumerate(cols):
+            CTkLabel(scroll, text=texto, font=("Arial", 11, "bold"),
+                     text_color="#6B7280", anchor="w",
+                     fg_color="#F8FAFC").grid(
+                     row=0, column=c_idx, padx=12, pady=10, sticky="ew")
+
+        # Filas de alumnos
+        for r_idx, (id_registro, numero_control, nombre, ap_pat, ap_mat) in enumerate(alumnos, start=1):
             nombre_completo = f"{nombre} {ap_pat} {ap_mat or ''}".strip()
             bonus_sem = obtener_bonus_semestre_alumno(id_registro, id_grupo)
             promedio = obtener_promedio_final_alumno(id_registro, id_grupo)
+            bg = "#FAFAFA" if r_idx % 2 == 0 else "white"
 
-            color_fila = "#FAFAFA" if idx % 2 == 0 else "white"
-            fila = CTkFrame(scroll, fg_color=color_fila, corner_radius=0)
-            fila.pack(fill="x")
-            CTkFrame(fila, height=1, fg_color="#F1F5F9").pack(fill="x")
+            c = 0
+            CTkLabel(scroll, text=numero_control, font=("Arial", 13, "bold"),
+                     text_color="#0F172A", anchor="w", fg_color=bg).grid(
+                     row=r_idx, column=c, padx=12, pady=12, sticky="ew")
+            c += 1
+            CTkLabel(scroll, text=nombre_completo, font=("Arial", 13),
+                     text_color="#374151", anchor="w", fg_color=bg).grid(
+                     row=r_idx, column=c, padx=12, pady=12, sticky="ew")
+            c += 1
 
-            for col, minsize in enumerate([130, 0, 140, 140, 140, 170]):
-                fila.grid_columnconfigure(col, minsize=minsize, weight=1 if minsize == 0 else 0)
+            # Bonus por unidad
+            for id_u, num_u, _ in unidades:
+                b_u = obtener_bonus_unidad_alumno(id_registro, str(id_u))
+                CTkLabel(scroll,
+                         text=f"+{b_u:.1f}" if b_u > 0 else "-",
+                         font=("Arial", 13),
+                         text_color="#1B5E20" if b_u > 0 else "#6B7280",
+                         anchor="center", fg_color=bg).grid(
+                         row=r_idx, column=c, padx=12, pady=12, sticky="ew")
+                c += 1
 
-            CTkLabel(fila, text=numero_control, font=("Arial", 13, "bold"),
-                     text_color="#0F172A", anchor="w").grid(row=0, column=0, padx=16, pady=14, sticky="w")
-            CTkLabel(fila, text=nombre_completo, font=("Arial", 13),
-                     text_color="#374151", anchor="w").grid(row=0, column=1, padx=16, pady=14, sticky="w")
-            CTkLabel(fila, text="-", font=("Arial", 13),
-                     text_color="#6B7280", anchor="w").grid(row=0, column=2, padx=16, pady=14, sticky="w")
-            CTkLabel(fila,
-                     text=f"+{bonus_sem:.1f}%" if bonus_sem > 0 else "-",
+            # Bonus semestre
+            CTkLabel(scroll,
+                     text=f"+{bonus_sem:.1f}" if bonus_sem > 0 else "-",
                      font=("Arial", 13),
                      text_color="#1B5E20" if bonus_sem > 0 else "#6B7280",
-                     anchor="w").grid(row=0, column=3, padx=16, pady=14, sticky="w")
-            CTkLabel(fila, text=f"{promedio:.1f}",
+                     anchor="center", fg_color=bg).grid(
+                     row=r_idx, column=c, padx=12, pady=12, sticky="ew")
+            c += 1
+
+            # Promedio final
+            CTkLabel(scroll, text=f"{promedio:.1f}",
                      font=("Arial Rounded MT Bold", 13),
                      text_color="#1B5E20" if promedio >= 60 else "#B00020",
-                     anchor="w").grid(row=0, column=4, padx=16, pady=14, sticky="w")
-            CTkButton(fila, text="🎓  Asignar Bonus",
-                      fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
-                      text_color="white", font=("Arial Rounded MT Bold", 13),
-                      height=34, corner_radius=8,
-                      command=lambda ir=id_registro, nc=numero_control, nm=nombre_completo:
-                          abrir_modal_bonus(frame, ir, nc, nm, id_grupo, on_guardado=render_filas)
-                      ).grid(row=0, column=5, padx=16, pady=10, sticky="w")
+                     anchor="center", fg_color=bg).grid(
+                     row=r_idx, column=c, padx=12, pady=12, sticky="ew")
+            c += 1
 
-    render_filas()
+            # Botón
+            CTkButton(scroll, text="🎓 Asignar Bonus",
+                      fg_color=COLOR_MAIN, hover_color=COLOR_HOVER,
+                      text_color="white", font=("Arial Rounded MT Bold", 12),
+                      height=32, corner_radius=8,
+                      command=lambda ir=id_registro, nc=numero_control, nm=nombre_completo:
+                          abrir_modal_bonus(frame, ir, nc, nm, id_grupo, on_guardado=render)
+                      ).grid(row=r_idx, column=c, padx=12, pady=8, sticky="w")
+
+    render()
