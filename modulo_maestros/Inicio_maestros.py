@@ -8,8 +8,8 @@ if ROOT_DIR not in sys.path:
 from customtkinter import *
 from PIL import Image
 import importlib
-from db_conexion import ejecutar_select, ejecutar_insert
-from codigo_alumnos import funciones_Alumnos as funciones_alumnos
+from core.db_conexion import ejecutar_select, ejecutar_insert
+from modulo_alumnos import funciones_Alumnos as funciones_alumnos
 
 
 ventana = None
@@ -45,7 +45,7 @@ def cerrar_sesion():
     global ventana
     if ventana is not None:
         ventana.destroy()
-    import interfaz_login
+    import ui.interfaz_login as interfaz_login
     importlib.reload(interfaz_login)
 
 
@@ -813,7 +813,7 @@ def menu_opciones(frame_menu):
     # ── Logo ──────────────────────────────────────────────────────────────
     try:
         logo_img = CTkImage(light_image=Image.open(
-            "carpeta_iconos/general/logo.jpeg"), size=(200, 95))
+            "ui/carpeta_iconos/general/logo.jpeg"), size=(200, 95))
         frame_logo = CTkFrame(frame_menu, fg_color="#FFFFFF", corner_radius=0)
         frame_logo.pack(fill="x")
         CTkLabel(frame_logo, text="", image=logo_img,
@@ -829,7 +829,7 @@ def menu_opciones(frame_menu):
 
     try:
         avatar_img = CTkImage(light_image=Image.open(
-            "carpeta_iconos/iconos_alumnos/avatar.png"), size=(80, 80))
+            "ui/carpeta_iconos/iconos_alumnos/avatar.png"), size=(80, 80))
         frame_circle = CTkFrame(
             frame_user, fg_color="#A8D8E8", corner_radius=50, width=96, height=96)
         frame_circle.pack(pady=(10, 6))
@@ -854,7 +854,7 @@ def menu_opciones(frame_menu):
     frame_bottom = CTkFrame(frame_menu, fg_color=COLOR_SIDE, corner_radius=0)
     frame_bottom.pack(side="bottom", fill="x", padx=8, pady=10)
     try:
-        salida_icon = crear_icono("carpeta_iconos/iconos_alumnos/salida.png", size=(22, 22), color="#1a1a1a")
+        salida_icon = crear_icono("ui/carpeta_iconos/iconos_alumnos/salida.png", size=(22, 22), color="#1a1a1a")
     except Exception:
         salida_icon = None
     CTkButton(frame_bottom,
@@ -877,17 +877,17 @@ def menu_opciones(frame_menu):
 
     btn_grupos = nav_btn(
         frame_nav, "Mis Grupos",
-        crear_icono("carpeta_iconos/iconos_alumnos/hogar.png", size=(22,22), color="#1a1a1a"),
+        crear_icono("ui/carpeta_iconos/iconos_alumnos/hogar.png", size=(22,22), color="#1a1a1a"),
         lambda: mis_grupos(frame_contenido))
 
     nav_btn(
         frame_nav, "Agregar Unidad",
-        crear_icono("carpeta_iconos/iconos_alumnos/lista.png", size=(22,22), color="#1a1a1a"),
+        crear_icono("ui/carpeta_iconos/iconos_alumnos/lista.png", size=(22,22), color="#1a1a1a"),
         lambda: agregar_unidad_general(frame_contenido))
 
     nav_btn(
         frame_nav, "Configuracion de Perfil",
-        crear_icono("carpeta_iconos/iconos_admin/usuario.png", size=(22,22), color="#1a1a1a"),
+        crear_icono("ui/carpeta_iconos/iconos_admin/usuario.png", size=(22,22), color="#1a1a1a"),
         lambda: Configuracion_Perfil_Maestro())
 
     # Activar "Mis Grupos" por defecto
@@ -1320,14 +1320,14 @@ def ver_grupo(frame, id_grupo):
         elif tab == "Actividades":
             pendientes(frame_pend, id_grupo)
         elif tab == "Bonus":
-            from codigo_maestros.funciones_actividad import vista_bonus
+            from modulo_maestros.funciones_actividad import vista_bonus
             vista_bonus(frame_bonus, id_grupo)
 
     tabview.configure(command=on_tab_change)
 
 
 def pendientes(frame, id_grupo):
-    from codigo_maestros.funciones_actividad import vista_actividades
+    from modulo_maestros.funciones_actividad import vista_actividades
 
     sql = """
         SELECT m.nombre_materia
@@ -1422,13 +1422,13 @@ def mis_grupos(frame):
     # Intentar cargar ícono de grupo: preferir el recurso en carpeta 'general', luego caer a iconos_alumnos
     grupo_icon = None
     posibles = [
-        "carpeta_iconos/general/grupo.png",
-        "carpeta_iconos/general/grupo.jpeg",
-        "carpeta_iconos/general/grupo.jpg",
-        "carpeta_iconos/iconos_alumnos/grupo.png",
-        "carpeta_iconos/iconos_alumnos/usuarios.png",
-        "carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png",
-        "carpeta_iconos/iconos_alumnos/avatar.png",
+        "ui/carpeta_iconos/general/grupo.png",
+        "ui/carpeta_iconos/general/grupo.jpeg",
+        "ui/carpeta_iconos/general/grupo.jpg",
+        "ui/carpeta_iconos/iconos_alumnos/grupo.png",
+        "ui/carpeta_iconos/iconos_alumnos/usuarios.png",
+        "ui/carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png",
+        "ui/carpeta_iconos/iconos_alumnos/avatar.png",
     ]
     # DESPUÉS:
     for ruta in posibles:

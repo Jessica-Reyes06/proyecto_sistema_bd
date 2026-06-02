@@ -3,15 +3,15 @@ import customtkinter
 import csv
 import datetime
 import random
-from db_conexion import ejecutar_insert, ejecutar_select, conexion
-from config_principal import limpiar_frame
+from core.db_conexion import ejecutar_insert, ejecutar_select, conexion
+from config.config_principal import limpiar_frame
 
 
 def crear_tabla_editable_con_doble_click(parent, headers, registros, tipo_tabla, campos_sql, campo_id, volver_a_lista=None):
 
     from customtkinter import CTkFrame, CTkLabel, CTkScrollableFrame, CTkEntry, CTkButton
-    from config_principal import limpiar_frame
-    from db_conexion import ejecutar_update
+    from config.config_principal import limpiar_frame
+    from core.db_conexion import ejecutar_update
 
     tabla = CTkFrame(parent)
     tabla.pack(fill="both", expand=True)
@@ -311,7 +311,7 @@ def crear_formulario_generico(frame_contenido, titulo, campos, sql_insert, volve
         try:
             ejecutar_insert(sql_insert, tuple(valores))
             # Registrar en auditoría
-            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
             import re
             tabla_match = re.search(r'INSERT INTO (\w+)', sql_insert, re.IGNORECASE)
             tabla_name = tabla_match.group(1).lower() if tabla_match else "desconocida"
@@ -406,7 +406,7 @@ def mostrar_form_registro_alumno(frame_contenido, volver_a_lista=None):
                 text="Primero genera número de control", text_color="red")
             return
 
-        from funciones_datos import obtener_id_carrera_por_nombre
+        from core.funciones_datos import obtener_id_carrera_por_nombre
 
         id_carrera = obtener_id_carrera_por_nombre(entradas["Carrera"].get())
         if id_carrera is None:
@@ -435,7 +435,7 @@ def mostrar_form_registro_alumno(frame_contenido, volver_a_lista=None):
         try:
             ejecutar_insert(sql, datos)
             # Registrar en auditoría
-            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
             nombre_admin = obtener_admin_actual()
             id_alumno = obtener_id_recien_insertado("alumno", valores_generados["numero"])
             registrar_auditoria(nombre_admin, "alumno", "INSERT", id_alumno)
@@ -533,7 +533,7 @@ def mostrar_form_registro_maestro(frame_contenido, volver_a_lista=None):
         try:
             ejecutar_insert(sql, valores)
             # Registrar en auditoría
-            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
             nombre_admin = obtener_admin_actual()
             id_maestro = obtener_id_recien_insertado("maestro", valores[0])
             registrar_auditoria(nombre_admin, "maestro", "INSERT", id_maestro)
@@ -622,7 +622,7 @@ def mostrar_form_registro_administrador(frame_contenido, volver_a_lista=None):
         try:
             ejecutar_insert(sql, valores)
             # Registrar en auditoría
-            from funciones_auditoria import registrar_auditoria, obtener_admin_actual
+            from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual
             #nombre_admin = obtener_admin_actual()
             registrar_auditoria(nombre_admin=None, tabla="administrador", tipo_operacion="INSERT", id_registro=valores[0])
 
@@ -705,7 +705,7 @@ def mostrar_form_registro_tipo_actividad(frame_contenido, volver_a_lista=None):
         try:
             ejecutar_insert(sql, (nombre, descripcion))
             # Registrar en auditoría
-            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
             nombre_admin = obtener_admin_actual()
             id_tipo = obtener_id_recien_insertado("tipos_actividades", nombre)
             registrar_auditoria(nombre_admin, "tipos_actividades", "INSERT", id_tipo)
@@ -732,7 +732,7 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
 
     limpiar_frame(frame_contenido)
 
-    from funciones_datos import obtener_columna_existente
+    from core.funciones_datos import obtener_columna_existente
 
     columna_unidad_materia = obtener_columna_existente(
         "unidad", ["id_materia", "idmateria", "materia_id"])
@@ -848,7 +848,7 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
         try:
             ejecutar_insert(sql, (id_tipo, id_unidad, detalles))
             # Registrar en auditoría
-            from funciones_auditoria import registrar_auditoria, obtener_admin_actual
+            from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual
             nombre_admin = obtener_admin_actual()
             registrar_auditoria(nombre_admin, "actividad", "INSERT", None)
             
@@ -870,8 +870,8 @@ def mostrar_form_actividad(frame_contenido, volver_a_lista=None):
 
 
 def mostrar_form_registro_materia(frame_contenido, volver_a_lista=None):
-    from db_conexion import ejecutar_select
-    from funciones_datos import obtener_id_carrera_por_nombre
+    from core.db_conexion import ejecutar_select
+    from core.funciones_datos import obtener_id_carrera_por_nombre
 
     limpiar_frame(frame_contenido)
 
@@ -943,7 +943,7 @@ def mostrar_form_registro_materia(frame_contenido, volver_a_lista=None):
             valores = (clave, nombre_materia, horas_semana, id_carrera)
             ejecutar_insert(sql, valores)
             # Registrar en auditoría
-            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
             nombre_admin = obtener_admin_actual()
             id_materia = obtener_id_recien_insertado("materia", clave)
             registrar_auditoria(nombre_admin, "materia", "INSERT", id_materia)
@@ -1033,7 +1033,7 @@ def mostrar_form_registro_grupo(frame_contenido, volver_a_lista=None):
     estado_label.pack()
 
     def guardar():
-        from funciones_datos import obtener_id_maestro_por_nombre, obtener_id_materia_por_nombre
+        from core.funciones_datos import obtener_id_maestro_por_nombre, obtener_id_materia_por_nombre
 
         nombre_maestro = combo_maestro.get()
         nombre_materia = combo_materia.get()
@@ -1095,7 +1095,7 @@ def mostrar_form_registro_grupo(frame_contenido, volver_a_lista=None):
         try:
             ejecutar_insert(sql, valores)
             # Registrar en auditoría
-            from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+            from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
             nombre_admin = obtener_admin_actual()
             id_grupo = obtener_id_recien_insertado("grupo", valores[0])
             registrar_auditoria(nombre_admin, "grupo", "INSERT", id_grupo)
@@ -1227,7 +1227,7 @@ def mostrar_form_registro_inscripcion(frame_contenido, volver_a_lista=None):
 
             ejecutar_insert(sql, valores)
             # Registrar en auditoría
-            from funciones_auditoria import registrar_auditoria, obtener_admin_actual
+            from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual
             nombre_admin = obtener_admin_actual()
             registrar_auditoria(nombre_admin, "registro", "INSERT", None)
 
@@ -1355,7 +1355,7 @@ def mostrar_form_registro_calificacion_final(frame_contenido, volver_a_lista=Non
         try:
             ejecutar_insert(sql, valores)
             # Registrar en auditoría
-            from funciones_auditoria import registrar_auditoria, obtener_admin_actual
+            from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual
             nombre_admin = obtener_admin_actual()
             registrar_auditoria(nombre_admin, "calificaciones_finales", "INSERT", None)
             
@@ -1449,7 +1449,7 @@ def mostrar_form_registro_calificacion_actividad(frame_contenido, volver_a_lista
         try:
             ejecutar_insert(sql, valores)
             # Registrar en auditoría
-            from funciones_auditoria import registrar_auditoria, obtener_admin_actual
+            from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual
             nombre_admin = obtener_admin_actual()
             registrar_auditoria(nombre_admin, "calificaciones_actividades", "INSERT", None)
             

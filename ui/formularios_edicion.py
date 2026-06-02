@@ -1,7 +1,7 @@
 import customtkinter
-from db_conexion import ejecutar_update
-from config_principal import limpiar_frame
-from formularios_bd import crear_campo, crear_combo
+from core.db_conexion import ejecutar_update
+from config.config_principal import limpiar_frame
+from ui.formularios_bd import crear_campo, crear_combo
 
 # EDITAR CARRERAS
 def editar_carreras(frame_contenido, id_carrera, nombre_carrera, tipo_carrera, numero_semestres, clave_carrera, volver_a_lista=None):
@@ -98,8 +98,8 @@ def editar_materias(frame_contenido, id_materia, clave, nombre_materia, horas_se
     Formulario para editar una materia existente.
     Recibe los datos actuales del registro y permite modificarlos.
     """
-    from db_conexion import ejecutar_select
-    from funciones_datos import obtener_nombre_carrera_por_id, obtener_id_carrera_por_nombre
+    from core.db_conexion import ejecutar_select
+    from core.funciones_datos import obtener_nombre_carrera_por_id, obtener_id_carrera_por_nombre
     
     limpiar_frame(frame_contenido)
 
@@ -208,8 +208,8 @@ def editar_grupo(frame_contenido, id_grupo, nombre_maestro, nombre_materia, cupo
     Formulario para editar un grupo existente.
     Recibe los datos actuales del registro y permite modificarlos.
     """
-    from db_conexion import ejecutar_select
-    from funciones_datos import obtener_id_maestro_por_nombre, obtener_id_materia_por_nombre
+    from core.db_conexion import ejecutar_select
+    from core.funciones_datos import obtener_id_maestro_por_nombre, obtener_id_materia_por_nombre
     
     limpiar_frame(frame_contenido)
 

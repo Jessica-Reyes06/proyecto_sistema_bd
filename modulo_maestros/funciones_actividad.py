@@ -6,7 +6,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from customtkinter import *
-from db_conexion import ejecutar_select, ejecutar_insert
+from core.db_conexion import ejecutar_select, ejecutar_insert
 
 
 # ── CONSULTAS ─────────────────────────────────────────────────────────────────
@@ -23,7 +23,7 @@ def obtener_unidades_con_actividades(id_grupo):
 
 
 def cambiar_estado_unidad(id_unidad, nuevo_estado):
-    from db_conexion import conexion
+    from core.db_conexion import conexion
     cur = conexion.cursor()
     cur.execute("UPDATE unidad SET estado = %s WHERE id_unidad = %s", (nuevo_estado, id_unidad))
     conexion.commit()
@@ -160,7 +160,7 @@ def vista_actividades(frame, id_grupo, nombre_materia=""):
 
         def toggle_estado(iu=id_unidad, frame_ref=frame,
                           ig=id_grupo, nm=nombre_materia, lbl=lbl_error):
-            from db_conexion import conexion
+            from core.db_conexion import conexion
             cur = conexion.cursor()
 
             # Verificar estado actual

@@ -1,6 +1,6 @@
 # Funciones de recuperación y conversión
 
-from db_conexion import ejecutar_select, conexion
+from core.db_conexion import ejecutar_select, conexion
 
 
 def obtener_carreras_ordenadas():

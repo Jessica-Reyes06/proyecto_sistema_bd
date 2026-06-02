@@ -2,8 +2,8 @@ import os
 import sys
 import customtkinter as ctk
 from PIL import Image
-from funciones_admin import *
-from escalado_dinamico import crear_escalador
+from ui.funciones_admin import *
+from config.escalado_dinamico import crear_escalador
 
 ventana_principal = None
 escalador = None
@@ -58,7 +58,7 @@ def iniciar_admin():
     print(f"📏 Factor de escala: {info_res['scale_factor']:.2f}x")
 
     # Compartir el escalador con funciones_admin.py
-    from funciones_admin import set_escalador
+    from ui.funciones_admin import set_escalador
     set_escalador(escalador)
 
     # ===== GRID PRINCIPAL =====

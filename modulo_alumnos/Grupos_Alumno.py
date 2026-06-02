@@ -1,5 +1,5 @@
-from db_conexion import *
-from codigo_alumnos import funciones_Alumnos as funciones
+from core.db_conexion import *
+from modulo_alumnos import funciones_Alumnos as funciones
 import datetime
 from PIL import Image
 from customtkinter import *
@@ -390,7 +390,7 @@ def boton_unidad_grupo(frame_tab, frame_detalle, titulo_unidad, actividades):
 
     img_unidad = CTkImage(
         Image.open(ruta_recurso(
-            "carpeta_iconos/iconos_alumnos/resaltador.png")),
+            "ui/carpeta_iconos/iconos_alumnos/resaltador.png")),
         size=(30, 30)
     )
 

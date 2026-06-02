@@ -4,7 +4,7 @@ import importlib
 from tkinter import messagebox
 
 from customtkinter import *
-from funciones_login import mostrar_ocultar, generar_mensaje_login
+from core.funciones_login import mostrar_ocultar, generar_mensaje_login
 from PIL import Image
 
 def ruta_recurso(ruta_relativa):
@@ -116,9 +116,9 @@ boton_contra.configure(
 
 def abrir_interfaz_maestro(usuario):
     try:
-        modulo = importlib.import_module("codigo_maestros.Inicio_maestros")
+        modulo = importlib.import_module("modulo_maestros.Inicio_maestros")
     except Exception:
-        modulo = importlib.import_module("Inicio_maestros")
+        modulo = importlib.import_module("modulo_maestros.Inicio_maestros")
     iniciar_maestro = getattr(modulo, "iniciar_maestro", None)
     if iniciar_maestro is None:
         raise ImportError("No se encontró iniciar_maestro en Inicio_maestros")
@@ -126,7 +126,7 @@ def abrir_interfaz_maestro(usuario):
 
 
 def abrir_interfaz_alumno(usuario):
-    modulo = importlib.import_module("codigo_alumnos.Inicio_Alumnos")
+    modulo = importlib.import_module("modulo_alumnos.Inicio_Alumnos")
 
     iniciar_alumno = getattr(modulo, "iniciar_alumno", None)
     if iniciar_alumno is None:
@@ -148,7 +148,7 @@ def on_login():
         rol = (mensaje["rol"] or "").strip().lower()
         if rol == "administrador":
             ventana_login.destroy()
-            from main_administrador import iniciar_admin
+            from ui.main_administrador import iniciar_admin
             iniciar_admin()
         elif rol == "alumno":
             try:

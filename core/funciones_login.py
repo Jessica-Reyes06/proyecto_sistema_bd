@@ -1,4 +1,4 @@
-from db_conexion import conexion
+from core.db_conexion import conexion
 import customtkinter
 
 def cambiar_modo():

@@ -1,7 +1,7 @@
 import datetime
 from tkinter import filedialog
 import importlib
-from db_conexion import ejecutar_select, ejecutar_insert
+from core.db_conexion import ejecutar_select, ejecutar_insert
 from customtkinter import CTkFrame, CTkLabel, CTkScrollableFrame
 import os
 import sys

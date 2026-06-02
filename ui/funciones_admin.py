@@ -1,8 +1,8 @@
 from tkinter import messagebox
 from customtkinter import *
 from PIL import Image
-from config_principal import bitacora_cambios, limpiar_frame
-from formularios_bd import *
+from config.config_principal import bitacora_cambios, limpiar_frame
+from ui.formularios_bd import *
 import os
 import sys
 
@@ -242,15 +242,15 @@ def crear_tabla_editable(parent, headers, registros, tabla_sql, color_tabla="#e0
 
 def ejecutar_update(sql, valores):
     """Función temporal para compatibilidad - usar db_conexion.ejecutar_update"""
-    from db_conexion import ejecutar_update as db_ejecutar_update
+    from core.db_conexion import ejecutar_update as db_ejecutar_update
     return db_ejecutar_update(sql, valores)
 
 
 def actualizar_registro(tabla, id_valor, nuevos_valores):
     """Callback para actualizar un registro"""
-    from db_conexion import ejecutar_update, conexion
+    from core.db_conexion import ejecutar_update, conexion
     from tkinter import messagebox
-    from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+    from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
 
     # Determinar el campo ID según la tabla
     campos_id = {
@@ -311,7 +311,7 @@ def verificar_dependencias(tabla, campo_id, id_valor):
     Verifica si un registro tiene dependencias antes de eliminarlo.
     Retorna una lista de dicts con dependencias encontradas.
     """
-    from db_conexion import ejecutar_select
+    from core.db_conexion import ejecutar_select
 
     # Mapa de dependencias por tabla
     dependencias = {
@@ -366,9 +366,9 @@ def eliminar_registro(tabla, id_valor, callback_recargar):
     Elimina un registro después de verificar dependencias y pedir confirmación.
     Si hay dependencias, pregunta al usuario si desea eliminarlas también.
     """
-    from db_conexion import ejecutar_delete
+    from core.db_conexion import ejecutar_delete
     from tkinter import messagebox
-    from funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
+    from core.funciones_auditoria import registrar_auditoria, obtener_admin_actual, obtener_id_recien_insertado
 
     campos_id = {
         "Alumno": "numero_control",
@@ -489,7 +489,7 @@ def mostrar_dashboard(frame):
 
     # Obtener contadores dinámicamente desde la base de datos
     try:
-        from funciones_datos import obtener_contadores_dashboard
+        from core.funciones_datos import obtener_contadores_dashboard
         cont = obtener_contadores_dashboard()
         stats = [
             ("Alumnos", cont.get("alumnos", "0"), "#510054"),
@@ -721,7 +721,7 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
         # CARGAR DATOS REALES DE LA BD
         if tabla_sql == "Carreras":
             # Usar función personalizada para Carreras
-            from funciones_datos import obtener_carreras_ordenadas
+            from core.funciones_datos import obtener_carreras_ordenadas
             try:
                 registros = obtener_carreras_ordenadas()
             except Exception as e:
@@ -729,7 +729,7 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
                 registros = []
         elif tabla_sql == "Materia":
             # Usar función personalizada para Materias
-            from funciones_datos import obtener_materias_ordenadas
+            from core.funciones_datos import obtener_materias_ordenadas
             try:
                 registros = obtener_materias_ordenadas()
             except Exception as e:
@@ -737,7 +737,7 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
                 registros = []
         elif tabla_sql == "Grupo":
             # Usar función personalizada para Grupos
-            from funciones_datos import obtener_grupos_ordenadas
+            from core.funciones_datos import obtener_grupos_ordenadas
             try:
                 registros = obtener_grupos_ordenadas()
             except Exception as e:
@@ -745,7 +745,7 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
                 registros = []
         elif tabla_sql == "Alumno":
             # Usar función personalizada para Alumnos
-            from funciones_datos import obtener_alumnos_ordenados
+            from core.funciones_datos import obtener_alumnos_ordenados
             try:
                 registros = obtener_alumnos_ordenados()
             except Exception as e:
@@ -753,7 +753,7 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
                 registros = []
         elif tabla_sql == "Maestro":
             # Usar función personalizada para Maestros
-            from funciones_datos import obtener_maestros_ordenados
+            from core.funciones_datos import obtener_maestros_ordenados
             try:
                 registros = obtener_maestros_ordenados()
             except Exception as e:
@@ -761,21 +761,21 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
                 registros = []
         elif tabla_sql == "Administrador":
             # Usar función personalizada para Administradores
-            from funciones_datos import obtener_administradores_ordenados
+            from core.funciones_datos import obtener_administradores_ordenados
             try:
                 registros = obtener_administradores_ordenados()
             except Exception as e:
                 print(f"Error cargando datos de Administrador: {e}")
                 registros = []
         elif tabla_sql == "Registro":
-            from funciones_datos import obtener_registros_ordenados
+            from core.funciones_datos import obtener_registros_ordenados
             try:
                 registros = obtener_registros_ordenados()
             except Exception as e:
                 print(f"Error cargando datos de Registro: {e}")
                 registros = []
         elif tabla_sql:
-            from db_conexion import ejecutar_select_todo
+            from core.db_conexion import ejecutar_select_todo
             try:
                 registros = ejecutar_select_todo(tabla_sql)
             except Exception as e:
@@ -788,7 +788,7 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
         # Crear callback de edición personalizado para Carreras
         editar_cb = None
         if tabla_sql == "Carreras":
-            from formularios_edicion import editar_carreras
+            from ui.formularios_edicion import editar_carreras
 
             def editar_cb(fila, callback_recargar):
                 try:
@@ -799,8 +799,8 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
                 except Exception as e:
                     print(f"Error en edición de carrera: {e}")
         elif tabla_sql == "Materia":
-            from formularios_edicion import editar_materias
-            from funciones_datos import obtener_id_carrera_por_nombre
+            from ui.formularios_edicion import editar_materias
+            from core.funciones_datos import obtener_id_carrera_por_nombre
 
             def editar_cb(fila, callback_recargar):
                 try:
@@ -812,7 +812,7 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
                 except Exception as e:
                     print(f"Error en edición de materia: {e}")
         elif tabla_sql == "Grupo":
-            from formularios_edicion import editar_grupo
+            from ui.formularios_edicion import editar_grupo
 
             def editar_cb(fila, callback_recargar):
                 try:
@@ -860,7 +860,7 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
             params = [f'%{filtro}%'] * len(columnas_busqueda)
         
         try:
-            from db_conexion import ejecutar_select
+            from core.db_conexion import ejecutar_select
             registros = ejecutar_select(sql, tuple(params) if params else None)
         except Exception as e:
             print(f"Error al cargar datos con filtro: {e}")
@@ -869,7 +869,7 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
         # Crear callback de edición (reutilizar la lógica de mostrar_tabla_base)
         editar_cb = None
         if tabla_sql == "Carreras":
-            from formularios_edicion import editar_carreras
+            from ui.formularios_edicion import editar_carreras
 
             def editar_cb(fila, callback_recargar):
                 try:
@@ -878,8 +878,8 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
                 except Exception as e:
                     print(f"Error en edición de carrera: {e}")
         elif tabla_sql == "Materia":
-            from formularios_edicion import editar_materias
-            from funciones_datos import obtener_id_carrera_por_nombre
+            from ui.formularios_edicion import editar_materias
+            from core.funciones_datos import obtener_id_carrera_por_nombre
 
             def editar_cb(fila, callback_recargar):
                 try:
@@ -889,7 +889,7 @@ def mostrar_seccion_gestion(frame, titulo, color_header, color_menu, color_tabla
                 except Exception as e:
                     print(f"Error en edición de materia: {e}")
         elif tabla_sql == "Grupo":
-            from formularios_edicion import editar_grupo
+            from ui.formularios_edicion import editar_grupo
 
             def editar_cb(fila, callback_recargar):
                 try:
@@ -960,7 +960,7 @@ def guardar_csv(nombre):
 
 def ejecutar_importacion(tabla, volver):
     """Importa datos desde un archivo CSV a la tabla especificada"""
-    from formularios_bd import importar_csv
+    from ui.formularios_bd import importar_csv
     from tkinter import filedialog
 
     ruta_csv = filedialog.askopenfilename(
@@ -982,7 +982,7 @@ def ejecutar_importacion(tabla, volver):
 
 def ejecutar_exportacion(tabla, nombre):
     """Exporta datos de una tabla a un archivo CSV"""
-    from formularios_bd import exportar_csv
+    from ui.formularios_bd import exportar_csv
     from tkinter import filedialog
 
     ruta_csv = filedialog.asksaveasfilename(
@@ -1005,7 +1005,7 @@ def ejecutar_exportacion(tabla, nombre):
 def crear_respaldo_completo():
     """Respaldo completo de la base de datos en archivos CSV individuales por tabla."""
     from tkinter import filedialog
-    from formularios_bd import exportar_csv
+    from ui.formularios_bd import exportar_csv
     import datetime
     import os
 
@@ -1061,7 +1061,7 @@ def crear_respaldo_completo():
 def restaurar_desde_respaldo():
     """Restaura datos desde los CSV de respaldo más recientes en una carpeta."""
     from tkinter import filedialog
-    from formularios_bd import importar_csv
+    from ui.formularios_bd import importar_csv
     import os
     import glob
 
@@ -1503,7 +1503,7 @@ def mostrar_actividades(frame):
         limpiar_frame(area_contenido)
 
         try:
-            from funciones_datos import obtener_columna_existente
+            from core.funciones_datos import obtener_columna_existente
 
             columna_unidad_materia = obtener_columna_existente(
                 "unidad", ["id_materia", "idmateria", "materia_id"])
@@ -1566,7 +1566,7 @@ def mostrar_actividades(frame):
 
 def mostrar_calificaciones_finales(frame):
     """Muestra calificaciones finales con JOINs correctos y manejo de bonuses"""
-    from db_conexion import ejecutar_select
+    from core.db_conexion import ejecutar_select
 
     limpiar_frame(frame)
 
@@ -1744,7 +1744,7 @@ def mostrar_calificaciones_finales(frame):
 
 def actualizar_calificacion_final_callback(tabla, id_final, nuevos_valores):
     """Callback para actualizar calificación final"""
-    from db_conexion import ejecutar_update
+    from core.db_conexion import ejecutar_update
     from tkinter import messagebox
 
     try:
@@ -1769,7 +1769,7 @@ def actualizar_calificacion_final_callback(tabla, id_final, nuevos_valores):
 
 def eliminar_calificacion_final_callback(tabla, id_final, callback_recargar):
     """Callback para eliminar calificación final"""
-    from db_conexion import ejecutar_delete
+    from core.db_conexion import ejecutar_delete
     from tkinter import messagebox
 
     confirmar = messagebox.askyesno(
@@ -1890,7 +1890,7 @@ def mostrar_solicitudes(frame, datos=None):
 
 
 def mostrar_reporte_grupal(frame, clave_grupo):
-    from db_conexion import ejecutar_select
+    from core.db_conexion import ejecutar_select
     limpiar_frame(frame)
 
     # ── BOTÓN REGRESAR ───────────────────────────────────────
@@ -2210,7 +2210,7 @@ def mostrar_reportes(frame):
 
     def recargar_tabla_con_filtros():
         #Recarga la tabla según los filtros seleccionados
-        from db_conexion import ejecutar_select
+        from core.db_conexion import ejecutar_select
         
         periodo = filtro_periodo.get()
         año = filtro_año.get()

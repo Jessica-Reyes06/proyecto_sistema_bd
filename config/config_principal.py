@@ -1,6 +1,6 @@
 from customtkinter import CTkFrame, CTkButton, CTkScrollableFrame, CTkLabel
 from tkcalendar import Calendar
-from funciones_auditoria import obtener_ultimos_cambios
+from core.funciones_auditoria import obtener_ultimos_cambios
 
 
 def limpiar_frame(frame):

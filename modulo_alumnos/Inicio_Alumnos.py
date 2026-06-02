@@ -1,5 +1,5 @@
-from db_conexion import ejecutar_select, ejecutar_insert
-from codigo_alumnos import Grupos_Alumno as grupos_alumno
+from core.db_conexion import ejecutar_select, ejecutar_insert
+from modulo_alumnos import Grupos_Alumno as grupos_alumno
 import importlib
 import datetime
 from tkcalendar import Calendar
@@ -41,7 +41,7 @@ def cerrar_sesion():
     if ventana is not None:
         ventana.destroy()
 
-    import interfaz_login
+    import ui.interfaz_login as interfaz_login
     importlib.reload(interfaz_login)
 
 
@@ -51,7 +51,7 @@ def crear_icono_clases(frame_clases, columna, fila, clave_grupo, maestro, materi
     frame_grupo_ind.grid(row=fila, column=columna, padx=5, pady=5)
     img_grupo = CTkImage(
         light_image=Image.open(ruta_recurso(
-            "carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png")),
+            "ui/carpeta_iconos/iconos_alumnos/archivo-de-carpetas.png")),
         size=(90, 90)
     )
     CTkButton(
@@ -89,7 +89,7 @@ def menu_opcioneas(frame_menu):
     global numero_control_alumno, nombre_alumno
 
     logo_img = CTkImage(light_image=Image.open(ruta_recurso(
-        "carpeta_iconos/general/logo.jpeg")), size=(120, 50))
+        "ui/carpeta_iconos/general/logo.jpeg")), size=(120, 50))
     # Frame de fondo del color del logo
     frame_logo_bg = CTkFrame(frame_menu, fg_color="#003152", corner_radius=0)
     frame_logo_bg.pack(fill="x", pady=(0, 5), padx=0)
@@ -103,7 +103,7 @@ def menu_opcioneas(frame_menu):
 
     img_usuario = CTkImage(
         light_image=Image.open(ruta_recurso(
-            "carpeta_iconos/iconos_alumnos/avatar.png")),
+            "ui/carpeta_iconos/iconos_alumnos/avatar.png")),
         size=(100, 100)
     )
     CTkLabel(frame_usuario,
@@ -959,13 +959,13 @@ def iniciar_alumno(numero_control):
     mostrar_maximizada()
 
     img_hogar = crear_icono(
-        "carpeta_iconos/iconos_alumnos/hogar.png")
+        "ui/carpeta_iconos/iconos_alumnos/hogar.png")
     img_calendario = crear_icono(
-        "carpeta_iconos/iconos_alumnos/calendario.png")
-    img_notificaciones = crear_icono("carpeta_iconos/iconos_alumnos/reloj.png")
-    img_pendiente = crear_icono("carpeta_iconos/iconos_alumnos/lista.png")
-    img_cerrar_sesion = crear_icono("carpeta_iconos/iconos_alumnos/salida.png")
-    img_usuario = crear_icono("carpeta_iconos/iconos_alumnos/avatar.png")
+        "ui/carpeta_iconos/iconos_alumnos/calendario.png")
+    img_notificaciones = crear_icono("ui/carpeta_iconos/iconos_alumnos/reloj.png")
+    img_pendiente = crear_icono("ui/carpeta_iconos/iconos_alumnos/lista.png")
+    img_cerrar_sesion = crear_icono("ui/carpeta_iconos/iconos_alumnos/salida.png")
+    img_usuario = crear_icono("ui/carpeta_iconos/iconos_alumnos/avatar.png")
 
     frame_menu = CTkFrame(ventana,
                           width=300,

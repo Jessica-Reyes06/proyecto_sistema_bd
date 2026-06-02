@@ -1,7 +1,7 @@
 """
 Funciones para manejo de auditoría de cambios de administradores
 """
-from db_conexion import ejecutar_insert, ejecutar_select
+from core.db_conexion import ejecutar_insert, ejecutar_select
 
 
 # Mapeo de nombres de tablas: nombre_tabla -> nombre_singular
