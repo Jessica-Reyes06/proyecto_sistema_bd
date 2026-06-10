@@ -246,7 +246,7 @@ def vista_actividades(frame, id_grupo, nombre_materia=""):
                          wraplength=180, justify="left").pack(anchor="w", padx=12, pady=(0, 6))
 
             badge_frame = CTkFrame(card, fg_color="transparent")
-            badge_frame.pack(anchor="w", padx=12, pady=(0, 12))
+            badge_frame.pack(anchor="w", padx=12, pady=(0, 4))
 
             badge = CTkFrame(badge_frame, fg_color=COLOR_AZUL, corner_radius=20)
             badge.pack(side="left")
@@ -255,18 +255,117 @@ def vista_actividades(frame, id_grupo, nombre_materia=""):
             CTkLabel(badge_frame, text=" del total",
                      font=("Arial", 13), text_color="#374151").pack(side="left")
 
-            # Click en toda la tarjeta
-            def abrir(ia=id_actividad, tipo=tipo_actividad, det=detalles, pond=ponderacion,
-                      nu=numero_unidad, tu=tema_unidad):
+            # Botones Calificar y Editar
+            acciones = CTkFrame(card, fg_color="transparent")
+            acciones.pack(fill="x", padx=8, pady=(0, 10))
+
+            def abrir_calif(ia=id_actividad, tipo=tipo_actividad, det=detalles, pond=ponderacion,
+                            nu=numero_unidad, tu=tema_unidad):
                 vista_calificacion(frame, id_grupo, ia, tipo, det, pond, nu, tu, nombre_materia)
 
-            card.bind("<Button-1>", lambda e, fn=abrir: fn())
-            for child in card.winfo_children():
-                child.bind("<Button-1>", lambda e, fn=abrir: fn())
-                for grandchild in child.winfo_children():
-                    grandchild.bind("<Button-1>", lambda e, fn=abrir: fn())
+            def abrir_editar_act(ia=id_actividad, tipo=tipo_actividad, pond=ponderacion,
+                                  det=detalles, fr=frame, ig=id_grupo, nm=nombre_materia):
+                abrir_modal_editar_actividad(fr, ia, tipo, pond, det,
+                                             on_guardado=lambda: vista_actividades(fr, ig, nm))
+
+            CTkButton(acciones, text="📋 Calificar",
+                      fg_color=COLOR_AZUL, hover_color=COLOR_HEADER_AZUL,
+                      text_color="white", font=("Arial Rounded MT Bold", 12),
+                      height=28, corner_radius=6,
+                      command=abrir_calif).pack(side="left", padx=(4, 4))
+
+            CTkButton(acciones, text="✏ Editar",
+                      fg_color="#F1F5F9", hover_color="#E2E8F0",
+                      text_color="#374151", font=("Arial Rounded MT Bold", 12),
+                      height=28, corner_radius=6,
+                      command=abrir_editar_act).pack(side="left")
 
             col += 1
+
+
+def abrir_modal_editar_actividad(parent, id_actividad, tipo_actual, ponderacion_actual, detalles_actuales, on_guardado=None):
+    modal = CTkToplevel(parent)
+    modal.title("Editar Actividad")
+    modal.resizable(False, False)
+    modal.grab_set()
+    modal.configure(fg_color="white")
+    modal.update_idletasks()
+    sw, sh = modal.winfo_screenwidth(), modal.winfo_screenheight()
+    w, h = 480, 420
+    modal.geometry(f"{w}x{h}+{(sw-w)//2}+{(sh-h)//2}")
+
+    CTkLabel(modal, text="Editar Actividad", font=("Arial Rounded MT Bold", 20),
+             text_color="#0F172A", fg_color="white").pack(anchor="w", padx=24, pady=(20, 4))
+    CTkFrame(modal, height=1, fg_color="#E2E8F0").pack(fill="x", pady=8)
+
+    # Tipo de actividad
+    CTkLabel(modal, text="Tipo de actividad *", font=("Arial Rounded MT Bold", 13),
+             text_color="#374151", fg_color="white").pack(anchor="w", padx=24, pady=(8, 4))
+    tipos_raw = ejecutar_select("SELECT id_tipo, nombre FROM tipos_actividades ORDER BY nombre")
+    tipos_nombres = [t[1] for t in tipos_raw]
+    tipos_ids = [t[0] for t in tipos_raw]
+    cb_tipo = CTkComboBox(modal, values=tipos_nombres, state="readonly",
+                          height=40, font=("Arial", 14))
+    if tipo_actual and tipo_actual in tipos_nombres:
+        cb_tipo.set(tipo_actual)
+    elif tipos_nombres:
+        cb_tipo.set(tipos_nombres[0])
+    cb_tipo.pack(fill="x", padx=24)
+
+    # Ponderación
+    CTkLabel(modal, text="Ponderación % *", font=("Arial Rounded MT Bold", 13),
+             text_color="#374151", fg_color="white").pack(anchor="w", padx=24, pady=(12, 4))
+    e_pond = CTkEntry(modal, height=40, font=("Arial", 14),
+                      fg_color="white", border_color="#E2E8F0", text_color="#0F172A")
+    e_pond.insert(0, str(ponderacion_actual or ""))
+    e_pond.pack(fill="x", padx=24)
+
+    # Detalles
+    CTkLabel(modal, text="Descripción", font=("Arial Rounded MT Bold", 13),
+             text_color="#374151", fg_color="white").pack(anchor="w", padx=24, pady=(12, 4))
+    e_det = CTkEntry(modal, height=40, font=("Arial", 14),
+                     fg_color="white", border_color="#E2E8F0", text_color="#0F172A")
+    e_det.insert(0, detalles_actuales or "")
+    e_det.pack(fill="x", padx=24)
+
+    lbl_estado = CTkLabel(modal, text="", font=("Arial", 12),
+                          text_color="gray", fg_color="white")
+    lbl_estado.pack(anchor="w", padx=24, pady=(8, 0))
+
+    CTkFrame(modal, height=1, fg_color="#E2E8F0").pack(fill="x", pady=8)
+    footer = CTkFrame(modal, fg_color="white")
+    footer.pack(fill="x", padx=24, pady=8)
+
+    CTkButton(footer, text="Cancelar", fg_color="white", text_color="#374151",
+              border_width=1, border_color="#E2E8F0", hover_color="#F1F5F9",
+              height=38, corner_radius=8, command=modal.destroy).pack(side="left")
+
+    def guardar():
+        try:
+            pond = float(e_pond.get().strip())
+            if pond <= 0 or pond > 100:
+                raise ValueError
+        except ValueError:
+            lbl_estado.configure(text="⚠ Ponderación inválida (0-100).", text_color="#B00020")
+            return
+        nombre_tipo = cb_tipo.get()
+        id_tipo = tipos_ids[tipos_nombres.index(nombre_tipo)]
+        try:
+            ejecutar_insert(
+                "UPDATE actividad SET id_tipo=%s, ponderacion=%s, detalles=%s WHERE id_actividad=%s",
+                (id_tipo, pond, e_det.get().strip(), id_actividad)
+            )
+            lbl_estado.configure(text="✓ Actividad actualizada.", text_color="#1B5E20")
+            if on_guardado:
+                modal.after(600, lambda: (modal.destroy(), on_guardado()))
+            else:
+                modal.after(600, modal.destroy)
+        except Exception as ex:
+            lbl_estado.configure(text=f"Error: {ex}", text_color="#B00020")
+
+    CTkButton(footer, text="Guardar cambios", fg_color=COLOR_AZUL, hover_color=COLOR_HEADER_AZUL,
+              text_color="white", height=38, corner_radius=8,
+              font=("Arial Rounded MT Bold", 13), command=guardar).pack(side="right")
 
 
 def vista_calificacion(frame, id_grupo, id_actividad, tipo_actividad, detalles, ponderacion,
